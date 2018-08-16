@@ -312,9 +312,7 @@ sexSwitch <- function(indiv = makeFounders(), direction = "both", prob = 0.0001)
     return(indiv)
 }
 
-
-
-
+################################################################################################
 
 #' birthdays(): takes an individual-data matrix, and adds one to each individual's age
 #'
