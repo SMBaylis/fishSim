@@ -323,13 +323,14 @@ sexSwitch <- function(indiv = makeFounders(), direction = "both", prob = 0.0001)
 #' birthdays(): takes an individual-data matrix, and adds one to each individual's age
 #'
 #' Nothing fancy: this is separated from the other functions to allow more flexible
-#' assignments of movement, mating and mortality within each year.
+#' assignments of movement, mating and mortality within each year. Only updates ages
+#' for animals that are alive, so indiv[,8] will remain 'age at death' for all dead animals.
 #'
 #' @param indiv A matrix of individuals, as from makeFounders(), move(), mate(), or mort().
 #' @export
 
 birthdays <- function(indiv = makeFounders() ) {
-    indiv[,8] <- as.numeric(indiv[,8]) + 1
+    indiv[is.na(indiv[,6]) ,8] <- as.numeric(indiv[is.na(indiv[,6]),8]) + 1
     return(indiv)
 }
 
