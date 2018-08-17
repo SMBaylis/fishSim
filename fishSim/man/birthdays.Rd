@@ -11,5 +11,6 @@ birthdays(indiv = makeFounders())
 }
 \description{
 Nothing fancy: this is separated from the other functions to allow more flexible
-assignments of movement, mating and mortality within each year.
+assignments of movement, mating and mortality within each year. Only updates ages
+for animals that are alive, so indiv[,8] will remain 'age at death' for all dead animals.
 }

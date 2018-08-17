@@ -6,7 +6,7 @@
 until a recruitment quota is filled.}
 \usage{
 mate(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
-  osr = c(0.5, 0.5), year = "-1")
+  osr = c(0.5, 0.5), year = "-1", firstBreed = 0)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}
@@ -22,6 +22,9 @@ nrow(indiv)*fecundity in order to keep the population size constant.}
 
 \item{year}{Intended to be used in a simulation loop - this will be the iteration number, and
 holds the 'birthyear' value to give to new recruits.}
+
+\item{firstBreed}{The age at first breeding, default zero. The minimum age at which individuals
+can breed. Applies to both potential mothers and potential fathers.}
 }
 \description{
 Returns an individual matrix with added newborns at age 0.

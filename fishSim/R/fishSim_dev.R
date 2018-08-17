@@ -435,8 +435,3 @@ remove_dead <- function(indiv = mort() ) {
 #end_time <- Sys.time()
 #end_time - start_time
 #nrow(archive)
-
-
-
-
-
