@@ -116,7 +116,7 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' @export
 
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr = c(0.5,0.5),
-                 year = "-1") {
+                 year = "-1", firstBreed = 6) {
     require(ids)
     sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
                       ncol = 8)
@@ -131,21 +131,25 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
         fathersInStock <- subset(fathers, fathers[,7] == drawMother[7])
         if(nrow(fathersInStock) > 1) { ##add exemption case if nrow(fathersInStock) = 1 later
             drawFather <- fathersInStock[sample(nrow(fathersInStock), size = 1, replace = FALSE),]
-            n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity could go here.
-            batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
-            batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
-            batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
-            batch[,3] <- drawFather[1]
-            batch[,4] <- drawMother[1]
-            batch[,5] <- year
-            ## [,6] stays 'NA', because no death year yet.
-            batch[,7] <- drawMother[7] ## always recruits into the parents' stock.
-            batch[,8] <- 0 ## it's a zero-year-old until the first 'birthday' step.
+            if(drawMother[8] >= firstBreed & drawFather[8] >= firstBreed) {
+                n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity here?
+                batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
+                batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
+                batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
+                batch[,3] <- drawFather[1]
+                batch[,4] <- drawMother[1]
+                batch[,5] <- year
+                ## [,6] stays 'NA', because no death year yet.
+                batch[,7] <- drawMother[7] ## always recruits into the parents' stock.
+                batch[,8] <- 0 ## it's a zero-year-old until the first 'birthday' step.
 
-            if ((ticker + n.sprogs) <= nrow(sprog.m)) {
-                sprog.m[ticker:(ticker+n.sprogs-1),] <- batch
-            } else if ((ticker + n.sprogs) > nrow(sprog.m)) {
-                sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:8]
+                if ((ticker + n.sprogs) <= nrow(sprog.m)) {
+                    sprog.m[ticker:(ticker+n.sprogs-1),] <- batch
+                } else if ((ticker + n.sprogs) > nrow(sprog.m)) {
+                    sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:8]
+                }
+            } else {
+                n.sprogs <- 0
             }
         }
         ticker <- ticker+n.sprogs
@@ -312,9 +316,7 @@ sexSwitch <- function(indiv = makeFounders(), direction = "both", prob = 0.0001)
     return(indiv)
 }
 
-
-
-
+################################################################################################
 
 #' birthdays(): takes an individual-data matrix, and adds one to each individual's age
 #'
