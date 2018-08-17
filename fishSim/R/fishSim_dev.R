@@ -113,10 +113,12 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' @param osr The sex ratio at birth (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
 #'             holds the 'birthyear' value to give to new recruits.
+#' @param firstBreed The age at first breeding, default zero. The minimum age at which individuals
+#'                   can breed. Applies to both potential mothers and potential fathers.
 #' @export
 
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr = c(0.5,0.5),
-                 year = "-1", firstBreed = 6) {
+                 year = "-1", firstBreed = 0) {
     require(ids)
     sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
                       ncol = 8)
