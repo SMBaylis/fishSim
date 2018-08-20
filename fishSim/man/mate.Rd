@@ -32,7 +32,12 @@ fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
 capable of specifying an age at first breeding, and firstBreed takes precedence.}
 
 \item{type}{The type of fecundity-age relationship to simulate. Must be one of "flat",
-"age", or "ageSex".}
+"age", or "ageSex". If "flat", offspring batch sizes will be the same for
+all age:sex combinations. If "age", the number of offspring for each pairing
+is a function of 'fecundityCurve', with the less-fecund parent determining the
+batch size. If "ageSex", the number of offspring for each pairing is a function
+of 'maleCurve' and 'femaleCurve', with the less-fecund parent determining the
+batch size.}
 
 \item{fecundityCurve}{Numeric vector describing the age-specific fecundity curve. One
 value per age, over all ages from 0:max(indiv[,8]). Used if "type"
