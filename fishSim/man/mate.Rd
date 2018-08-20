@@ -6,25 +6,52 @@
 until a recruitment quota is filled.}
 \usage{
 mate(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
-  osr = c(0.5, 0.5), year = "-1", firstBreed = 0)
+  osr = c(0.5, 0.5), year = "-1", firstBreed = 0, type = "flat",
+  fecundityCurve, maleCurve, femaleCurve)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}
 
-\item{fecundity}{mean number of recruits to generate, as a proportion of the number
-of animals in 'indiv'. nrow(indiv)*fecundity is the annual turnover -
-i.e., the number of animals killed in 'mortality' will equal
+\item{fecundity}{Numeric variable. mean number of recruits to generate, as a proportion of
+the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
+turnover - i.e., the number of animals killed in 'mortality' will equal
 nrow(indiv)*fecundity in order to keep the population size constant.}
 
-\item{batchSize}{The mean number of offspring produced per pairing. Follows ~Poisson.}
+\item{batchSize}{Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
+Used iff type = "flat".}
 
-\item{osr}{The sex ratio at birth (recruitment). Used to assign sexes to new offspring.}
+\item{osr}{Numeric vector with length two, c(male, female), giving the sex ratio at birth
+(recruitment). Used to assign sexes to new offspring.}
 
 \item{year}{Intended to be used in a simulation loop - this will be the iteration number, and
 holds the 'birthyear' value to give to new recruits.}
 
-\item{firstBreed}{The age at first breeding, default zero. The minimum age at which individuals
-can breed. Applies to both potential mothers and potential fathers.}
+\item{firstBreed}{Integer variable. The age at first breeding, default zero. The minimum age
+at which individuals can breed. Applies to potential mothers and potential
+fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
+capable of specifying an age at first breeding, and firstBreed takes precedence.}
+
+\item{type}{The type of fecundity-age relationship to simulate. Must be one of "flat",
+"age", or "ageSex".}
+
+\item{fecundityCurve}{Numeric vector describing the age-specific fecundity curve. One
+value per age, over all ages from 0:max(indiv[,8]). Used if "type"
+= "age". Note that 'firstBreed' can interfere with 'fecundityCurve'
+by setting fecundities to zero for some age classes. Recommended
+usage is to set 'firstBreed' to zero whenever 'fecundityCurve' is
+specified.}
+
+\item{maleCurve}{Numeric vector describing age-specific fecundity for males. One value per
+age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
+Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+fecundities to zero for some age classes. Recommended usage is to set
+'firstBreed' to zero whenever 'fecundityCurve' is specified.}
+
+\item{femaleCurve}{Numeric vector describing age-specific fecundity for females. One value
+per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
+Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+fecundities to zero for some age classes. Recommended usage is to set
+'firstBreed' to zero whenever 'fecundityCurve' is specified.}
 }
 \description{
 Returns an individual matrix with added newborns at age 0.

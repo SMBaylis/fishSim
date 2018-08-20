@@ -105,20 +105,43 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' Returns an individual matrix with added newborns at age 0.
 #' 
 #' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
-#' @param fecundity mean number of recruits to generate, as a proportion of the number
-#'                  of animals in 'indiv'. nrow(indiv)*fecundity is the annual turnover -
-#'                  i.e., the number of animals killed in 'mortality' will equal
+#' @param fecundity Numeric variable. mean number of recruits to generate, as a proportion of
+#'                  the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
+#'                  turnover - i.e., the number of animals killed in 'mortality' will equal
 #'                  nrow(indiv)*fecundity in order to keep the population size constant.
-#' @param batchSize The mean number of offspring produced per pairing. Follows ~Poisson.
-#' @param osr The sex ratio at birth (recruitment). Used to assign sexes to new offspring.
+#' @param batchSize Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
+#'                  Used iff type = "flat".
+#' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
+#'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
 #'             holds the 'birthyear' value to give to new recruits.
-#' @param firstBreed The age at first breeding, default zero. The minimum age at which individuals
-#'                   can breed. Applies to both potential mothers and potential fathers.
+#' @param firstBreed Integer variable. The age at first breeding, default zero. The minimum age
+#'                   at which individuals can breed. Applies to potential mothers and potential
+#'                   fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
+#'                   capable of specifying an age at first breeding, and firstBreed takes precedence.
+#' @param type The type of fecundity-age relationship to simulate. Must be one of "flat",
+#'             "age", or "ageSex".
+#' @param fecundityCurve Numeric vector describing the age-specific fecundity curve. One
+#'                       value per age, over all ages from 0:max(indiv[,8]). Used if "type"
+#'                       = "age". Note that 'firstBreed' can interfere with 'fecundityCurve'
+#'                       by setting fecundities to zero for some age classes. Recommended
+#'                       usage is to set 'firstBreed' to zero whenever 'fecundityCurve' is
+#'                       specified.
+#' @param maleCurve Numeric vector describing age-specific fecundity for males. One value per
+#'                  age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
+#'                  Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+#'                  fecundities to zero for some age classes. Recommended usage is to set
+#'                  'firstBreed' to zero whenever 'fecundityCurve' is specified.
+#' @param femaleCurve Numeric vector describing age-specific fecundity for females. One value
+#'                    per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
+#'                    Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+#'                    fecundities to zero for some age classes. Recommended usage is to set
+#'                    'firstBreed' to zero whenever 'fecundityCurve' is specified.
 #' @export
-
+ 
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr = c(0.5,0.5),
-                 year = "-1", firstBreed = 0) {
+                   year = "-1", firstBreed = 0, type = "flat",
+                   fecundityCurve, maleCurve, femaleCurve) {
     require(ids)
     sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
                       ncol = 8)
@@ -131,10 +154,22 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
         drawMother <- mothers[sample(nrow(mothers), size = 1, replace = FALSE),]
                                         # Note: character vector, not matrix
         fathersInStock <- subset(fathers, fathers[,7] == drawMother[7])
-        if(nrow(fathersInStock) > 1) { ##add exemption case if nrow(fathersInStock) = 1 later
+        if(nrow(fathersInStock) > 1) {
             drawFather <- fathersInStock[sample(nrow(fathersInStock), size = 1, replace = FALSE),]
             if(drawMother[8] >= firstBreed & drawFather[8] >= firstBreed) {
-                n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity here?
+                if(type == "flat") {
+                    n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity here?
+                } else if (type == "age") {
+                    n.sprogs <- rpois(n = 1,
+                                           lambda = min(c(fecundityCurve[as.numeric(drawFather[8])+1],
+                                                          fecundityCurve[as.numeric(drawMother[8])+1]))
+                                      )
+                } else if (type == "ageSex") {
+                    n.sprogs <- rpois(n = 1,
+                                      lambda = min(c(maleCurve[as.numeric(drawFather[8])+1],
+                                                     femaleCurve[as.numeric(drawMother[8])+1]))
+                                      )
+                }
                 batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
                 batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
                 batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
@@ -145,10 +180,12 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
                 batch[,7] <- drawMother[7] ## always recruits into the parents' stock.
                 batch[,8] <- 0 ## it's a zero-year-old until the first 'birthday' step.
 
-                if ((ticker + n.sprogs) <= nrow(sprog.m)) {
-                    sprog.m[ticker:(ticker+n.sprogs-1),] <- batch
-                } else if ((ticker + n.sprogs) > nrow(sprog.m)) {
-                    sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:8]
+                if(n.sprogs > 0) {
+                    if ((ticker + n.sprogs) <= nrow(sprog.m)) {
+                        sprog.m[ticker:(ticker+n.sprogs-1),] <- batch
+                    } else if ((ticker + n.sprogs) > nrow(sprog.m)) {
+                        sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:8]
+                    }
                 }
             } else {
                 n.sprogs <- 0
@@ -159,6 +196,12 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
     indiv <- rbind(indiv, sprog.m)
     return(indiv)
 }
+
+
+
+
+
+
 
 ###################################################################################################
 
