@@ -148,6 +148,10 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
                    year = "-1", firstBreed = 0, type = "flat",
                    fecundityCurve, maleCurve, femaleCurve) {
     require(ids)
+    if (!(type %in% c("flat", "age", "ageSex"))) {
+        stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
+    }
+    
     sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
                       ncol = 8)
     mothers <- subset(indiv, indiv[,2] == "F")
