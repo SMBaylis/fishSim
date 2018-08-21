@@ -126,6 +126,14 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'             batch size. If "ageSex", the number of offspring for each pairing is a function
 #'             of 'maleCurve' and 'femaleCurve', with the less-fecund parent determining the
 #'             batch size.
+#' @param maxClutch Numeric value giving the maximum clutch / litter / batch / whatever size.
+#'                  Reduces larger clutches to this size, within each pairing.
+#' @param exhaustMothers TRUE/FALSE value indicating whether mothers should become 'exhausted'
+#'                         by one breeding attempt. If exhausted, an individual will not mate
+#'                         again in this mate() call.
+#' @param exhaustFathers TRUE/FALSE value indicating whether fathers should become 'exhausted'
+#'                         by one breeding attempt. If exhausted, an individual will not mate
+#'                         again in this mate() call.
 #' @param fecundityCurve Numeric vector describing the age-specific fecundity curve. One
 #'                       value per age, over all ages from 0:max(indiv[,8]). Used if "type"
 #'                       = "age". Note that 'firstBreed' can interfere with 'fecundityCurve'
@@ -145,13 +153,13 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' @export
  
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr = c(0.5,0.5),
-                   year = "-1", firstBreed = 0, type = "flat",
-                   fecundityCurve, maleCurve, femaleCurve) {
+                 year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
+                 exhaustMothers = FALSE, exhaustFathers = FALSE,
+                 fecundityCurve, maleCurve, femaleCurve) {
     require(ids)
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    
     sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
                       ncol = 8)
     mothers <- subset(indiv, indiv[,2] == "F")
@@ -179,6 +187,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
                                                      femaleCurve[as.numeric(drawMother[8])+1]))
                                       )
                 }
+                if(n.sprogs > maxClutch) n.sprogs <- maxClutch
                 batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
                 batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
                 batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
@@ -196,21 +205,23 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
                         sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:8]
                     }
                 }
-            } else {
-                n.sprogs <- 0
             }
+        } else {
+            n.sprogs <- 0
         }
+        if(exhaustMothers == TRUE & n.sprogs > 0) {
+            mothers <- mothers[mothers[,1] != drawMother[1] ]
+        } ## remove exhausted mother from potential mothers.
+        if(exhaustFathers == TRUE & n.sprogs > 0) {
+            fathers <- fathers[fathers[,1] != drawFather[1] ]
+        } ## remove exhausted father from potential fathers.
+        if(nrow(fathers) == 0) stop("All potential fathers are exhausted")
+        if(nrow(mothers) == 0) stop("All potential mothers are exhausted")
         ticker <- ticker+n.sprogs
     }
-    indiv <- rbind(indiv, sprog.m)
+    indiv <- rbind(indiv, sprog.m)  
     return(indiv)
 }
-
-
-
-
-
-
 
 ###################################################################################################
 
