@@ -7,6 +7,7 @@ until a recruitment quota is filled.}
 \usage{
 mate(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
   osr = c(0.5, 0.5), year = "-1", firstBreed = 0, type = "flat",
+  maxClutch = Inf, exhaustMothers = FALSE, exhaustFathers = FALSE,
   fecundityCurve, maleCurve, femaleCurve)
 }
 \arguments{
@@ -38,6 +39,17 @@ is a function of 'fecundityCurve', with the less-fecund parent determining the
 batch size. If "ageSex", the number of offspring for each pairing is a function
 of 'maleCurve' and 'femaleCurve', with the less-fecund parent determining the
 batch size.}
+
+\item{maxClutch}{Numeric value giving the maximum clutch / litter / batch / whatever size.
+Reduces larger clutches to this size, within each pairing.}
+
+\item{exhaustMothers}{TRUE/FALSE value indicating whether mothers should become 'exhausted'
+by one breeding attempt. If exhausted, an individual will not mate
+again in this mate() call.}
+
+\item{exhaustFathers}{TRUE/FALSE value indicating whether fathers should become 'exhausted'
+by one breeding attempt. If exhausted, an individual will not mate
+again in this mate() call.}
 
 \item{fecundityCurve}{Numeric vector describing the age-specific fecundity curve. One
 value per age, over all ages from 0:max(indiv[,8]). Used if "type"

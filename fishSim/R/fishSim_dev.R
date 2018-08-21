@@ -210,10 +210,10 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
             n.sprogs <- 0
         }
         if(exhaustMothers == TRUE & n.sprogs > 0) {
-            mothers <- mothers[mothers[,1] != drawMother[1] ]
+            mothers <- mothers[mothers[,1] != drawMother[1] , , drop = FALSE]
         } ## remove exhausted mother from potential mothers.
         if(exhaustFathers == TRUE & n.sprogs > 0) {
-            fathers <- fathers[fathers[,1] != drawFather[1] ]
+            fathers <- fathers[fathers[,1] != drawFather[1] , , drop = FALSE]
         } ## remove exhausted father from potential fathers.
         if(nrow(fathers) == 0) stop("All potential fathers are exhausted")
         if(nrow(mothers) == 0) stop("All potential mothers are exhausted")
