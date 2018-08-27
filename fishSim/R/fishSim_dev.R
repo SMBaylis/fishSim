@@ -162,9 +162,9 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
     }
     sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
                       ncol = 8)
-    mothers <- subset(indiv, indiv[,2] == "F")
+    mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] > firstBreed)
     if(nrow(mothers) == 0) stop("There are no females in the population")
-    fathers <- subset(indiv, indiv[,2] == "M")
+    fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] > firstBreed)
     if(nrow(fathers) == 0) stop("There are no males in the population")
     ticker <- 1
     while(ticker <= nrow(sprog.m)) {
@@ -221,6 +221,11 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
     indiv <- rbind(indiv, sprog.m)  
     return(indiv)
 }
+
+
+
+
+
 
 ###################################################################################################
 
