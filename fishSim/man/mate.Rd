@@ -60,15 +60,15 @@ specified.}
 
 \item{maleCurve}{Numeric vector describing age-specific fecundity for males. One value per
 age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+Note that 'firstBreed' can interfere with 'maleCurve' by setting
 fecundities to zero for some age classes. Recommended usage is to set
-'firstBreed' to zero whenever 'fecundityCurve' is specified.}
+'firstBreed' to zero whenever 'maleCurve' is specified.}
 
 \item{femaleCurve}{Numeric vector describing age-specific fecundity for females. One value
 per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+Note that 'firstBreed' can interfere with 'femaleCurve' by setting
 fecundities to zero for some age classes. Recommended usage is to set
-'firstBreed' to zero whenever 'fecundityCurve' is specified.}
+'firstBreed' to zero whenever 'femaleCurve' is specified.}
 }
 \description{
 Returns an individual matrix with added newborns at age 0.

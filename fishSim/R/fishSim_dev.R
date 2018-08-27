@@ -142,14 +142,14 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'                       specified.
 #' @param maleCurve Numeric vector describing age-specific fecundity for males. One value per
 #'                  age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-#'                  Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+#'                  Note that 'firstBreed' can interfere with 'maleCurve' by setting
 #'                  fecundities to zero for some age classes. Recommended usage is to set
-#'                  'firstBreed' to zero whenever 'fecundityCurve' is specified.
+#'                  'firstBreed' to zero whenever 'maleCurve' is specified.
 #' @param femaleCurve Numeric vector describing age-specific fecundity for females. One value
 #'                    per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-#'                    Note that 'firstBreed' can interfere with 'fecundityCurve' by setting
+#'                    Note that 'firstBreed' can interfere with 'femaleCurve' by setting
 #'                    fecundities to zero for some age classes. Recommended usage is to set
-#'                    'firstBreed' to zero whenever 'fecundityCurve' is specified.
+#'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
 #' @export
  
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr = c(0.5,0.5),
@@ -171,6 +171,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
         drawMother <- mothers[sample(nrow(mothers), size = 1, replace = FALSE),]
                                         # Note: character vector, not matrix
         fathersInStock <- subset(fathers, fathers[,7] == drawMother[7])
+        n.sprogs <- 0
         if(nrow(fathersInStock) > 1) {
             drawFather <- fathersInStock[sample(nrow(fathersInStock), size = 1, replace = FALSE),]
             if(drawMother[8] >= firstBreed & drawFather[8] >= firstBreed) {
@@ -206,8 +207,6 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
                     }
                 }
             }
-        } else {
-            n.sprogs <- 0
         }
         if(exhaustMothers == TRUE & n.sprogs > 0) {
             mothers <- mothers[mothers[,1] != drawMother[1] , , drop = FALSE]
