@@ -350,7 +350,9 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
         clutch <- clutch[clutch>0]
     }
 
+    clutch[clutch > maxClutch] <- maxClutch ## delimits clutch sizes to not exceed maxClutch
     sprog.m <- matrix(data = NA, nrow = 0, ncol = 8) ## left empty if no-one breeds.
+    
     for (s in unique(mothers[,7])) { ## s for 'stock'.
         mothersInStock <- mothers[mothers[,7] == s ,]
         clutchInStock <- clutch[mothers[,7] == s]
