@@ -180,11 +180,13 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
     fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) stop("There are no males in the population")
 
-    sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv[is.na(indiv[,6]),])*fecundity),
+    sprog.m <- matrix(data = NA, nrow = floor(nrow(indiv[is.na(indiv[,6]),])*fecundity),
                       ncol = 8)  ## Number of sprogs is a proportion of the number of
                                  ## *live* animals in the matrix.
     ticker <- 1
     while(ticker <= nrow(sprog.m)) {
+        if(nrow(fathers) == 0) stop("All potential fathers are exhausted")
+        if(nrow(mothers) == 0) stop("All potential mothers are exhausted")        
         drawMother <- mothers[sample(nrow(mothers), size = 1, replace = FALSE),]
                                         # Note: character vector, not matrix
         fathersInStock <- subset(fathers, fathers[,7] == drawMother[7])
@@ -231,8 +233,6 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         if(exhaustFathers == TRUE & n.sprogs > 0) {
             fathers <- fathers[fathers[,1] != drawFather[1] , , drop = FALSE]
         } ## remove exhausted father from potential fathers.
-        if(nrow(fathers) == 0) stop("All potential fathers are exhausted")
-        if(nrow(mothers) == 0) stop("All potential mothers are exhausted")
         ticker <- ticker+n.sprogs
     }
     indiv <- rbind(indiv, sprog.m)  
