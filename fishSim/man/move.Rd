@@ -13,7 +13,5 @@ move(indiv = makeFounders(), moveMat = admix.m)
 each other stock, with 'from' by row and 'to' by column.}
 }
 \description{
-returns a pop-by-8 character matrix, defined in the makeFounders documentation. Dev note:
-this version will still apply movement to dead individuals, but most users would probably
-expect the dead to stay in the stock where they died. Update that.
+returns a pop-by-8 character matrix, defined in the makeFounders documentation.
 }
