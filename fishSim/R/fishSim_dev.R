@@ -174,8 +174,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
-                      ncol = 8)
+
     mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) stop("There are no females in the population")
     fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
