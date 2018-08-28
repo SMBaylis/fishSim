@@ -58,7 +58,9 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
 
 #' move(): markovian movement between breeding stocks.
 #'
-#' returns a pop-by-8 character matrix, defined in the makeFounders documentation.
+#' returns a pop-by-8 character matrix, defined in the makeFounders documentation. Dev note:
+#' this version will still apply movement to dead individuals, but most users would probably
+#' expect the dead to stay in the stock where they died. Update that.
 #'
 #' @param indiv Individual matrix, e.g. from makeFounders(). Can also be a non-founder matrix.
 #' @param moveMat An s-by-s matrix describing the probability of moving from each stock to
@@ -102,15 +104,27 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' mate(): find male-female pairs within the same stock, and generate batches of offspring
 #' until a recruitment quota is filled.
 #'
-#' Returns an individual matrix with added newborns at age 0.
+#' Returns an individual matrix with added newborns at age 0. This is the first
+#' mate method, where the number of newborns is a set as a proportion of the adult population,
+#' and matings happen between individuals that are older than the age at first-breeding
+#' (optionally with breeding success-rates set by the age of the less-mature parent, etc.,) until
+#' that 'quota' or newborns has been met, or all potential parents have reached breeding exhaustion.
+#' A second mate method exists, where the number of newborns is derived from the fecundities of all
+#' breeding females in the population - see altMate().
 #' 
 #' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
 #' @param fecundity Numeric variable. mean number of recruits to generate, as a proportion of
 #'                  the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
 #'                  turnover - i.e., the number of animals killed in 'mortality' will equal
 #'                  nrow(indiv)*fecundity in order to keep the population size constant.
+#' @param growth One of "population" or "individual". If "population", the total number of newborns
+#'               will equal [the number of live individuals in indiv] * [fecundity], and
+#'               fecundityCurve, maleCurve, and femaleCurve affect each individual's probability
+#'               of being a parent to one or more of the pre-defined number of offspring.
 #' @param batchSize Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
-#'                  Used iff type = "flat".
+#'                  Used iff type = "flat". Note that, if run within a loop that
+#'                  goes [move -> mate -> mort -> birthdays], 'produced' will be an amalgam of
+#'                  'is born' and 'survives its first year'.
 #' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
 #'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
@@ -152,20 +166,23 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
 #' @export
  
-mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr = c(0.5,0.5),
-                 year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
+mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
+                 osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
                  exhaustMothers = FALSE, exhaustFathers = FALSE,
                  fecundityCurve, maleCurve, femaleCurve) {
     require(ids)
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv)*fecundity),
-                      ncol = 8)
-    mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] > firstBreed)
+
+    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) stop("There are no females in the population")
-    fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] > firstBreed)
+    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) stop("There are no males in the population")
+
+    sprog.m <- matrix(data = NA, nrow = ceiling(nrow(indiv[is.na(indiv[,6]),])*fecundity),
+                      ncol = 8)  ## Number of sprogs is a proportion of the number of
+                                 ## *live* animals in the matrix.
     ticker <- 1
     while(ticker <= nrow(sprog.m)) {
         drawMother <- mothers[sample(nrow(mothers), size = 1, replace = FALSE),]
@@ -223,6 +240,166 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5, osr =
 }
 
 
+#' altMate(): breeding based on mature females, not quota-filling.
+#'
+#' Returns an individual matrix with added newborns at age 0. This is the second
+#' mate method, where the number of offspring is derived from the number of mature females,
+#' such that each mature female produces a number of offspring specified by a sampling distribution,
+#' and fathers are randomly drawn from all mature males within the mother's stock. Note that in
+#' this mating system, *maturity by age* is specified, rather than *fecundity by age*. A single
+#' probability distribution sets the number of offspring for each female, but the probability
+#' that an individidual female is mature may vary by age. The same maturity by age structure applies
+#' for males. It is possible, in cases where the maturity-by-age slope is shallow, that an individual
+#' may be 'mature' in one breeding season, but then 'not mature' the next season.
+#' Another mate method exists, where the number of newborns is set as a proportion of the population
+#' size, and mating occurs until the required number of offspring are generated (if possible, given
+#' breeding constraints) - see mate().
+#' 
+#' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
+#' @param batchSize Numeric. The mean number of offspring produced per mature female. Follows
+#'                  ~Poisson. Used iff type = "flat". Note that, if run within a loop that
+#'                  goes [move -> mate -> mort -> birthdays], 'produced' will be an amalgam of
+#'                  'is born' and 'survives its first year'.
+#' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
+#'            (recruitment). Used to assign sexes to new offspring.
+#' @param year Intended to be used in a simulation loop - this will be the iteration number, and
+#'             holds the 'birthyear' value to give to new recruits.
+#' @param firstBreed Integer variable. The age at first breeding, default zero. The minimum age
+#'                   at which individuals can breed. Applies to potential mothers and potential
+#'                   fathers. 'firstBreed', 'maturityCurve', 'maleCurve, and 'femaleCurve' are
+#'                   all capable of specifying an age at first breeding, and 'firstBreed' takes
+#'                   precedence.
+#' @param type The type of maturity-age relationship to simulate. Must be one of "flat",
+#'             "age", or "ageSex". If "flat", the probability of parenthood is the same for
+#'             all age:sex combinations above firstBreed. If "age", the probability that an
+#'             individual is sexually mature is age-specific, set in 'maturityCurve'. If "ageSex",
+#'             the probability that an individual is sexually mature is age- and sex-specific,
+#'             set for males in 'maleCurve' and for females in 'femaleCurve'.
+#' @param maxClutch Numeric value giving the maximum clutch / litter / batch / whatever size.
+#'                  Reduces larger clutches to this size, for each breeding female.
+#' @param singlePaternity TRUE/FALSE value indicating whether all the offspring produced by
+#'                        female in a year should have the same father. Default TRUE. If
+#'                        FALSE, each offspring will have a randomly-drawn father from within
+#'                        the mother's stock. Note that this can lead to rapid exhaustion of
+#'                        fathers if exhaustFathers = TRUE.
+#' @param exhaustFathers TRUE/FALSE value indicating whether fathers should become 'exhausted'
+#'                       by one breeding attempt. If exhausted, an individual will only mate with
+#'                       one female, though may father more than one offspring - see
+#'                       'singlePaternity' and 'batchSize'.
+#' @param maturityCurve Numeric vector describing the age-specific maturity curve. One
+#'                      value per age, over all ages from 0:max(indiv[,8]). Used if "type"
+#'                      = "age". Note that 'firstBreed' can interfere with 'maturityCurve'
+#'                      by setting maturities to zero for some age classes. Recommended
+#'                      usage is to set 'firstBreed' to zero whenever 'maturityCurve' is
+#'                      specified.
+#' @param maleCurve Numeric vector describing age-specific maturity for males. One value per
+#'                  age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
+#'                  Note that 'firstBreed' can interfere with 'maleCurve' by setting
+#'                  maturities to zero for some age classes. Recommended usage is to set
+#'                  'firstBreed' to zero whenever 'maleCurve' is specified.
+#' @param femaleCurve Numeric vector describing age-specific maturity for females. One value
+#'                    per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
+#'                    Note that 'firstBreed' can interfere with 'femaleCurve' by setting
+#'                    maturities to zero for some age classes. Recommended usage is to set
+#'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
+#' @export
+
+altMate <- function(indiv = makeFounders(), batchSize = 0.5,
+                 osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
+                 singlePaternity = TRUE, exhaustFathers = FALSE,
+                 maturityCurve, maleCurve, femaleCurve) {
+    require(ids)
+    if (!(type %in% c("flat", "age", "ageSex"))) {
+        stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
+    }
+    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
+    if(nrow(mothers) == 0) stop("There are no females in the population")
+    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
+    if(nrow(fathers) == 0) stop("There are no males in the population")
+
+    if (type == "flat") {
+
+        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
+        mothers <- subset(mothers, clutch > 0)  ## identify the mothers that truly breed,
+        clutch <- clutch[clutch>0]              ## how many offspring each produces,
+        
+    } else if (type == "age") {
+
+        mothers <- mothers[runif(nrow(mothers)) < maturityCurve[as.numeric(mothers[,8])],
+                         , drop = FALSE] ## trims 'mothers' to those that pass a random
+                                         ## maturity test.
+        fathers <- fathers[runif(nrow(fathers)) < maturityCurve[as.numeric(fathers[,8])],
+                         , drop = FALSE] ## trime 'fathers' to those that pass a random
+                                         ## maturity test.
+        
+        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
+        mothers <- subset(mothers, clutch > 0) ## trims 'mothers' to those that truly breed
+        clutch <- clutch[clutch>0]
+        
+    } else if (type == "ageSex") {
+
+        mothers <- mothers[runif(nrow(mothers)) < femaleCurve[as.numeric(mothers[,8])] ,
+                          ,drop = FALSE] ## trims 'mothers' to just those that pass a random
+                                         ## maturity test.
+        
+        fathers <- fathers[runif(nrow(fathers)) < maleCurve[as.numeric(fathers[,8])] ,
+                          ,drop = FALSE]  ## trims 'fathers' to just those that pass a random
+                                          ## maturity test.
+        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
+        mothers <- subset(mothers, clutch > 0)
+        clutch <- clutch[clutch>0]
+    }
+
+    sprog.m <- matrix(data = NA, nrow = 0, ncol = 8) ## left empty if no-one breeds.
+    for (s in unique(mothers[,7])) { ## s for 'stock'.
+        mothersInStock <- mothers[mothers[,7] == s ,]
+        clutchInStock <- clutch[mothers[,7] == s]
+        fathersInStock <- fathers[fathers[,7] == s ,]
+        if(nrow(fathersInStock) == 0) {
+            warning (paste("There were no mature males in stock ",
+                           s, ", so ", nrow(mothersInStock),
+                           " mature females did not produce offspring",
+                           sep = ""))
+            sprog.stock <- matrix(data = NA, nrow = 0, ncol = 8)
+        } else if(nrow(fathersInStock > 0)) {
+            sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 8)
+            ticker <- 1
+            for (m in 1:nrow(mothersInStock)) { ## m for 'mothers'
+                if(nrow(fathersInStock) == 0) {
+                        stop(paste("All fathers in stock ", s, " are exhausted.", sep = ""))
+                }
+                sprog.stock[ticker:(ticker+clutchInStock[m]-1), 4] <- mothersInStock[m,1]
+                ## assign mother
+                if (singlePaternity == TRUE) {
+                    sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
+                        fathersInStock[sample(1:nrow(fathersInStock), 1), 1]
+                } else if (singlePaternity == FALSE) {
+                    sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
+                        fathersInStock[sample(1:nrow(fathersInStock), clutchInStock[m]), 1]
+                } ## Assign father(s).
+                ## Note the potential conflict here with 'exhaustFathers' - but maybe not
+                ## of concern, because there can't be many species with multiple paternity
+                ## that also exhaust fathers after one mating attempt.
+                if(exhaustFathers == TRUE) {
+                    fathersInStock <- fathersInStock[!fathersInStock[,1] %in% sprog.stock[,3],
+                                                    ,drop = FALSE]
+                    ## remove the used fathers from 'fathersInStock'
+                }
+                ticker <- ticker+clutchInStock[m]
+                ## increment ticker
+            }
+        }
+        sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
+        sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
+        sprog.stock[,5] <- year
+        sprog.stock[,7] <- s
+        sprog.stock[,8] <- 0
+        sprog.m <- rbind(sprog.m, sprog.stock)
+    }
+    indiv <- rbind(indiv, sprog.m)
+
+    return(indiv)
+}
 
 
 
