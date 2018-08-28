@@ -406,7 +406,6 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
 
 
 
-
 ###################################################################################################
 
 ## ages <- min(as.numeric(indiv[,8])):max(as.numeric(indiv[,8]))
