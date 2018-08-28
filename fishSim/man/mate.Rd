@@ -19,9 +19,7 @@ turnover - i.e., the number of animals killed in 'mortality' will equal
 nrow(indiv)*fecundity in order to keep the population size constant.}
 
 \item{batchSize}{Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
-Used iff type = "flat". Note that, if run within a loop that
-goes [move -> mate -> mort -> birthdays], 'produced' will be an amalgam of
-'is born' and 'survives its first year'.}
+Used iff type = "flat".}
 
 \item{osr}{Numeric vector with length two, c(male, female), giving the sex ratio at birth
 (recruitment). Used to assign sexes to new offspring.}
@@ -71,18 +69,7 @@ per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
 Note that 'firstBreed' can interfere with 'femaleCurve' by setting
 fecundities to zero for some age classes. Recommended usage is to set
 'firstBreed' to zero whenever 'femaleCurve' is specified.}
-
-\item{growth}{One of "population" or "individual". If "population", the total number of newborns
-will equal [the number of live individuals in indiv] * [fecundity], and
-fecundityCurve, maleCurve, and femaleCurve affect each individual's probability
-of being a parent to one or more of the pre-defined number of offspring.}
 }
 \description{
-Returns an individual matrix with added newborns at age 0. This is the first
-mate method, where the number of newborns is a set as a proportion of the adult population,
-and matings happen between individuals that are older than the age at first-breeding
-(optionally with breeding success-rates set by the age of the less-mature parent, etc.,) until
-that 'quota' or newborns has been met, or all potential parents have reached breeding exhaustion.
-A second mate method exists, where the number of newborns is derived from the fecundities of all
-breeding females in the population - see altMate().
+Returns an individual matrix with added newborns at age 0.
 }
