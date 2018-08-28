@@ -174,9 +174,6 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    if (!(growth %in% c("population", "individual"))) {
-        stop("'growth' must be one of 'population' or 'individual'.")
-    }
     mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) stop("There are no females in the population")
     fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
