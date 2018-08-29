@@ -193,7 +193,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         n.sprogs <- 0
         if(nrow(fathersInStock) > 1) {
             drawFather <- fathersInStock[sample(nrow(fathersInStock), size = 1, replace = FALSE),]
-            if(drawMother[8] >= firstBreed & drawFather[8] >= firstBreed) {
+            if(as.numeric(drawMother[8]) >= firstBreed & as.numeric(drawFather[8]) >= firstBreed) {
                 if(type == "flat") {
                     n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity here?
                 } else if (type == "age") {
