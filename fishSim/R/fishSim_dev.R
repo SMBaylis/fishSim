@@ -123,8 +123,8 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'               of being a parent to one or more of the pre-defined number of offspring.
 #' @param batchSize Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
 #'                  Used iff type = "flat". Note that, if run within a loop that
-#'                  goes [move -> mate -> mort -> birthdays], 'produced' will be an amalgam of
-#'                  'is born' and 'survives its first year'.
+#'                  goes [move -> mate -> mort -> birthdays], 'produced' is not the same as 'enters
+#'                  age-class 1', as some mortality may occur at age 0.
 #' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
 #'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
@@ -165,7 +165,7 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'                    fecundities to zero for some age classes. Recommended usage is to set
 #'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
 #' @export
- 
+
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
                  osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
                  exhaustMothers = FALSE, exhaustFathers = FALSE,
@@ -257,9 +257,9 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #' 
 #' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
 #' @param batchSize Numeric. The mean number of offspring produced per mature female. Follows
-#'                  ~Poisson. Used iff type = "flat". Note that, if run within a loop that
-#'                  goes [move -> mate -> mort -> birthdays], 'produced' will be an amalgam of
-#'                  'is born' and 'survives its first year'.
+#'                  ~Poisson. Used for all maturity structures. Note that, if run within a loop that
+#'                  goes [move -> altMate -> mort -> birthdays], 'produced' is not the same as
+#'                  'enters age-class 1', as some individuals will die at age 0.
 #' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
 #'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
@@ -313,9 +313,9 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
     mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
-    if(nrow(mothers) == 0) stop("There are no females in the population")
+    if(nrow(mothers) == 0) warning("There are no mature females in the population")
     fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
-    if(nrow(fathers) == 0) stop("There are no males in the population")
+    if(nrow(fathers) == 0) warning("There are no mature males in the population")
 
     if (type == "flat") {
 
@@ -354,9 +354,9 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
     sprog.m <- matrix(data = NA, nrow = 0, ncol = 8) ## left empty if no-one breeds.
     
     for (s in unique(mothers[,7])) { ## s for 'stock'.
-        mothersInStock <- mothers[mothers[,7] == s ,]
+        mothersInStock <- mothers[mothers[,7] == s , , drop = FALSE]
         clutchInStock <- clutch[mothers[,7] == s]
-        fathersInStock <- fathers[fathers[,7] == s ,]
+        fathersInStock <- fathers[fathers[,7] == s , , drop = FALSE]
         if(nrow(fathersInStock) == 0) {
             warning (paste("There were no mature males in stock ",
                            s, ", so ", nrow(mothersInStock),
@@ -368,29 +368,31 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
             ticker <- 1
             for (m in 1:nrow(mothersInStock)) { ## m for 'mothers'
                 if(nrow(fathersInStock) == 0) {
-                        stop(paste("All fathers in stock ", s, " are exhausted.", sep = ""))
+                    warning(paste("All fathers in stock ", s, " are exhausted.", sep = ""))
+                } else {
+                    sprog.stock[ticker:(ticker+clutchInStock[m]-1), 4] <- mothersInStock[m,1]
+                    ## assign mother
+                    if (singlePaternity == TRUE) {
+                        sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
+                            fathersInStock[sample(1:nrow(fathersInStock), 1), 1]
+                    } else if (singlePaternity == FALSE) {
+                        sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
+                            fathersInStock[sample(1:nrow(fathersInStock), clutchInStock[m]), 1]
+                    } ## Assign father(s).
+                    ## Note the potential conflict here with 'exhaustFathers' - but maybe not
+                    ## of concern, because there can't be many species with multiple paternity
+                    ## that also exhaust fathers after one mating attempt.
+                    if(exhaustFathers == TRUE) {
+                        fathersInStock <- fathersInStock[!fathersInStock[,1] %in% sprog.stock[,3],
+                                                        ,drop = FALSE]
+                        ## remove the used fathers from 'fathersInStock'                        
+                    }
+                    ticker <- ticker+clutchInStock[m]  ## increment ticker
                 }
-                sprog.stock[ticker:(ticker+clutchInStock[m]-1), 4] <- mothersInStock[m,1]
-                ## assign mother
-                if (singlePaternity == TRUE) {
-                    sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
-                        fathersInStock[sample(1:nrow(fathersInStock), 1), 1]
-                } else if (singlePaternity == FALSE) {
-                    sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
-                        fathersInStock[sample(1:nrow(fathersInStock), clutchInStock[m]), 1]
-                } ## Assign father(s).
-                ## Note the potential conflict here with 'exhaustFathers' - but maybe not
-                ## of concern, because there can't be many species with multiple paternity
-                ## that also exhaust fathers after one mating attempt.
-                if(exhaustFathers == TRUE) {
-                    fathersInStock <- fathersInStock[!fathersInStock[,1] %in% sprog.stock[,3],
-                                                    ,drop = FALSE]
-                    ## remove the used fathers from 'fathersInStock'
-                }
-                ticker <- ticker+clutchInStock[m]
-                ## increment ticker
             }
         }
+        sprog.stock <- sprog.stock[!is.na(sprog.stock[,3]), , drop = FALSE]
+     
         sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
         sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
         sprog.stock[,5] <- year
@@ -402,9 +404,6 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
 
     return(indiv)
 }
-
-
-
 
 ###################################################################################################
 
@@ -641,7 +640,7 @@ archive_dead <- function(indiv = mort(), archive = make_archive() ) {
 #' @export
 
 remove_dead <- function(indiv = mort() ) {
-    indiv <- indiv[is.na(indiv[,6]),]
+    indiv <- indiv[is.na(indiv[,6]), , drop = FALSE]
     return(indiv)
 }
 
