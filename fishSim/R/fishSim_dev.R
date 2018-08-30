@@ -376,8 +376,13 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
                         sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
                             fathersInStock[sample(1:nrow(fathersInStock), 1), 1]
                     } else if (singlePaternity == FALSE) {
-                        sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
-                            fathersInStock[sample(1:nrow(fathersInStock), clutchInStock[m]), 1]
+                        if(nrow(fathersInStock) >= clutchInStock[m]) {
+                            sprog.stock[ticker:(ticker+clutchInStock[m]-1), 3] <-
+                                fathersInStock[sample(1:nrow(fathersInStock), clutchInStock[m]), 1]
+                        } else {
+                            sprog.stock[ticker:(ticker+nrow(fathersInStock)-1),3] <-
+                                fathersInStock[ ,1]
+                        }
                     } ## Assign father(s).
                     ## Note the potential conflict here with 'exhaustFathers' - but maybe not
                     ## of concern, because there can't be many species with multiple paternity
