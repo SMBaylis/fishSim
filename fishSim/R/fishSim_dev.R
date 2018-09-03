@@ -6,10 +6,12 @@
 #' [,2] is sex, values "M" or "F".
 #' [,3] is "founder" for all animals.
 #' [,4] is "founder" for all animals.
-#' [,5] is "-1" for all animals.
+#' [,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
+#'      very start of a new year, just after a 'birthdays' step.
 #' [,6] is NA for all animals.
 #' [,7] is the stock membership for each animal.
-#' [,8] is the age of each animal (in 'breeding seasons') at year 0.
+#' [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
+#'      given that birthdays occur at the very end.
 #'
 #' @param pop The size of the founder population.
 #' @param osr A numeric vector describing the sex ratio, c([male], [female]). Must sum to 1.
@@ -35,11 +37,12 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
                                         # assign sexes by probability
     indiv[,3] <- c(rep("founder", nrow(indiv))) ## has no father
     indiv[,4] <- c(rep("founder", nrow(indiv))) ## has no mother
-    indiv[,5] <- c(rep(-1, nrow(indiv))) ## founders are born at year -1
+##  indiv[,5] <- c(rep(-1, nrow(indiv))) ## founders are born at year -1
     indiv[,6] <- c(rep(NA, nrow(indiv))) ## founders are not yet dead
     indiv[,7] <- sample(1:length(stocks), nrow(indiv), TRUE, prob = stocks)
                                         # assign founder stock membership
     indiv[,8] <- sample.int(maxAge, nrow(indiv), TRUE, prob = survCurv)
+    indiv[,5] <- 1 - as.numeric(indiv[,8]) ## back-infer birth year from age
 
     return(indiv)
 }
