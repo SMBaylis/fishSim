@@ -7,19 +7,23 @@
 #' [,3] is "founder" for all animals.
 #' [,4] is "founder" for all animals.
 #' [,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
-#'      very start of a new year, just after a 'birthdays' step.
+#'      very start of year 1, just after the 'birthdays' step of year 0.
 #' [,6] is NA for all animals.
 #' [,7] is the stock membership for each animal.
 #' [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
 #'      given that birthdays occur at the very end.
+#' makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
+#' not strictly necessary that they sum to 1 (proportional probability within each is sufficient),
+#' but we suspect that the most likely use-case will have these sum to 1, so have provided warnings
+#' as a courtesy feature.
 #'
 #' @param pop The size of the founder population.
-#' @param osr A numeric vector describing the sex ratio, c([male], [female]). Must sum to 1.
+#' @param osr A numeric vector describing the sex ratio, c([male], [female]).
 #' @param stocks A numeric vector describing the probability that an individual
-#'               is in each stock. Must sum to 1.
+#'               is in each stock.
 #' @param maxAge Numeric. The max age to which an animal may survive.
 #' @param survCurv Numeric vector. Describes the probability within the founder cohort of belonging
-#'                 to each age-class for age=-classes 1:maxAge. Must sum to 1. Cannot be blank.
+#'                 to each age-class for age=-classes 1:maxAge. Cannot be blank.
 #' @export
 
 makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
