@@ -10,15 +10,15 @@ makeFounders(pop = 1000, osr = c(0.5, 0.5), stocks = c(0.3, 0.3,
 \arguments{
 \item{pop}{The size of the founder population.}
 
-\item{osr}{A numeric vector describing the sex ratio, c([male], [female]). Must sum to 1.}
+\item{osr}{A numeric vector describing the sex ratio, c([male], [female]).}
 
 \item{stocks}{A numeric vector describing the probability that an individual
-is in each stock. Must sum to 1.}
+is in each stock.}
 
 \item{maxAge}{Numeric. The max age to which an animal may survive.}
 
 \item{survCurv}{Numeric vector. Describes the probability within the founder cohort of belonging
-to each age-class for age=-classes 1:maxAge. Must sum to 1. Cannot be blank.}
+to each age-class for age=-classes 1:maxAge. Cannot be blank.}
 }
 \description{
 Returns a pop-by-8 character matrix, with each row being an individual in the
@@ -27,8 +27,13 @@ founder population.
 [,2] is sex, values "M" or "F".
 [,3] is "founder" for all animals.
 [,4] is "founder" for all animals.
-[,5] is "-1" for all animals.
+[,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
+     very start of year 1, just after the 'birthdays' step of year 0.
 [,6] is NA for all animals.
 [,7] is the stock membership for each animal.
-[,8] is the age of each animal (in 'breeding seasons') at year 0.
+[,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
+     given that birthdays occur at the very end.
+makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
+not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
+but error-checking and readability is easiest if they do sum to 1.
 }

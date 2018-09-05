@@ -13,9 +13,9 @@ altMate(indiv = makeFounders(), batchSize = 0.5, osr = c(0.5, 0.5),
 \item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}
 
 \item{batchSize}{Numeric. The mean number of offspring produced per mature female. Follows
-~Poisson. Used iff type = "flat". Note that, if run within a loop that
-goes [move -> mate -> mort -> birthdays], 'produced' will be an amalgam of
-'is born' and 'survives its first year'.}
+~Poisson. Used for all maturity structures. Note that, if run within a loop that
+goes [move -> altMate -> mort -> birthdays], 'produced' is not the same as
+'enters age-class 1', as some individuals will die at age 0.}
 
 \item{osr}{Numeric vector with length two, c(male, female), giving the sex ratio at birth
 (recruitment). Used to assign sexes to new offspring.}

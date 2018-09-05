@@ -13,9 +13,8 @@
 #' [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
 #'      given that birthdays occur at the very end.
 #' makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
-#' not strictly necessary that they sum to 1 (proportional probability within each is sufficient),
-#' but we suspect that the most likely use-case will have these sum to 1, so have provided warnings
-#' as a courtesy feature.
+#' not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
+#' but error-checking and readability is easiest if they do sum to 1.
 #'
 #' @param pop The size of the founder population.
 #' @param osr A numeric vector describing the sex ratio, c([male], [female]).
@@ -124,10 +123,6 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'                  the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
 #'                  turnover - i.e., the number of animals killed in 'mortality' will equal
 #'                  nrow(indiv)*fecundity in order to keep the population size constant.
-#' @param growth One of "population" or "individual". If "population", the total number of newborns
-#'               will equal [the number of live individuals in indiv] * [fecundity], and
-#'               fecundityCurve, maleCurve, and femaleCurve affect each individual's probability
-#'               of being a parent to one or more of the pre-defined number of offspring.
 #' @param batchSize Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
 #'                  Used iff type = "flat". Note that, if run within a loop that
 #'                  goes [move -> mate -> mort -> birthdays], 'produced' is not the same as 'enters
@@ -336,7 +331,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5,
                          , drop = FALSE] ## trims 'mothers' to those that pass a random
                                          ## maturity test.
         fathers <- fathers[runif(nrow(fathers)) < maturityCurve[as.numeric(fathers[,8])],
-                         , drop = FALSE] ## trime 'fathers' to those that pass a random
+                         , drop = FALSE] ## trims 'fathers' to those that pass a random
                                          ## maturity test.
         
         clutch <- rpois(n = nrow(mothers), lambda = batchSize)
@@ -657,6 +652,215 @@ remove_dead <- function(indiv = mort() ) {
 }
 
 ################################################################################################
+
+#' check_growthrate(): estimate population growth under some mate() and mort() conditions.
+#'
+#' In complex models, population trends may not be immediately clear from the settings. Yet
+#' it can be important to know population trends in advance: growing populations take progressively
+#' more computing time, and the relationship dynamics between individuals across generations are
+#' different for growing vs. shrinking populations. check_growthrate() provides an estimate of
+#' the long-term population growth rate under some altMate() and mort() settings, assuming one
+#' altMate() and one mort() per cycle. Estimation is via Leslie matrices.
+#' check_growthrates only functions for some altMate() and mort() structures. Specifically, in
+#' altMate, 'type' must be one of 'flat', 'age', or 'ageSex', and in mort, if 'type' is 'flat'
+#' or 'age', a single growth rate will be returned, but if 'stock' or 'ageStock', one growth
+#' rate will be returned per stock. If 'type' is 'simple' for mort(), the growthrate is forced to
+#' zero, so check_growthrate() does not explicitly handle this case.
+#' Some conditions can cause check_growthrate to fail or provide inaccurate estimates. If mature
+#' females go unmated through lack of available fathers (for instance, if exhaustFathers = TRUE
+#' in mate and N(mature females) > N(mature males) ), the Leslie matrix approach will provide an
+#' over-estimate of the growth rate. In mate(), batchSize is the mean number of offspring per female,
+#' but if maxClutch is also set to a value other than Inf, the *effective* mean number of offspring
+#' per female is estimated by simulation. The mean number of female offspring per female per year
+#' is assumed to be half of the effective mean number of offspring per female unless osr is specified,
+#' in which case the proportion of female offspring is taken from osr.
+#' If your model involves a variation not handled by check_growthrates(), you may find it simplest
+#' to run your simulation for a few generations with a smallish founder population and empirically
+#' estimate the growth rate.
+#'
+#' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
+#'                 or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
+#'                 and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
+#'                 be provided. Defaults to 'flat'.
+#' @param mortType the value of 'type' used in the mort() call. Must be one of 'flat', 'age',
+#'                 'stock', or 'ageStock'. If 'flat', 'mortRate' must be provided. If 'age',
+#'                 'ageMort' must be provided. If 'stock', 'stockMort' must be provided. If
+#'                 'ageStock', 'ageStockMort' must be provided. Defaults to 'flat'.
+#' @param batchSize the value of 'batchSize' used in the altMate() call. Cannot be blank.
+#' @param firstBreed the value of 'firstBreed' used in the altMate() call. Defaults to 0.
+#' @param maxClutch the value of 'maxClutch' used in the altMate() call. Defaults to Inf. If non-Inf,
+#'                  _effective_ batchSize is estimated as the mean of 1000000 draws from the
+#'                  distribution of batchSize, subsetted to those <= maxAge.
+#' @param osr the value of 'osr' used in the altMate() call. Female proportion is used as a
+#'            multiplier on the fecundities. Defaults to c(0.5, 0.5).
+#' @param maturityCurve the value of 'maturityCurve' used in the altMate() call. check_growthrates()
+#'                      only uses female fecundities in its estimates, so femaleCurve is
+#'                      equivalent to maturityCurve in check_growthrates(), but maturityCurve is
+#'                      used when mateType is 'age'. If both mortality and maturity are specified
+#'                      as vectors, they can be of different lengths. If the maturity vector is
+#'                      shorter, it is 'padded' to the same length as the mortality vector by
+#'                      repeating the last value in the vector.
+#' @param femaleCurve the value of 'femaleCurve' used in the altMate() call. check_growthrates()
+#'                    only uses female fecundities in its estimates, so femaleCurve is
+#'                    equivalent to maturityCurve in check_growthrates(), but femaleCurve is used
+#'                    when 'mateType' is 'ageSex'. If both mortality and maturity are specified
+#'                    as vectors, they can be of different lengths. If the maturity vector is
+#'                    shorter, it is 'padded' to the same length as the mortality vector by
+#'                    repeating the last value in the vector.
+#' @param maxAge the value of 'maxAge' used in the mort() call. Defaults to Inf.
+#' @param mortRate the value of 'mortRate' used in the mort() call
+#' @param ageMort the value of 'ageMort' used in the mort() call. If both mortality and maturity are
+#'                specified as vectors, they can be of different lengths. If the mortality vector is
+#'                shorter, it is 'padded' to the same length as the maturity vector by repeating the
+#'                last value in the vector.
+#' @param stockMort the value of 'stockMort' used in the mort() call
+#' @param ageStockMort the value of 'ageStockMort' used in the mort() call. If both mortality and
+#'                maturity are specified as vectors, they can be of different lengths. If the
+#'                mortality vector is shorter, it is 'padded' to the same length as the maturity
+#'                vector by repeating the last value in the vector.
+#' @export
+
+check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
+                             maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
+                             maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
+
+    if(!(mateType %in% c("flat", "age", "ageSex"))) {
+        stop("'mateType' must be one of 'flat', 'age', or 'ageSex'.")
+    }
+    
+    if(!(mortType %in% c("flat", "age", "stock", "ageStock"))) {
+        stop("'mortType' must be one of 'flat', 'age', 'stock', or 'ageStock'.")
+    }
+
+    if(missing(batchSize)) stop("'batchSize' must be specified.")
+
+    ## re-calculate batchSize if maxClutch is non-Inf    
+    if(batchSize != Inf) {
+        batches <- rpois(1000000, lambda = batchSize)
+        batchSize <- mean(batches[batches <= maxClutch]) 
+    }
+
+    if(mateType == "flat") {
+        if(mortType == "flat") {
+            mat <- matrix(data = 0, nrow = length(0:firstBreed)+1, ncol = length(0:firstBreed)+1)
+            mat[1,((2+firstBreed):ncol(mat))] <- batchSize*osr[2]  ##for all mateType == "flat"
+            for(i in 1:ncol(mat) ) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-mortRate
+            }
+            mat[nrow(mat), ncol(mat)] <- 1-mortRate            
+            ## build a Leslie matrix
+        } else if(mortType == "age") {
+            mat <- matrix(data = 0, nrow = length(ageMort)+1, ncol = length(ageMort)+1)
+            mat[1,((2+firstBreed):ncol(mat))] <- batchSize*osr[2]  ##for all mateType == "flat"
+            for(i in 1:ncol(mat) ) {
+                if((i+1) <= nrow(mat)) mat[i+1, i] <- 1-ageMort[i]
+            }
+            mat[nrow(mat), ncol(mat)] <- 1-ageMort[length(ageMort)]
+            ## build a Leslie matrix
+        } else if(mortType == "stock") {
+            mat <- matrix(data = 0, nrow = length(0:firstBreed)+1, ncol = length(0:firstBreed)+1)
+            mat.l <- lapply(seq_len(length(stockMort)), function(X) mat) ## list of empty 'mat'
+            for(s in 1:length(stockMort)) {
+                mat.l[[s]][1,((2+firstBreed):ncol(mat.l[[s]]))] <- batchSize*osr[2]
+                for( i in 1:ncol(mat.l[[s]]) ) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-stockMort[s]
+                }
+                mat.l[[s]][nrow(mat.l[[s]]), ncol(mat.l[[s]])] <- 1-stockMort[s]
+            }
+            ## build a list of Leslie matrices
+        } else if(mortType == "ageStock") {
+            mat <- matrix(data = 0, nrow = length(ageStockMort[,1])+1,
+                          ncol = length(ageStockMort[,1])+1)
+            mat.l <- lapply(seq_len(ncol(ageStockMort)), function(X) mat) ## list of empty 'mat'
+            for(s in 1:ncol(ageStockMort)) {
+                mat.l[[s]][1,((2+firstBreed):ncol(mat.l[[s]]))] <- batchSize*osr[2]
+                for( i in 1:ncol(mat.l[[s]]) ) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-ageStockMort[i,s]
+                }
+                mat.l[[s]][nrow(mat.l[[s]]),ncol(mat.l[[s]])] <- 1-ageStockMort[nrow(ageStockMort),s]
+            }
+            ## build a list of Leslie matrices
+        }
+    } else if( mateType == "age") {
+        if(firstBreed > 0) maturityCurve[1:(firstBreed-1)] <- 0 ## truncates maturity by firstBreed
+        if(mortType == "flat") {
+            mat <- matrix(data = 0, nrow = length(maturityCurve), ncol = length(maturityCurve))
+            mat[1,] <- maturityCurve*batchSize*osr[2]
+            for(i in 1:ncol(mat) ) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-mortRate
+            }
+            mat[nrow(mat), ncol(mat)] <- 1-mortRate
+            ## build a Leslie matrix
+        } else if(mortType == "age") {
+            mat <- matrix(data = 0, nrow = max(c(length(maturityCurve), length(ageMort))),
+                          ncol = max(c(length(maturityCurve), length(ageMort))))
+            mat[1,(1:length(maturityCurve))] <- maturityCurve*batchSize*osr[2]
+            mat[1,(length(maturityCurve):
+                   ncol(mat))] <- maturityCurve[length(maturityCurve)]*batchSize*osr[2]
+            ## 'padding' of maturity is done here.
+            for(i in 1:length(ageMort)) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-ageMort[i]
+            }
+            for(i in length(ageMort):ncol(mat) ) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-ageMort[length(ageMort)]
+            }
+            mat[nrow(mat), ncol(mat)] <- 1 - ageMort[length(ageMort)]
+            ## build a Leslie matrix
+        } else if(mortType == "stock") {
+            mat <- matrix(data = 0, nrow = length(maturityCurve), ncol = length(maturityCurve))
+            mat.l <- lapply(seq_len(length(stockMort)), function(X) mat) ## list of empty 'mat'
+            for(s in 1:length(stockMort)) {
+                mat.l[[s]][1,(1:length(maturityCurve))] <- maturityCurve*batchSize*osr[2]
+                mat.l[[s]][1,(length(maturityCurve):
+                           ncol(mat.l[[s]]))] <- maturityCurve[length(maturityCurve)]*batchSize*osr[2]
+                for(i in 1:ncol(mat.l[[s]])) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-stockMort[s]
+                }
+                mat.l[[s]][nrow(mat.l[[s]]), ncol(mat.l[[s]])] <- 1 - stockMort[s]
+            }
+            ## build a list of Leslie matrices
+        } else if(mortType == "ageStock") {
+            mat <- matrix(data = 0, nrow = max(c(length(maturityCurve), nrow(ageStockMort))),
+                          ncol = max(c(length(maturityCurve), nrow(ageStockMort))))
+            mat.l <- lapply(seq_len(ncol(ageStockMort)), function(X) mat) ## list of empty 'mat'
+            for(s in 1:ncol(ageStockMort)) {
+                mat.l[[s]][1,(1:length(maturityCurve))] <- maturityCurve*batchSize*osr[2]
+                mat.l[[s]][1,(length(maturityCurve):
+                           ncol(mat.l[[s]]))] <- maturityCurve[length(maturityCurve)]*batchSize*osr[2]
+                for(i in 1:ncol(mat.l[[s]])) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-ageStockMort[i,s]
+                }
+                for(i in nrow(ageStockMort):ncol(mat.l[[s]])) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-ageStockMort[nrow(ageMort),s]
+                }
+                mat.l[[s]][nrow(mat.l[[s]]), ncol(mat.l[[s]])] <- 1-ageStockMort[nrow(ageStockMort),s]
+            }
+            ## build a list of Leslie matrices
+        }
+    } else if( mateType == "ageSex") {
+        if(mortType == "flat") {
+            ## build a Leslie matrix
+        } else if(mortType == "age") {
+            ## build a Leslie matrix
+        } else if(mortType == "stock") {
+            ## build a list of Leslie matrices
+        } else if(mortType == "ageStock") {
+            ## build a list of Leslie matrices
+        }
+    }
+    return(eigen(mat)$values[1]) ## this is a numeric growth rate.
+}
+
+
+
+
+
+
+
+
+
+
+
 
 ## an example implementation:
 #start_time <- Sys.time()
