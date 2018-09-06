@@ -737,7 +737,7 @@ check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, fi
     ## re-calculate batchSize if maxClutch is non-Inf    
     if(batchSize != Inf) {
         batches <- rpois(1000000, lambda = batchSize)
-        batchSize <- mean(batches[batches <= maxClutch]) 
+        batchSize <- mean(batches[batches <= maxClutch])
     }
 
     if(mateType == "flat") {
@@ -839,16 +839,68 @@ check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, fi
         }
     } else if( mateType == "ageSex") {
         if(mortType == "flat") {
+            mat <- matrix(data = 0, nrow = length(femaleCurve), ncol = length(femaleCurve))
+            mat[1,] <- femaleCurve*batchSize*osr[2]
+            for(i in 1:ncol(mat) ) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-mortRate
+            }
+            mat[nrow(mat), ncol(mat)] <- 1-mortRate
             ## build a Leslie matrix
         } else if(mortType == "age") {
+            mat <- matrix(data = 0, nrow = max(c(length(femaleCurve), length(ageMort))),
+                          ncol = max(c(length(femaleCurve), length(ageMort))))
+            mat[1,(1:length(femaleCurve))] <- femaleCurve*batchSize*osr[2]
+            mat[1,(length(femaleCurve):
+                   ncol(mat))] <- femaleCurve[length(femaleCurve)]*batchSize*osr[2]
+            ## 'padding' of maturity is done here.
+            for(i in 1:length(ageMort)) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-ageMort[i]
+            }
+            for(i in length(ageMort):ncol(mat) ) {
+                if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-ageMort[length(ageMort)]
+            }
+            mat[nrow(mat), ncol(mat)] <- 1 - ageMort[length(ageMort)]
             ## build a Leslie matrix
         } else if(mortType == "stock") {
+            mat <- matrix(data = 0, nrow = length(femaleCurve), ncol = length(femaleCurve))
+            mat.l <- lapply(seq_len(length(stockMort)), function(X) mat) ## list of empty 'mat'
+            for(s in 1:length(stockMort)) {
+                mat.l[[s]][1,(1:length(femaleCurve))] <- femaleCurve*batchSize*osr[2]
+                mat.l[[s]][1,(length(femaleCurve):
+                           ncol(mat.l[[s]]))] <- femaleCurve[length(femaleCurve)]*batchSize*osr[2]
+                for(i in 1:ncol(mat.l[[s]])) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-stockMort[s]
+                }
+                mat.l[[s]][nrow(mat.l[[s]]), ncol(mat.l[[s]])] <- 1 - stockMort[s]
+            }
             ## build a list of Leslie matrices
         } else if(mortType == "ageStock") {
+            mat <- matrix(data = 0, nrow = max(c(length(femaleCurve), nrow(ageStockMort))),
+                          ncol = max(c(length(femaleCurve), nrow(ageStockMort))))
+            mat.l <- lapply(seq_len(ncol(ageStockMort)), function(X) mat) ## list of empty 'mat'
+            for(s in 1:ncol(ageStockMort)) {
+                mat.l[[s]][1,(1:length(femaleCurve))] <- femaleCurve*batchSize*osr[2]
+                mat.l[[s]][1,(length(femaleCurve):
+                           ncol(mat.l[[s]]))] <- femaleCurve[length(femaleCurve)]*batchSize*osr[2]
+                for(i in 1:ncol(mat.l[[s]])) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-ageStockMort[i,s]
+                }
+                for(i in nrow(ageStockMort):ncol(mat.l[[s]])) {
+                    if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-ageStockMort[nrow(ageMort),s]
+                }
+                mat.l[[s]][nrow(mat.l[[s]]), ncol(mat.l[[s]])] <- 1-ageStockMort[nrow(ageStockMort),s]
+            }
             ## build a list of Leslie matrices
         }
     }
-    return(eigen(mat)$values[1]) ## this is a numeric growth rate.
+    if(mortType %in% c("flat", "age")) {
+        return(eigen(mat)$values[1]) ## this is a numeric growth rate.
+    }
+    if(mortType %in% c("stock", "ageStock")) {
+        outs <- c(rep(NA, length(mat.l)))
+        for(i in 1:length(outs)) outs[i] <- eigen(mat.l[[i]])$values[1]
+        return(outs)
+    }
 }
 
 
