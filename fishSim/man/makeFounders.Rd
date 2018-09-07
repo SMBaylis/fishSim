@@ -37,3 +37,6 @@ makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1.
 not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
 but error-checking and readability is easiest if they do sum to 1.
 }
+\seealso{
+[fishSim::make_archive()]
+}

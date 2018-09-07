@@ -6,7 +6,8 @@
 \usage{
 check_growthrate(mateType = "flat", mortType = "flat", batchSize,
   firstBreed = 0, maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve,
-  femaleCurve, maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort)
+  femaleCurve, maxAge = Inf, forceY1 = NA, mortRate, ageMort,
+  stockMort, ageStockMort)
 }
 \arguments{
 \item{mateType}{the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
@@ -48,6 +49,9 @@ repeating the last value in the vector.}
 
 \item{maxAge}{the value of 'maxAge' used in the mort() call. Defaults to Inf.}
 
+\item{forceY1}{optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,
+should be a numeric value between 0 and 1. If NA, ignored.}
+
 \item{mortRate}{the value of 'mortRate' used in the mort() call}
 
 \item{ageMort}{the value of 'ageMort' used in the mort() call. If both mortality and maturity are
@@ -85,4 +89,7 @@ in which case the proportion of female offspring is taken from osr.
 If your model involves a variation not handled by check_growthrates(), you may find it simplest
 to run your simulation for a few generations with a smallish founder population and empirically
 estimate the growth rate.
+}
+\seealso{
+[fishSim::PoNG()]
 }

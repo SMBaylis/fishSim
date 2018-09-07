@@ -23,6 +23,7 @@
 #' @param maxAge Numeric. The max age to which an animal may survive.
 #' @param survCurv Numeric vector. Describes the probability within the founder cohort of belonging
 #'                 to each age-class for age=-classes 1:maxAge. Cannot be blank.
+#' @seealso [fishSim::make_archive()]
 #' @export
 
 makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
@@ -166,6 +167,7 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'                    Note that 'firstBreed' can interfere with 'femaleCurve' by setting
 #'                    fecundities to zero for some age classes. Recommended usage is to set
 #'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
+#' @seealso [fishSim::altMate()]
 #' @export
 
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
@@ -304,6 +306,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #'                    Note that 'firstBreed' can interfere with 'femaleCurve' by setting
 #'                    maturities to zero for some age classes. Recommended usage is to set
 #'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
+#' @seealso [fishSim::mate()]
 #' @export
 
 altMate <- function(indiv = makeFounders(), batchSize = 0.5,
@@ -597,6 +600,7 @@ birthdays <- function(indiv = makeFounders() ) {
 #' archive that is read and written less frequently than 'indiv'.
 #' @return The function returns an empty 0-by-8 matrix, to which subsets of 'indiv' can be
 #'         attached. See archive_dead() and remove_dead().
+#' @seealso [fishSim::archive_dead(), fishSim::remove_dead()]
 #' @export
 
 make_archive <- function() {
@@ -612,6 +616,7 @@ make_archive <- function() {
 #' @param indiv A matrix of individuals, as from makeFounders(), move(), mate(), or mort().
 #' @param archive A matrix of individuals, probably from make_archive() or a previous call of
 #'                archive_dead().
+#' @seealso [fishSim::remove_dead(), fishSim::make_archive()]
 #' @export
 #' @examples
 #' archive <- make_archive()
@@ -644,6 +649,7 @@ archive_dead <- function(indiv = mort(), archive = make_archive() ) {
 #' In these cases, run-times may be improved by periodically moving dead individuals into an
 #' archive that is read and written less frequently than 'indiv'. See also archive_dead().
 #' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::archive_dead(), fishSim::make_archive()]
 #' @export
 
 remove_dead <- function(indiv = mort() ) {
@@ -708,6 +714,8 @@ remove_dead <- function(indiv = mort() ) {
 #'                    shorter, it is 'padded' to the same length as the mortality vector by
 #'                    repeating the last value in the vector.
 #' @param maxAge the value of 'maxAge' used in the mort() call. Defaults to Inf.
+#' @param forceY1 optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,
+#'                should be a numeric value between 0 and 1. If NA, ignored.
 #' @param mortRate the value of 'mortRate' used in the mort() call
 #' @param ageMort the value of 'ageMort' used in the mort() call. If both mortality and maturity are
 #'                specified as vectors, they can be of different lengths. If the mortality vector is
@@ -718,11 +726,12 @@ remove_dead <- function(indiv = mort() ) {
 #'                maturity are specified as vectors, they can be of different lengths. If the
 #'                mortality vector is shorter, it is 'padded' to the same length as the maturity
 #'                vector by repeating the last value in the vector.
+#' @seealso [fishSim::PoNG()]
 #' @export
 
 check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
                              maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
-                             maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
+                             maxAge = Inf, forceY1 = NA, mortRate, ageMort, stockMort, ageStockMort) {
 
     if(!(mateType %in% c("flat", "age", "ageSex"))) {
         stop("'mateType' must be one of 'flat', 'age', or 'ageSex'.")
@@ -893,6 +902,11 @@ check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, fi
             ## build a list of Leslie matrices
         }
     }
+    if(!is.na(forceY1)) {
+        if(mortType %in% c("flat", "age")) mat[2,1] <- 1-forceY1
+        if(mortType %in% c("stock", "ageStock")) for(i in 1:length(mat.l)) mat.l[[i]][2,1] <- 1-forceY1
+    }  ## optionally forces year 1 mortality rate to a specific value.
+        
     if(mortType %in% c("flat", "age")) {
         return(eigen(mat)$values[1]) ## this is a numeric growth rate.
     }
@@ -903,10 +917,128 @@ check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, fi
     }
 }
 
+##################################################################################################
 
+#' PoNG(): find a Point of No Growth (by tweaking first-year mortality).
+#'
+#' This is essentially a wrapper for check_growthrate(), taking all the same inputs. It returns
+#' a plot of projected growth-rates across all possible first-year survival rates and the numeric
+#' first-year survival rate at which zero population growth is expected (via uniroot, or something).
+#' The reasoning behind this utility is that often in biological systems, adult survival rates and
+#' fecundities may be quite well-characterised, and population growth rates may also be well
+#' characterised, but first-year survival may be nearly impossible to assess. This utility allows
+#' a value of first-year survival to be chosen such that the population size changes at a known rate,
+#' while leaving all well-characterised adult survival parameters unchanged. It is also useful for
+#' answering questions of the form: 'how high would our first-year survival have to be, in order
+#' for this population to _not_ be in decline?', which will surely be familiar in applied management
+#' situations. Note that PoNG() uses some simulation-based estimation methods on the back end, so
+#' it's not terribly efficient. It takes around half a minute per stock to execute on a fairly-modern
+#' (vintage 2018) laptop.
+#' 
+#' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
+#'                 or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
+#'                 and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
+#'                 be provided. Defaults to 'flat'.
+#' @param mortType the value of 'type' used in the mort() call. Must be one of 'flat', 'age',
+#'                 'stock', or 'ageStock'. If 'flat', 'mortRate' must be provided. If 'age',
+#'                 'ageMort' must be provided. If 'stock', 'stockMort' must be provided. If
+#'                 'ageStock', 'ageStockMort' must be provided. Defaults to 'flat'.
+#' @param batchSize the value of 'batchSize' used in the altMate() call. Cannot be blank.
+#' @param firstBreed the value of 'firstBreed' used in the altMate() call. Defaults to 0.
+#' @param maxClutch the value of 'maxClutch' used in the altMate() call. Defaults to Inf. If non-Inf,
+#'                  _effective_ batchSize is estimated as the mean of 1000000 draws from the
+#'                  distribution of batchSize, subsetted to those <= maxAge.
+#' @param osr the value of 'osr' used in the altMate() call. Female proportion is used as a
+#'            multiplier on the fecundities. Defaults to c(0.5, 0.5).
+#' @param maturityCurve the value of 'maturityCurve' used in the altMate() call. check_growthrates()
+#'                      only uses female fecundities in its estimates, so femaleCurve is
+#'                      equivalent to maturityCurve in check_growthrates(), but maturityCurve is
+#'                      used when mateType is 'age'. If both mortality and maturity are specified
+#'                      as vectors, they can be of different lengths. If the maturity vector is
+#'                      shorter, it is 'padded' to the same length as the mortality vector by
+#'                      repeating the last value in the vector.
+#' @param femaleCurve the value of 'femaleCurve' used in the altMate() call. check_growthrates()
+#'                    only uses female fecundities in its estimates, so femaleCurve is
+#'                    equivalent to maturityCurve in check_growthrates(), but femaleCurve is used
+#'                    when 'mateType' is 'ageSex'. If both mortality and maturity are specified
+#'                    as vectors, they can be of different lengths. If the maturity vector is
+#'                    shorter, it is 'padded' to the same length as the mortality vector by
+#'                    repeating the last value in the vector.
+#' @param maxAge the value of 'maxAge' used in the mort() call. Defaults to Inf.
+#' @param mortRate the value of 'mortRate' used in the mort() call
+#' @param ageMort the value of 'ageMort' used in the mort() call. If both mortality and maturity are
+#'                specified as vectors, they can be of different lengths. If the mortality vector is
+#'                shorter, it is 'padded' to the same length as the maturity vector by repeating the
+#'                last value in the vector.
+#' @param stockMort the value of 'stockMort' used in the mort() call
+#' @param ageStockMort the value of 'ageStockMort' used in the mort() call. If both mortality and
+#'                maturity are specified as vectors, they can be of different lengths. If the
+#'                mortality vector is shorter, it is 'padded' to the same length as the maturity
+#'                vector by repeating the last value in the vector.
+#' @seealso [fishSim::check_growthrate()]
+#' @export
 
+PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
+                 maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
+                 maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
 
-
+    testPoints <- c(seq(0,1,0.001))
+    outs <- c(rep(NA, length(testPoints)))
+    if(mortType %in% c("flat", "age")) {
+        for( i in 1:length(testPoints)) {
+            outs[i] <- check_growthrate(mateType = mateType, mortType = mortType, batchSize=batchSize,
+                                        firstBreed = firstBreed, maxClutch = maxClutch, osr = osr,
+                                        maturityCurve = maturityCurve, femaleCurve = femaleCurve,
+                                        maxAge = maxAge, forceY1 = testPoints[i], mortRate = mortRate,
+                                        ageMort = ageMort, stockMort = stockMort,
+                                        ageStockMort = ageStockMort)
+        }  ## will need to make a special case for stock-structured populations.
+        plot(x = testPoints, y = outs, type = "l", col = "red", xlab = "First-year mortality rate",
+             ylab = "Population growth rate")
+        abline(h = 1, lty = 2)
+        if(!all(outs < 1) & !all(outs > 1) ) {
+            PNG <- testPoints[abs(1 - outs) == min(abs(1 - outs))]
+            abline(v = PNG, lty = 2)
+            return(PNG)
+        }
+    } else if (mortType %in% c("stock", "ageStock")) {
+        if(mortType == "stock") {
+            testPoints.m <- matrix(data = testPoints, nrow = length(testPoints),
+                                   ncol = length(stockMort))
+            outs.m <- matrix(data = outs, nrow = length(testPoints), ncol = length(stockMort))
+        }
+        if(mortType == "ageStock") {
+            testPoints.m <- matrix(data = testPoints, nrow = length(testPoints),
+                                   ncol = ncol(ageStockMort))
+            outs.m <- matrix(data = data, nrow = length(testPoints), ncol = ncol(ageStockMort))
+        }
+        for( i in 1:length(testPoints)) {
+            outs.m[i,] <- check_growthrate(mateType = mateType, mortType = mortType,
+                                           batchSize=batchSize,
+                                        firstBreed = firstBreed, maxClutch = maxClutch, osr = osr,
+                                        maturityCurve = maturityCurve, femaleCurve = femaleCurve,
+                                        maxAge = maxAge, forceY1 = testPoints[i], mortRate = mortRate,
+                                        ageMort = ageMort, stockMort = stockMort,
+                                        ageStockMort = ageStockMort)
+        } ## This is the special case for stock-structured populations.
+        plot(x = testPoints.m[,1], y = outs.m[,1], type = "l", col = "black",
+             xlim = c(min(testPoints.m), max(testPoints.m)),
+             ylim = c(min(outs.m), max(outs.m)),
+             xlab = "First-year mortality rate",
+             ylab = "Population growth rate")
+        for(i in 2:ncol(testPoints.m)) {
+            lines(x = testPoints.m[,i], y = outs.m[,i], col = i)
+        }
+        PNGs <- c(rep(NA, ncol(outs.m)))
+        for(i in 1:length(PNGs)) {
+            if(!all(outs.m[,i] < 1) & !all(outs.m[,i] > 1) ) {
+                PNGs[i] <- testPoints.m[(abs(1 - outs.m[,i]) == min(abs(1 - outs.m[,i]))),i]
+                abline(v = PNG, lty = 2)
+            }
+        }
+        return(PNGs)
+    }
+}
 
 
 

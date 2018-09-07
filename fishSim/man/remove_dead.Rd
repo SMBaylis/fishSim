@@ -14,3 +14,6 @@ For larger simulations, the matrix 'indiv' may grow very large and slow down the
 In these cases, run-times may be improved by periodically moving dead individuals into an
 archive that is read and written less frequently than 'indiv'. See also archive_dead().
 }
+\seealso{
+[fishSim::archive_dead(), fishSim::make_archive()]
+}

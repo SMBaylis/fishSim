@@ -37,3 +37,6 @@ for(k in 1:30) {
    indiv <- remove_dead(indiv = indiv) # actually removes the dead from 'indiv'. 
 }
 }
+\seealso{
+[fishSim::remove_dead(), fishSim::make_archive()]
+}

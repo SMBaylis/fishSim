@@ -83,3 +83,6 @@ Another mate method exists, where the number of newborns is set as a proportion 
 size, and mating occurs until the required number of offspring are generated (if possible, given
 breeding constraints) - see mate().
 }
+\seealso{
+[fishSim::mate()]
+}

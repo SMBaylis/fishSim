@@ -81,3 +81,6 @@ that 'quota' or newborns has been met, or all potential parents have reached bre
 A second mate method exists, where the number of newborns is derived from the fecundities of all
 breeding females in the population - see altMate().
 }
+\seealso{
+[fishSim::altMate()]
+}
