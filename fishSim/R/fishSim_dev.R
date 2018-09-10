@@ -684,6 +684,9 @@ remove_dead <- function(indiv = mort() ) {
 #' to run your simulation for a few generations with a smallish founder population and empirically
 #' estimate the growth rate.
 #'
+#' @param forceY1 optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,
+#'                should be a numeric value between 0 and 1. If NA, ignored. Must be the first
+#'                argument so that uniroot()-based solutions for null growth will work.
 #' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
 #'                 or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
 #'                 and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
@@ -714,8 +717,6 @@ remove_dead <- function(indiv = mort() ) {
 #'                    shorter, it is 'padded' to the same length as the mortality vector by
 #'                    repeating the last value in the vector.
 #' @param maxAge the value of 'maxAge' used in the mort() call. Defaults to Inf.
-#' @param forceY1 optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,
-#'                should be a numeric value between 0 and 1. If NA, ignored.
 #' @param mortRate the value of 'mortRate' used in the mort() call
 #' @param ageMort the value of 'ageMort' used in the mort() call. If both mortality and maturity are
 #'                specified as vectors, they can be of different lengths. If the mortality vector is
@@ -729,9 +730,9 @@ remove_dead <- function(indiv = mort() ) {
 #' @seealso [fishSim::PoNG()]
 #' @export
 
-check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
-                             maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
-                             maxAge = Inf, forceY1 = NA, mortRate, ageMort, stockMort, ageStockMort) {
+check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat", batchSize,
+                             firstBreed = 0, maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve,
+                             femaleCurve, maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
 
     if(!(mateType %in% c("flat", "age", "ageSex"))) {
         stop("'mateType' must be one of 'flat', 'age', or 'ageSex'.")
@@ -977,12 +978,29 @@ check_growthrate <- function(mateType = "flat", mortType = "flat", batchSize, fi
 #'                vector by repeating the last value in the vector.
 #' @seealso [fishSim::check_growthrate()]
 #' @export
+#' @examples
+#' mateType = "flat"
+#' mortType = "flat"
+#' batchSize = 0.8
+#' firstBreed = 1
+#' mortRate = 0.2
+#' PoNG(batchSize = batchSize, firstBreed = firstBreed, mortRate = mortRate)
+#'
+#' mateType = "flat"
+#' mortType = "stock"
+#' stockMort = c(0.2, 0.3, 0.5)
+#' firstBreed = 1
+#' batchSize = 0.9
+#' PoNG(mortType = "stock", batchSize = batchSize, firstBreed = firstBreed, stockMort = stockMort)
+#'  ## note that only two of the stocks return a valid PoNG - with 0.5 mortality, stock 3 cannot
+#'  ## reach null growth with any first-year survival rate.
+
 
 PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
                  maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
                  maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
 
-    testPoints <- c(seq(0,1,0.001))
+    testPoints <- c(seq(0,1,0.01))
     outs <- c(rep(NA, length(testPoints)))
     if(mortType %in% c("flat", "age")) {
         for( i in 1:length(testPoints)) {
@@ -996,10 +1014,19 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
         plot(x = testPoints, y = outs, type = "l", col = "red", xlab = "First-year mortality rate",
              ylab = "Population growth rate")
         abline(h = 1, lty = 2)
-        if(!all(outs < 1) & !all(outs > 1) ) {
-            PNG <- testPoints[abs(1 - outs) == min(abs(1 - outs))]
-            abline(v = PNG, lty = 2)
-            return(PNG)
+        if(!all(Re(outs) < 1) & !all(Re(outs) > 1) ) {
+##            PNG <- testPoints[abs(1 - outs) == min(abs(1 - outs))]
+            PNG <- uniroot(function(x) {Re(check_growthrate(forceY1 = x,
+                                                         mateType = mateType, mortType = mortType,
+                                            batchSize = batchSize, firstBreed = firstBreed,
+                                            maxClutch = maxClutch, osr = osr,
+                                            maturityCurve = maturityCurve,
+                                            femaleCurve = femaleCurve, maxAge = maxAge,
+                                            mortRate = mortRate, ageMort = ageMort,
+                                            stockMort = stockMort, ageStockMort = ageStockMort))-1},
+                           interval = c(0,1), tol = 0.001)
+            abline(v = PNG$root, lty = 2)
+            return(PNG) ## Point of No Growth
         }
     } else if (mortType %in% c("stock", "ageStock")) {
         if(mortType == "stock") {
@@ -1013,13 +1040,13 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
             outs.m <- matrix(data = data, nrow = length(testPoints), ncol = ncol(ageStockMort))
         }
         for( i in 1:length(testPoints)) {
-            outs.m[i,] <- check_growthrate(mateType = mateType, mortType = mortType,
-                                           batchSize=batchSize,
+            outs.m[i,] <- Re(check_growthrate(mateType = mateType, mortType = mortType,
+                                        batchSize=batchSize,
                                         firstBreed = firstBreed, maxClutch = maxClutch, osr = osr,
                                         maturityCurve = maturityCurve, femaleCurve = femaleCurve,
                                         maxAge = maxAge, forceY1 = testPoints[i], mortRate = mortRate,
                                         ageMort = ageMort, stockMort = stockMort,
-                                        ageStockMort = ageStockMort)
+                                        ageStockMort = ageStockMort))
         } ## This is the special case for stock-structured populations.
         plot(x = testPoints.m[,1], y = outs.m[,1], type = "l", col = "black",
              xlim = c(min(testPoints.m), max(testPoints.m)),
@@ -1031,12 +1058,23 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
         }
         PNGs <- c(rep(NA, ncol(outs.m)))
         for(i in 1:length(PNGs)) {
-            if(!all(outs.m[,i] < 1) & !all(outs.m[,i] > 1) ) {
-                PNGs[i] <- testPoints.m[(abs(1 - outs.m[,i]) == min(abs(1 - outs.m[,i]))),i]
-                abline(v = PNG, lty = 2)
+            if(!all(Re(outs.m[,i]) < 1) & !all(Re(outs.m[,i]) > 1) ) {
+##                PNGs[i] <- testPoints.m[(abs(1 - outs.m[,i]) == min(abs(1 - outs.m[,i]))),i]
+                PNGs[i] <- uniroot(function(x) {(Re(check_growthrate(forceY1 = x,
+                                            mateType = mateType, mortType = mortType,
+                                            batchSize = batchSize, firstBreed = firstBreed,
+                                            maxClutch = maxClutch, osr = osr,
+                                            maturityCurve = maturityCurve,
+                                            femaleCurve = femaleCurve, maxAge = maxAge,
+                                            mortRate = mortRate, ageMort = ageMort,
+                                            stockMort = stockMort,
+                                            ageStockMort = ageStockMort)[i])-1)},
+                                   interval = c(0,1), tol = 0.001)$root
+                abline(v = PNGs, lty = 2)
+                abline(h = 1, lty = 2)
             }
         }
-        return(PNGs)
+        return(PNGs) ## Points of No Growth
     }
 }
 
