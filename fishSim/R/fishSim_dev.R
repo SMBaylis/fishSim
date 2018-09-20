@@ -928,12 +928,12 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 #' The reasoning behind this utility is that often in biological systems, adult survival rates and
 #' fecundities may be quite well-characterised, and population growth rates may also be well
 #' characterised, but first-year survival may be nearly impossible to assess. This utility allows
-#' a value of first-year survival to be chosen such that the population size changes at a known rate,
+#' a value of first-year survival to be chosen such that the population size does not change,
 #' while leaving all well-characterised adult survival parameters unchanged. It is also useful for
 #' answering questions of the form: 'how high would our first-year survival have to be, in order
 #' for this population to _not_ be in decline?', which will surely be familiar in applied management
-#' situations. Note that PoNG() uses some simulation-based estimation methods on the back end, so
-#' it's not terribly efficient. It takes around half a minute per stock to execute on a fairly-modern
+#' situations. Note that PoNG() uses some brute-force methods on the back end, so
+#' it's not terribly efficient. It takes around 5 - 10 seconds per stock on a fairly-modern
 #' (vintage 2018) laptop.
 #' 
 #' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
@@ -979,22 +979,18 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 #' @seealso [fishSim::check_growthrate()]
 #' @export
 #' @examples
-#' mateType = "flat"
-#' mortType = "flat"
 #' batchSize = 0.8
 #' firstBreed = 1
 #' mortRate = 0.2
 #' PoNG(batchSize = batchSize, firstBreed = firstBreed, mortRate = mortRate)
 #'
-#' mateType = "flat"
 #' mortType = "stock"
 #' stockMort = c(0.2, 0.3, 0.5)
 #' firstBreed = 1
 #' batchSize = 0.9
 #' PoNG(mortType = "stock", batchSize = batchSize, firstBreed = firstBreed, stockMort = stockMort)
 #'  ## note that only two of the stocks return a valid PoNG - with 0.5 mortality, stock 3 cannot
-#'  ## reach null growth with any first-year survival rate.
-
+#'  ## reach null growth with any first-year survival rate between 0 and 1.
 
 PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
                  maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
