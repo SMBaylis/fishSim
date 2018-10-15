@@ -261,14 +261,16 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #' 
 #' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
 #' @param batchSize Numeric. The mean number of offspring produced per mature female if fecundityDist
-#'                  = "Poisson", or the mean number of offspring per female that gives birth, if
-#'                  fecundityDist = "truncPoisson". Used for all maturity structures. Note that,
-#'                  if run within a loop that goes [move -> altMate -> mort -> birthdays],
-#'                  'produced' is not the same as 'enters age-class 1', as some individuals will
-#'                  die at age 0.
-#' @param fecundityDist One of "Poisson" or "truncPoisson". May be expanded to include other
-#'                      dists in future. ~Bernoulli seems a likely candidate. Defaults to
-#'                      "Poisson"
+#'                  = "poisson"; the value of T from a zero-truncated Poisson distribution, if
+#'                  fecundityDist = "truncPoisson" (useful in cases where the probability of no
+#'                  offspring is rolled into the 'maturity' parameter); or the probability that a
+#'                  female will have a (single) offspring, given that she is mature, if
+#'                  fecundityDist = "binomial".
+#'                  Used for all maturity structures. Note that, if run within a loop that goes
+#'                  [move -> altMate -> mort -> birthdays], 'produced' is not the same as 'enters
+#'                  age-class 1', as some individuals will die at age 0.
+#' @param fecundityDist One of "poisson", "truncPoisson", or "binomial". Sets the distribution of the
+#'                      number of offspring per mature female. Defaults to "poisson".
 #' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
 #'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
@@ -314,7 +316,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #' @seealso [fishSim::mate()]
 #' @export
 
-altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "Poisson",
+altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "poisson",
                  osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
                  singlePaternity = TRUE, exhaustFathers = FALSE,
                  maturityCurve, maleCurve, femaleCurve) {
@@ -322,6 +324,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "Po
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
+    if (!(fecundityDist %in% c("poisson", "truncPoisson", "binomial"))) {
+        stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', or 'binomial'.")
+    }
+
     mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) warning("There are no mature females in the population")
     fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
@@ -329,8 +335,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "Po
 
     if (type == "flat") {
 
-        if(fecundityDist == "Poisson") clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "rTruncPoisson") clutch <- rTruncPois(n = nrow(mothers), T = batchSize)
+        if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
+        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
+        if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        
         mothers <- subset(mothers, clutch > 0)  ## identify the mothers that truly breed,
         clutch <- clutch[clutch>0]              ## how many offspring each produces,
         
@@ -344,9 +352,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "Po
                                          ## maturity test.
         
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "Poisson") clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "rTruncPoisson") clutch <- rTruncPois(n = nrow(mothers), T = batchSize)
-
+        if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
+        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
+        if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        
         mothers <- subset(mothers, clutch > 0) ## trims 'mothers' to those that truly breed
         clutch <- clutch[clutch>0]
         
@@ -360,9 +369,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "Po
                           ,drop = FALSE]  ## trims 'fathers' to just those that pass a random
                                           ## maturity test.
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "Poisson") clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "rTruncPoisson") clutch <- rTruncPois(n = nrow(mothers), T = batchSize)
-
+        if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
+        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
+        if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        
         mothers <- subset(mothers, clutch > 0)
         clutch <- clutch[clutch>0]
     }
