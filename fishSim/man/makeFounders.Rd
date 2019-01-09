@@ -29,7 +29,7 @@ founder population.
 [,4] is "founder" for all animals.
 [,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
      very start of year 1, just after the 'birthdays' step of year 0.
-[,6] is NA for all animals.
+[,6] is NA for all animals. Holds the death year in most cases.
 [,7] is the stock membership for each animal.
 [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
      given that birthdays occur at the very end.

@@ -5,7 +5,7 @@
 \title{altMate(): breeding based on mature females, not quota-filling.}
 \usage{
 altMate(indiv = makeFounders(), batchSize = 0.5,
-  fecundityDist = "Poisson", osr = c(0.5, 0.5), year = "-1",
+  fecundityDist = "poisson", osr = c(0.5, 0.5), year = "-1",
   firstBreed = 0, type = "flat", maxClutch = Inf,
   singlePaternity = TRUE, exhaustFathers = FALSE, maturityCurve,
   maleCurve, femaleCurve)
@@ -14,15 +14,17 @@ altMate(indiv = makeFounders(), batchSize = 0.5,
 \item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}
 
 \item{batchSize}{Numeric. The mean number of offspring produced per mature female if fecundityDist
-= "Poisson", or the mean number of offspring per female that gives birth, if
-fecundityDist = "truncPoisson". Used for all maturity structures. Note that,
-if run within a loop that goes [move -> altMate -> mort -> birthdays],
-'produced' is not the same as 'enters age-class 1', as some individuals will
-die at age 0.}
+= "poisson"; the value of T from a zero-truncated Poisson distribution, if
+fecundityDist = "truncPoisson" (useful in cases where the probability of no
+offspring is rolled into the 'maturity' parameter); or the probability that a
+female will have a (single) offspring, given that she is mature, if
+fecundityDist = "binomial".
+Used for all maturity structures. Note that, if run within a loop that goes
+[move -> altMate -> mort -> birthdays], 'produced' is not the same as 'enters
+age-class 1', as some individuals will die at age 0.}
 
-\item{fecundityDist}{One of "Poisson" or "truncPoisson". May be expanded to include other
-dists in future. ~Bernoulli seems a likely candidate. Defaults to
-"Poisson"}
+\item{fecundityDist}{One of "poisson", "truncPoisson", or "binomial". Sets the distribution of the
+number of offspring per mature female. Defaults to "poisson".}
 
 \item{osr}{Numeric vector with length two, c(male, female), giving the sex ratio at birth
 (recruitment). Used to assign sexes to new offspring.}

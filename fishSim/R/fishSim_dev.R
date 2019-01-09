@@ -8,7 +8,7 @@
 #' [,4] is "founder" for all animals.
 #' [,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
 #'      very start of year 1, just after the 'birthdays' step of year 0.
-#' [,6] is NA for all animals.
+#' [,6] is NA for all animals. Holds the death year in most cases.
 #' [,7] is the stock membership for each animal.
 #' [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
 #'      given that birthdays occur at the very end.
@@ -1095,6 +1095,147 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
         return(PNGs) ## Points of No Growth
     }
 }
+
+
+#' parents(): look up the parents of one or more individuals.
+#'
+#' The parents() function searches an 'indiv' matrix for individuals with a given ID,
+#' and returns the IDs of its parents. If one or more of the parents were founders, it
+#' returns 'founder' instead of a ID for founder parents, and if the individual's ID
+#' is 'founder', it returns 'founder' as the ID for both parents. Parents are returned
+#' in order [father, mother].
+#' If more than one ID is given, parents are returned in order of ID: [ID1 father,
+#' ID1 mother, ID2 father, ID2 mother ... ]
+#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::grandparents(), fishSim::great.grandparents(),
+#' fishSim::great4.grandparents()]
+#' @export
+#' @examples
+#' indiv <- makeFounders()
+#' for(k in 1:30) {
+#'   indiv <- mate(indiv = indiv, year = k)
+#'   indiv <- mort(indiv = indiv, year = k)
+#'   indiv <- birthdays(indiv = indiv)
+#' }  ## set up a population
+#' ID <- indiv[nrow(indiv), 1] ## an individual from the youngest generation
+#' parents(ID, indiv) ## that individual's parents, as [father, mother]
+#' parents(parents(ID, indiv), indiv) ## that individual's grandparents, as
+#' ## [pat. grandfather, pat. grandmother, mat. grandfather, mat. grandmother]
+
+parents <- function(ID, indiv) {
+    outs <- c(rep("blank", length(ID)*2))
+    for(i in 1:length(ID)) {
+        if(ID[i] == "founder") { ## founders don't have parents, so special case: return founder
+            outs[(i*2)-1] <- "founder"
+            outs[(i*2)] <- "founder"
+        } else { ## non-founders have parents, so look these up.
+            outs[(i*2)-1] <- indiv[indiv[,1] == ID[i], 3]
+            outs[(i*2)] <- indiv[indiv[,1] == ID[i], 4]
+        }
+    }
+    return(outs)
+}
+
+#' grandparents(): look up the grandparents of one or more individuals.
+#'
+#' A convenience wrapper for 'parents()', returning the grandparents of one or more
+#' individuals. If FF is 'father's father', MF is 'mother's father', and so on,
+#' grandparents are returned in order [FF, FM, MF, MM] for each specified ID.
+#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::parents()]
+#' @export
+
+grandparents <- function(ID, indiv) {
+    parents(parents(ID, indiv), indiv)
+}
+
+#' great.grandparents(): look up the great-grandparents of one or more individuals.
+#'
+#' A convenience wrapper for 'parents()', returning the great-grandparents of one or more
+#' individuals. If FFF is 'father's father's father', MFM is 'mother's father's mother',
+#' and so on, great-grandparents are returned in order [FFF, FFM, FMF, FMM, MFF, MFM,
+#' MMF, MMM] for each specified ID.
+#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::parents()]
+#' @export
+
+great.grandparents <- function(ID, indiv) {
+    parents(parents(parents(ID, indiv), indiv), indiv)
+}
+
+#' great2.grandparents(): look up the great-great-grandparents of one or more individuals.
+#'
+#' A convenience wrapper for 'parents()', returning the great-great-grandparents of one
+#' or more individuals. If 'FFFF' is 'father's father's father's father', and
+#' 'MMFM' is 'mother's mother's father's mother', and so on, great-great-grandparents
+#' are returned in order [FFFF,FFFM,FFMF,FFMM,FMFF,FMFM,FMMF,FMMM,MFFF,MFFM,MFMF,MFMM,
+#' MMFF,MMFM,MMMF,MMMM]
+#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::parents()]
+#' @export
+
+great2.grandparents <- function(ID, indiv) {
+    parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv)
+}
+
+#' great3.grandparents(): look up the great-great-great-grandparents of one or more individuals.
+#'
+#' A convenience wrapper for 'parents()', returning the great-great-great-grandparents
+#' of one or more individuals. If 'FFFFF' is 'father's father's father's father's father',
+#' and 'FFMFM' is 'father's father's mother's father's mother', and so on,
+#' great-great-great-grandparents are returned in order [FFFFF, FFFFM, FFFMF,
+#' FFFMM, FFMFF, FFMFM, FFMMF, FFMMM, FMFFF, FMFFM, FMFMF, FMFMM,
+#' FMMFF, FMMFM, FMMMF, FMMMM, MFFFF, MFFFM, MFFMF, MFFMM, MFMFF,
+#' MFMFM, MFMMF, MFMMM, MMFFF, MMFFM, MMFMF, MMFMM, MMMFF, MMMFM,
+#' MMMMF, MMMMM]
+#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::parents()]
+#' @export
+
+great3.grandparents <- function(ID, indiv) {
+    parents(parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv), indiv)
+}
+
+#' great4.grandparents(): look up the great-great-great-great-grandparents of one or more individuals.
+#'
+#' A convenience wrapper for 'parents()', returning the
+#' great-great-great-great-grandparents of one or more individuals. If 'FFFFFF' is
+#' 'father's father's father's father's father's father', and 'FFFMMM' is
+#' 'father's father's father's mother's mother's mother',
+#' great-great-great-great-grandparents are returned in order [FFFFFF, FFFFFM, FFFFMF,
+#' FFFFMM, FFFMFF, FFFMFM, FFFMMF, FFFMMM, FFMFFF, FFMFFM, FFMFMF, FFMFMM, FFMMFF,
+#' FFMMFM, FFMMMF, FFMMMM, FMFFFF, FMFFFM, FMFFMF, FMFFMM, FMFMFF, FMFMFM, FMFMMF,
+#' FMFMMM, FMMFFF, FMMFFM, FMMFMF, FMMFMM, FMMMFF, FMMMFM, FMMMMF, FMMMMM, MFFFFF,
+#' MFFFFM, MFFFMF, MFFFMM, MFFMFF, MFFMFM, MFFMMF, MFFMMM, MFMFFF, MFMFFM, MFMFMF,
+#' MFMFMM, MFMMFF, MFMMFM, MFMMMF, MFMMMM, MMFFFF, MMFFFM, MMFFMF, MMFFMM, MMFMFF,
+#' MMFMFM, MMFMMF, MMFMMM, MMMFFF, MMMFFM, MMMFMF, MMMFMM, MMMMFF, MMMMFM, MMMMMF,
+#' MMMMMM]
+#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param indiv A matrix of individuals, as from mort().
+#' @seealso [fishSim::parents()]
+#' @export
+
+great4.grandparents <- function(ID, indiv) {
+    parents(parents(parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv), indiv), indiv)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
