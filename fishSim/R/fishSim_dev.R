@@ -1255,143 +1255,362 @@ great4.grandparents <- function(ID, indiv) {
 
 findRelatives <- function(indiv, sampled) {
 
-ancestors <- matrix(data = c(sampled, rep("blanks", length(sampled)*126)), nrow = length(sampled))
-colnames(ancestors) <- c("self","father", "mother", # self and parents
-                          "FF", "FM", "MF", "MM", # grandparents
-                          "FFF", "FFM", "FMF", "FMM", "MFF", "MFM", "MMF", "MMM", #great-grandparents
-                          "FFFF","FFFM","FFMF","FFMM","FMFF","FMFM","FMMF","FMMM",
-                          "MFFF","MFFM","MFMF","MFMM","MMFF","MMFM","MMMF","MMMM",#gg-grandparents
-                          "FFFFF","FFFFM","FFFMF","FFFMM","FFMFF","FFMFM","FFMMF",
-                          "FFMMM","FMFFF","FMFFM","FMFMF","FMFMM","FMMFF","FMMFM",
-                          "FMMMF","FMMMM","MFFFF","MFFFM","MFFMF","MFFMM","MFMFF",
-                          "MFMFM","MFMMF","MFMMM","MMFFF","MMFFM","MMFMF","MMFMM",
-                          "MMMFF","MMMFM","MMMMF","MMMMM", # ggg-grandparents
-                          "FFFFFF","FFFFFM","FFFFMF","FFFFMM","FFFMFF","FFFMFM","FFFMMF",
-                          "FFFMMM","FFMFFF","FFMFFM","FFMFMF","FFMFMM","FFMMFF","FFMMFM",
-                          "FFMMMF","FFMMMM","FMFFFF","FMFFFM","FMFFMF","FMFFMM","FMFMFF",
-                          "FMFMFM","FMFMMF","FMFMMM","FMMFFF","FMMFFM","FMMFMF","FMMFMM",
-                          "FMMMFF","FMMMFM","FMMMMF","FMMMMM","MFFFFF","MFFFFM","MFFFMF",
-                          "MFFFMM","MFFMFF","MFFMFM","MFFMMF","MFFMMM","MFMFFF","MFMFFM",
-                          "MFMFMF","MFMFMM","MFMMFF","MFMMFM","MFMMMF","MFMMMM","MMFFFF",
-                          "MMFFFM","MMFFMF","MMFFMM","MMFMFF","MMFMFM","MMFMMF","MMFMMM",
-                          "MMMFFF","MMMFFM","MMMFMF","MMMFMM","MMMMFF","MMMMFM","MMMMMF",
-                          "MMMMMM") # gggg-grandparents                        
+    ancestors <- matrix(data = c(sampled, rep("blanks", length(sampled)*126)), nrow = length(sampled))
+    colnames(ancestors) <- c("self","father", "mother", # self and parents
+                             "FF", "FM", "MF", "MM", # grandparents
+                             "FFF","FFM","FMF","FMM","MFF","MFM","MMF","MMM", #great-grandparents
+                             "FFFF","FFFM","FFMF","FFMM","FMFF","FMFM","FMMF","FMMM",
+                             "MFFF","MFFM","MFMF","MFMM","MMFF","MMFM","MMMF","MMMM",#gg-grandparents
+                             "FFFFF","FFFFM","FFFMF","FFFMM","FFMFF","FFMFM","FFMMF",
+                             "FFMMM","FMFFF","FMFFM","FMFMF","FMFMM","FMMFF","FMMFM",
+                             "FMMMF","FMMMM","MFFFF","MFFFM","MFFMF","MFFMM","MFMFF",
+                             "MFMFM","MFMMF","MFMMM","MMFFF","MMFFM","MMFMF","MMFMM",
+                             "MMMFF","MMMFM","MMMMF","MMMMM", # ggg-grandparents
+                             "FFFFFF","FFFFFM","FFFFMF","FFFFMM","FFFMFF","FFFMFM","FFFMMF",
+                             "FFFMMM","FFMFFF","FFMFFM","FFMFMF","FFMFMM","FFMMFF","FFMMFM",
+                             "FFMMMF","FFMMMM","FMFFFF","FMFFFM","FMFFMF","FMFFMM","FMFMFF",
+                             "FMFMFM","FMFMMF","FMFMMM","FMMFFF","FMMFFM","FMMFMF","FMMFMM",
+                             "FMMMFF","FMMMFM","FMMMMF","FMMMMM","MFFFFF","MFFFFM","MFFFMF",
+                             "MFFFMM","MFFMFF","MFFMFM","MFFMMF","MFFMMM","MFMFFF","MFMFFM",
+                             "MFMFMF","MFMFMM","MFMMFF","MFMMFM","MFMMMF","MFMMMM","MMFFFF",
+                             "MMFFFM","MMFFMF","MMFFMM","MMFMFF","MMFMFM","MMFMMF","MMFMMM",
+                             "MMMFFF","MMMFFM","MMMFMF","MMMFMM","MMMMFF","MMMMFM","MMMMMF",
+                             "MMMMMM") # gggg-grandparents                        
 
-for(i in 1:nrow(ancestors)) {
-    ancestors[i, 2:3] <- parents(ancestors[i,1], indiv)
-    ancestors[i, 4:7] <- grandparents(ancestors[i,1], indiv)
-    ancestors[i, 8:15] <- great.grandparents(ancestors[i,1], indiv)
-    ancestors[i, 16:31] <- great2.grandparents(ancestors[i,1], indiv)
-    ancestors[i, 32:63] <- great3.grandparents(ancestors[i,1], indiv)
-    ancestors[i, 64:127] <- great4.grandparents(ancestors[i,1], indiv)
-}   ## Work out each individual's ancestors from the full ('indiv');
+    for(i in 1:nrow(ancestors)) {
+        ancestors[i, 2:3] <- parents(ancestors[i,1], indiv)
+        ancestors[i, 4:7] <- grandparents(ancestors[i,1], indiv)
+        ancestors[i, 8:15] <- great.grandparents(ancestors[i,1], indiv)
+        ancestors[i, 16:31] <- great2.grandparents(ancestors[i,1], indiv)
+        ancestors[i, 32:63] <- great3.grandparents(ancestors[i,1], indiv)
+        ancestors[i, 64:127] <- great4.grandparents(ancestors[i,1], indiv)
+    }   ## Work out each individual's ancestors from the full ('indiv');
     ## trim out the sampled individuals and save to 'ancestors'.
 
-pairs <- expand.grid(ancestors[,1], ancestors[,1])
-pairs <- pairs[pairs$Var1 != pairs$Var2,]  ## remove self-comparisons
+    pairs <- expand.grid(ancestors[,1], ancestors[,1])
+    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
 
-related <- c(rep(NA, nrow(pairs)))  
-totalRelatives <- c(rep(NA, nrow(pairs)))  ##mainly here for imagined post-hoc diagnostics
+    related <- c(rep(NA, nrow(pairs)))  
+    totalRelatives <- c(rep(NA, nrow(pairs))) ##mainly here for imagined post-hoc diagnostics
+    
+    OneTwo <- c(rep(NA, nrow(pairs)))
+    OneThree <- c(rep(NA, nrow(pairs)))
+    OneFour <- c(rep(NA, nrow(pairs)))
+    OneFive <- c(rep(NA, nrow(pairs)))
+    OneSix <- c(rep(NA, nrow(pairs)))
+    OneSeven <- c(rep(NA, nrow(pairs))) ## 'one is the other's parent/grandparent/etc' relative
+    TwoTwo <- c(rep(NA, nrow(pairs)))
+    TwoThree <- c(rep(NA, nrow(pairs)))
+    TwoFour <- c(rep(NA, nrow(pairs)))
+    TwoFive <- c(rep(NA, nrow(pairs)))
+    TwoSix <- c(rep(NA, nrow(pairs)))
+    TwoSeven <- c(rep(NA, nrow(pairs)))  ##'one's parent is the other's parent/grandparent/etc'
+    ThreeThree <- c(rep(NA, nrow(pairs)))
+    ThreeFour <- c(rep(NA, nrow(pairs)))
+    ThreeFive <- c(rep(NA, nrow(pairs)))
+    ThreeSix <- c(rep(NA, nrow(pairs)))
+    ThreeSeven <- c(rep(NA, nrow(pairs))) ##'one's grandparent is the other's grandparent/ggparent/etc'
+    FourFour <- c(rep(NA, nrow(pairs)))
+    FourFive <- c(rep(NA, nrow(pairs)))
+    FourSix <- c(rep(NA, nrow(pairs)))
+    FourSeven <- c(rep(NA, nrow(pairs))) ##'one's g-grandparent is the other's ggparent/gggparent/etc'
+    FiveFive <- c(rep(NA, nrow(pairs)))
+    FiveSix <- c(rep(NA, nrow(pairs)))
+    FiveSeven <- c(rep(NA, nrow(pairs))) ##'one's gg-grandparent is the other's ggparent/gggparent etc'
+    SixSix <- c(rep(NA, nrow(pairs)))
+    SixSeven <- c(rep(NA, nrow(pairs))) ##'one's ggg-grandparent is the other's ggggparent/gggggparent'
+    SevenSeven <- c(rep(NA, nrow(pairs))) ##'one's gggg-grandparent is the other's gggggparent'
 
-OneTwo <- c(rep(NA, nrow(pairs)))
-OneThree <- c(rep(NA, nrow(pairs)))
-OneFour <- c(rep(NA, nrow(pairs)))
-OneFive <- c(rep(NA, nrow(pairs)))
-OneSix <- c(rep(NA, nrow(pairs)))
-OneSeven <- c(rep(NA, nrow(pairs))) ## holders for 'one is the other's parent/grandparent/etc' relative
-TwoTwo <- c(rep(NA, nrow(pairs)))
-TwoThree <- c(rep(NA, nrow(pairs)))
-TwoFour <- c(rep(NA, nrow(pairs)))
-TwoFive <- c(rep(NA, nrow(pairs)))
-TwoSix <- c(rep(NA, nrow(pairs)))
-TwoSeven <- c(rep(NA, nrow(pairs)))  # 'one's parent is the other's parent/grandparent/etc'
-ThreeThree <- c(rep(NA, nrow(pairs)))
-ThreeFour <- c(rep(NA, nrow(pairs)))
-ThreeFive <- c(rep(NA, nrow(pairs)))
-ThreeSix <- c(rep(NA, nrow(pairs)))
-ThreeSeven <- c(rep(NA, nrow(pairs))) ## 'one's grandparent is the other's grandparent/ggparent/etc'
-FourFour <- c(rep(NA, nrow(pairs)))
-FourFive <- c(rep(NA, nrow(pairs)))
-FourSix <- c(rep(NA, nrow(pairs)))
-FourSeven <- c(rep(NA, nrow(pairs))) ## 'one's g-grandparent is the other's ggparent/gggparent/etc'
-FiveFive <- c(rep(NA, nrow(pairs)))
-FiveSix <- c(rep(NA, nrow(pairs)))
-FiveSeven <- c(rep(NA, nrow(pairs))) ## 'one's gg-grandparent is the other's ggparent/gggparent etc'
-SixSix <- c(rep(NA, nrow(pairs)))
-SixSeven <- c(rep(NA, nrow(pairs))) ## 'one's ggg-grandparent is the other's ggggparent/gggggparent'
-SevenSeven <- c(rep(NA, nrow(pairs))) ## 'one's gggg-grandparent is the other's gggggparent'
+    for(i in 1:length(related)) {
+        allAncestors <- ancestors[ancestors[,1] == pairs[i,1],1:127] %in%
+            ancestors[ancestors[,1] == pairs[i,2],1:127]
+        indi1 <- pairs[i,1] ## 1st individual's self
+        indi2 <- pairs[i,2] ## 2nd individual's self
+        indi1Par <- ancestors[ancestors[,1] == pairs[i,1],2:3] ## 1st indiv's parents
+        indi2Par <- ancestors[ancestors[,1] == pairs[i,2],2:3] ## 2nd indiv's parents
+        indi1GP <- ancestors[ancestors[,1] == pairs[i,1],4:7] ## 1st indiv's grandparents
+        indi2GP <- ancestors[ancestors[,1] == pairs[i,2],4:7] ## 2nd indiv's grandparents
+        indi1GGP <- ancestors[ancestors[,1] == pairs[i,1],8:15] ## 1st indiv's g-grandparents
+        indi2GGP <- ancestors[ancestors[,1] == pairs[i,2],8:15] ## 2nd indiv's g-grandparents
+        indi1GGGP <- ancestors[ancestors[,1] == pairs[i,1],16:31] ## 1st indiv's gg-grandparents
+        indi2GGGP <- ancestors[ancestors[,1] == pairs[i,2],16:31] ## 2nd indiv's gg-grandparents
+        indi1GGGGP <- ancestors[ancestors[,1] == pairs[i,1],32:63] ## 1st indiv's ggg-grandparents
+        indi2GGGGP <- ancestors[ancestors[,1] == pairs[i,2],32:63] ## 2nd indiv's ggg-grandparents
+        indi1GGGGGP <- ancestors[ancestors[,1] == pairs[i,1],64:127] ## 1st indiv's gggg-grandparents
+        indi2GGGGGP <- ancestors[ancestors[,1] == pairs[i,2],64:127] ## 2nd indiv's gggg-grandparents
 
-for(i in 1:length(related)) {
-    allAncestors <- ancestors[ancestors[,1] == pairs[i,1],1:127] %in%
-                        ancestors[ancestors[,1] == pairs[i,2],1:127]
-    indi1 <- pairs[i,1] ## first individual's self
-    indi2 <- pairs[i,2] ## second individual's self
-    indi1Par <- ancestors[ancestors[,1] == pairs[i,1],2:3] ## first indiv's parents
-    indi2Par <- ancestors[ancestors[,1] == pairs[i,2],2:3] ## second indiv's parents
-    indi1GP <- ancestors[ancestors[,1] == pairs[i,1],4:7] ## first indiv's grandparents
-    indi2GP <- ancestors[ancestors[,1] == pairs[i,2],4:7] ## second indiv's grandparents
-    indi1GGP <- ancestors[ancestors[,1] == pairs[i,1],8:15] ## first indiv's g-grandparents
-    indi2GGP <- ancestors[ancestors[,1] == pairs[i,2],8:15] ## second indiv's g-grandparents
-    indi1GGGP <- ancestors[ancestors[,1] == pairs[i,1],16:31] ## first indiv's gg-grandparents
-    indi2GGGP <- ancestors[ancestors[,1] == pairs[i,2],16:31] ## second indiv's gg-grandparents
-    indi1GGGGP <- ancestors[ancestors[,1] == pairs[i,1],32:63] ## first indiv's ggg-grandparents
-    indi2GGGGP <- ancestors[ancestors[,1] == pairs[i,2],32:63] ## second indiv's ggg-grandparents
-    indi1GGGGGP <- ancestors[ancestors[,1] == pairs[i,1],64:127] ## first indiv's gggg-grandparents
-    indi2GGGGGP <- ancestors[ancestors[,1] == pairs[i,2],64:127] ## second indiv's gggg-grandparents
+        related[i] <- any(allAncestors)
+        totalRelatives[i] <- sum(allAncestors)
 
-    related[i] <- any(allAncestors)
-    totalRelatives[i] <- sum(allAncestors)
+        ## Identify pairs where one indiv is the other indiv's n-parent
+        OneTwo[i] <- sum(c(indi1 %in% indi2Par, indi2 %in% indi1Par))
+        OneThree[i] <- sum(c(indi1 %in% indi2GP, indi2 %in% indi1GP))
+        OneFour[i] <- sum(c(indi1 %in% indi2GGP, indi2 %in% indi1GGP))
+        OneFive[i] <- sum(c(indi1 %in% indi2GGGP, indi2 %in% indi1GGGP))
+        OneSix[i] <- sum(c(indi1 %in% indi2GGGGP, indi2 %in% indi1GGGGP))
+        OneSeven[i] <- sum(c(indi1 %in% indi2GGGGGP, indi2 %in% indi1GGGGGP))
 
-    OneTwo[i] <- sum(c(indi1 %in% indi2Par, indi2 %in% indi1Par))
-    OneThree[i] <- sum(c(indi1 %in% indi2GP, indi2 %in% indi1GP))
-    OneFour[i] <- sum(c(indi1 %in% indi2GGP, indi2 %in% indi1GGP))
-    OneFive[i] <- sum(c(indi1 %in% indi2GGGP, indi2 %in% indi1GGGP))
-    OneSix[i] <- sum(c(indi1 %in% indi2GGGGP, indi2 %in% indi1GGGGP))
-    OneSeven[i] <- sum(c(indi1 %in% indi2GGGGGP, indi2 %in% indi1GGGGGP))
+        ## Identify pairs where one indiv's parent is the other's n-parent
+        TwoTwo[i] <- sum(c(indi1Par %in% indi2Par))
+        TwoThree[i] <- sum(c(indi1Par %in% indi2GP, indi2Par %in% indi1GP))
+        TwoFour[i] <- sum(c(indi1Par %in% indi2GGP, indi2Par %in% indi1GGP))
+        TwoFive[i] <- sum(c(indi1Par %in% indi2GGGP, indi2Par %in% indi1GGGP))
+        TwoSix[i] <- sum(c(indi1Par %in% indi2GGGGP, indi2Par %in% indi1GGGGP))
+        TwoSeven[i] <- sum(c(indi1Par %in% indi2GGGGGP, indi2Par %in% indi1GGGGGP))
 
-    TwoTwo[i] <- sum(c(indi1Par %in% indi2Par, indi2Par %in% indi1Par))
-    TwoThree[i] <- sum(c(indi1Par %in% indi2GP, indi2Par %in% indi1GP))
-    TwoFour[i] <- sum(c(indi1Par %in% indi2GGP, indi2Par %in% indi1GGP))
-    TwoFive[i] <- sum(c(indi1Par %in% indi2GGGP, indi2Par %in% indi1GGGP))
-    TwoSix[i] <- sum(c(indi1Par %in% indi2GGGGP, indi2Par %in% indi1GGGGP))
-    TwoSeven[i] <- sum(c(indi1Par %in% indi2GGGGGP, indi2Par %in% indi1GGGGGP))
+        ## Identify pairs where one indiv's grandparent is the other's n-parent
+        ThreeThree[i] <- sum(c(indi1GP %in% indi2GP))
+        ThreeFour[i] <- sum(c(indi1GP %in% indi2GGP, indi2GP %in% indi1GGP))
+        ThreeFive[i] <- sum(c(indi1GP %in% indi2GGGP, indi2GP %in% indi1GGGP))
+        ThreeSix[i] <- sum(c(indi1GP %in% indi2GGGGP, indi2GP %in% indi1GGGGP))
+        ThreeSeven[i] <- sum(c(indi1GP %in% indi2GGGGGP, indi2GP %in% indi1GGGGGP))
 
-    ThreeThree[i] <- sum(c(indi1GP %in% indi2GP, indi2GP %in% indi1GP))
-    ThreeFour[i] <- sum(c(indi1GP %in% indi2GGP, indi2GP %in% indi1GGP))
-    ThreeFive[i] <- sum(c(indi1GP %in% indi2GGGP, indi2GP %in% indi1GGGP))
-    ThreeSix[i] <- sum(c(indi1GP %in% indi2GGGGP, indi2GP %in% indi1GGGGP))
-    ThreeSeven[i] <- sum(c(indi1GP %in% indi2GGGGGP, indi2GP %in% indi1GGGGGP))
+        ## Identify pairs where one indiv's g-grandparent is the other's n-parent
+        FourFour[i] <- sum(c(indi1GGP %in% indi2GGP))
+        FourFive[i] <- sum(c(indi1GGP %in% indi2GGGP, indi2GGP %in% indi1GGGP))
+        FourSix[i] <- sum(c(indi1GGP %in% indi2GGGGP, indi2GGP %in% indi1GGGGP))
+        FourSeven[i] <- sum(c(indi1GGP %in% indi2GGGGGP, indi2GGP %in% indi1GGGGGP))
 
-    FourFour[i] <- sum(c(indi1GGP %in% indi2GGP, indi2GGP %in% indi1GGP))
-    FourFive[i] <- sum(c(indi1GGP %in% indi2GGGP, indi2GGP %in% indi1GGGP))
-    FourSix[i] <- sum(c(indi1GGP %in% indi2GGGGP, indi2GGP %in% indi1GGGGP))
-    FourSeven[i] <- sum(c(indi1GGP %in% indi2GGGGGP, indi2GGP %in% indi1GGGGGP))
+        ## Identify pairs where one indiv's gg-grandparent is the other's n-parent
+        FiveFive[i] <- sum(c(indi1GGGP %in% indi2GGGP))
+        FiveSix[i] <- sum(c(indi1GGGP %in% indi2GGGGP, indi2GGGP %in% indi1GGGGP))
+        FiveSeven[i] <- sum(c(indi1GGGP %in% indi2GGGGGP, indi2GGGP %in% indi1GGGGGP))
 
-    FiveFive[i] <- sum(c(indi1GGGP %in% indi2GGGP, indi2GGGP %in% indi1GGGP))
-    FiveSix[i] <- sum(c(indi1GGGP %in% indi2GGGGP, indi2GGGP %in% indi1GGGGP))
-    FiveSeven[i] <- sum(c(indi1GGGP %in% indi2GGGGGP, indi2GGGP %in% indi1GGGGGP))
+        ## Identify pairs where one indiv's ggg-grandparent is the other's n-parent
+        SixSix[i] <- sum(c(indi1GGGGP %in% indi2GGGGP))
+        SixSeven[i] <- sum(c(indi1GGGGP %in% indi2GGGGGP, indi2GGGGP %in% indi1GGGGGP))
 
-    SixSix[i] <- sum(c(indi1GGGGP %in% indi2GGGGP, indi2GGGGP %in% indi1GGGGP))
-    SixSeven[i] <- sum(c(indi1GGGGP %in% indi2GGGGGP, indi2GGGGP %in% indi1GGGGGP))
+        ## Identify pairs where one indiv's gggg-grandparent is the other's gggg-grandparent
+        SevenSeven[i] <- sum(c(indi1GGGGGP %in% indi2GGGGGP))
+        if(i / 1000 == floor(i/1000) ) { print(paste(i," of ", length(related),
+                                                     " comparisons", sep = "")) }
+    }
 
-    SevenSeven[i] <- sum(c(indi1GGGGGP %in% indi2GGGGGP, indi2GGGGGP %in% indi1GGGGGP))
-    print(i)
+    pairs <- data.frame(pairs, related, totalRelatives,
+                        OneTwo, OneThree, OneFour, OneFive, OneSix, OneSeven,
+                        TwoTwo, TwoThree, TwoFour, TwoFive, TwoSix, TwoSeven,
+                        ThreeThree, ThreeFour, ThreeFive, ThreeSix, ThreeSeven,
+                        FourFour, FourFive, FourSix, FourSeven,
+                        FiveFive, FiveSix, FiveSeven,
+                        SixSix, SixSeven, SevenSeven)
+
+    ## Up to here: 'pairs' holds the number of instances of [i,j]-parent-pairs between
+    ## each pair of individuals, where [i,j] is [n-parent of indiv 1, n-parent of indiv 2].
+    ## This allows very simple identification of the most recent common ancestor for any pair
+    ## of animals.
+    return(pairs)
 }
 
-pairs <- data.frame(pairs, related, totalRelatives,
-                    OneTwo, OneThree, OneFour, OneFive, OneSix, OneSeven,
-                    TwoTwo, TwoThree, TwoFour, TwoFive, TwoSix, TwoSeven,
-                    ThreeThree, ThreeFour, ThreeFive, ThreeSix, ThreeSeven,
-                    FourFour, FourFive, FourSix, FourSeven,
-                    FiveFive, FiveSix, FiveSeven,
-                    SixSix, SixSeven, SevenSeven)
+#' findRelativesPar(): partially-parallelized findRelatives()
+#'
+#' findRelativesPar is a partially-parallelized version of findRelatives. Its use is
+#' exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
+#' 
+#' Lookup operations to find each member's ancestors are parallelized, but comparisons
+#' between ancestor-sets are not. On a test-set of 100 sampled individuals, this partial-
+#' parallelization reduced runtime from 55 seconds to 22 seconds.
+#' findRelatives takes a set of 'sampled' individuals and a population simulation output
+#' (i.e., an 'indiv' object, of the kind output by mort() ). It returns a data.frame
+#' for each pair of sampled individuals, with columns:
+#' 1) Var1: the first individual's ID
+#' 2) Var2: the second individual's ID
+#' 3) related: TRUE for each pair that with one or more shared ancestors within seven
+#'    ancestral generations (i.e., great-great-great-great grandparents), otherwise FALSE
+#' 4) totalRelatives: numeric indicator of the total number of shared ancestors found
+#' 5) OneTwo, OneThree, ThreeFour, etc.: Numeric values, indicating the number of shared
+#'    ancestors by relationship class. For instance, a shared relative in the OneTwo class
+#'    indicates that one member of the pair is the other member's parent, a shared relative
+#'    in the OneThree class indicates that one member is the other's grandparent, and a shared
+#'    in the ThreeFour class indicates that one individual's grandparent is the other's great-
+#'    grandparent. If a pair shares an ancestor in the TwoThree class, they necessarily also
+#'    share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
+#'    and so on. Note that relationship classes are identical by reversal - ThreeFour is the
+#'    same as FourThree, and so only relationship classes with increasing order are presented
+#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo). 
+#' @param indiv A matrix of individuals, as from mort(), but which will need to contain
+#'              long strings of parent-offspring relationships, so will most likely come
+#'              from a multi-generation simulation.
+#' @param sampled A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @import foreach
+#' @import parallel
+#' @import doParallel
+#' @seealso [fishSim::findRelatives()]
+#' @export
 
-## Up to here: 'pairs' holds the number of instances of [i,j]-parent-pairs between
-## each pair of individuals, where [i,j] is [n-parent of indiv 1, n-parent of indiv 2].
-## This allows very simple identification of the most recent common ancestor for any pair
-## of animals.
-return(pairs)
+findRelativesPar <- function(indiv, sampled) {
 
+    require(foreach)
+    require(parallel)
+    require(doParallel)
+    nCores <- detectCores()-1 ## 8 cores on my system. Use 7?
+    registerDoParallel(nCores)
+   
+    ancestors <- matrix(data = sampled, nrow = length(sampled))
+
+    parents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
+        parents(ancestors[i,1], indiv)
+    }
+    print(paste("parents found at ", Sys.time(), sep = ""))
+    grandparents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
+        grandparents(ancestors[i,1], indiv)
+    }
+    print(paste("grandparents found at ", Sys.time()))
+    ggrandparents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
+        great.grandparents(ancestors[i,1], indiv)
+    }
+    print(paste("great-grandparents found at ", Sys.time(), sep = ""))
+    gggrandparents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
+        great2.grandparents(ancestors[i,1], indiv)
+    }
+    print(paste("great-great-grandparents found at ", Sys.time(), sep = ""))
+    ggggrandparents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
+        great3.grandparents(ancestors[i,1], indiv)
+    }
+    print(paste("great-great-great-grandparents found at ", Sys.time(), sep = ""))
+    gggggrandparents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
+        great4.grandparents(ancestors[i,1], indiv)
+    }
+    print(paste("great-great-great-great-grandparents found at ", Sys.time(), sep = ""))
+    ## Work out each individual's ancestors from the full ('indiv');
+    ## trim out the sampled individuals and save to 'ancestors'.
+
+    ancestors <- cbind(ancestors, parents.o, grandparents.o, ggrandparents.o,
+                       gggrandparents.o, ggggrandparents.o, gggggrandparents.o)
+    colnames(ancestors) <- c("self","father", "mother", # self and parents
+                             "FF", "FM", "MF", "MM", # grandparents
+                             "FFF","FFM","FMF","FMM","MFF","MFM","MMF","MMM", #great-grandparents
+                             "FFFF","FFFM","FFMF","FFMM","FMFF","FMFM","FMMF","FMMM",
+                             "MFFF","MFFM","MFMF","MFMM","MMFF","MMFM","MMMF","MMMM",#gg-grandparents
+                             "FFFFF","FFFFM","FFFMF","FFFMM","FFMFF","FFMFM","FFMMF",
+                             "FFMMM","FMFFF","FMFFM","FMFMF","FMFMM","FMMFF","FMMFM",
+                             "FMMMF","FMMMM","MFFFF","MFFFM","MFFMF","MFFMM","MFMFF",
+                             "MFMFM","MFMMF","MFMMM","MMFFF","MMFFM","MMFMF","MMFMM",
+                             "MMMFF","MMMFM","MMMMF","MMMMM", # ggg-grandparents
+                             "FFFFFF","FFFFFM","FFFFMF","FFFFMM","FFFMFF","FFFMFM","FFFMMF",
+                             "FFFMMM","FFMFFF","FFMFFM","FFMFMF","FFMFMM","FFMMFF","FFMMFM",
+                             "FFMMMF","FFMMMM","FMFFFF","FMFFFM","FMFFMF","FMFFMM","FMFMFF",
+                             "FMFMFM","FMFMMF","FMFMMM","FMMFFF","FMMFFM","FMMFMF","FMMFMM",
+                             "FMMMFF","FMMMFM","FMMMMF","FMMMMM","MFFFFF","MFFFFM","MFFFMF",
+                             "MFFFMM","MFFMFF","MFFMFM","MFFMMF","MFFMMM","MFMFFF","MFMFFM",
+                             "MFMFMF","MFMFMM","MFMMFF","MFMMFM","MFMMMF","MFMMMM","MMFFFF",
+                             "MMFFFM","MMFFMF","MMFFMM","MMFMFF","MMFMFM","MMFMMF","MMFMMM",
+                             "MMMFFF","MMMFFM","MMMFMF","MMMFMM","MMMMFF","MMMMFM","MMMMMF",
+                             "MMMMMM") # gggg-grandparents                        
+    
+    pairs <- expand.grid(ancestors[,1], ancestors[,1])
+    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
+
+    related <- c(rep(NA, nrow(pairs)))  
+    totalRelatives <- c(rep(NA, nrow(pairs))) ##mainly here for imagined post-hoc diagnostics
+    
+    OneTwo <- c(rep(NA, nrow(pairs)))
+    OneThree <- c(rep(NA, nrow(pairs)))
+    OneFour <- c(rep(NA, nrow(pairs)))
+    OneFive <- c(rep(NA, nrow(pairs)))
+    OneSix <- c(rep(NA, nrow(pairs)))
+    OneSeven <- c(rep(NA, nrow(pairs))) ## 'one is the other's parent/grandparent/etc' relative
+    TwoTwo <- c(rep(NA, nrow(pairs)))
+    TwoThree <- c(rep(NA, nrow(pairs)))
+    TwoFour <- c(rep(NA, nrow(pairs)))
+    TwoFive <- c(rep(NA, nrow(pairs)))
+    TwoSix <- c(rep(NA, nrow(pairs)))
+    TwoSeven <- c(rep(NA, nrow(pairs)))  ##'one's parent is the other's parent/grandparent/etc'
+    ThreeThree <- c(rep(NA, nrow(pairs)))
+    ThreeFour <- c(rep(NA, nrow(pairs)))
+    ThreeFive <- c(rep(NA, nrow(pairs)))
+    ThreeSix <- c(rep(NA, nrow(pairs)))
+    ThreeSeven <- c(rep(NA, nrow(pairs))) ##'one's grandparent is the other's grandparent/ggparent/etc'
+    FourFour <- c(rep(NA, nrow(pairs)))
+    FourFive <- c(rep(NA, nrow(pairs)))
+    FourSix <- c(rep(NA, nrow(pairs)))
+    FourSeven <- c(rep(NA, nrow(pairs))) ##'one's g-grandparent is the other's ggparent/gggparent/etc'
+    FiveFive <- c(rep(NA, nrow(pairs)))
+    FiveSix <- c(rep(NA, nrow(pairs)))
+    FiveSeven <- c(rep(NA, nrow(pairs))) ##'one's gg-grandparent is the other's ggparent/gggparent etc'
+    SixSix <- c(rep(NA, nrow(pairs)))
+    SixSeven <- c(rep(NA, nrow(pairs))) ##'one's ggg-grandparent is the other's ggggparent/gggggparent'
+    SevenSeven <- c(rep(NA, nrow(pairs))) ##'one's gggg-grandparent is the other's gggggparent'
+
+    for(i in 1:length(related)) {
+        allAncestors <- ancestors[ancestors[,1] == pairs[i,1],1:127] %in%
+            ancestors[ancestors[,1] == pairs[i,2],1:127]
+        indi1 <- pairs[i,1] ## 1st individual's self
+        indi2 <- pairs[i,2] ## 2nd individual's self
+        indi1Par <- ancestors[ancestors[,1] == pairs[i,1],2:3] ## 1st indiv's parents
+        indi2Par <- ancestors[ancestors[,1] == pairs[i,2],2:3] ## 2nd indiv's parents
+        indi1GP <- ancestors[ancestors[,1] == pairs[i,1],4:7] ## 1st indiv's grandparents
+        indi2GP <- ancestors[ancestors[,1] == pairs[i,2],4:7] ## 2nd indiv's grandparents
+        indi1GGP <- ancestors[ancestors[,1] == pairs[i,1],8:15] ## 1st indiv's g-grandparents
+        indi2GGP <- ancestors[ancestors[,1] == pairs[i,2],8:15] ## 2nd indiv's g-grandparents
+        indi1GGGP <- ancestors[ancestors[,1] == pairs[i,1],16:31] ## 1st indiv's gg-grandparents
+        indi2GGGP <- ancestors[ancestors[,1] == pairs[i,2],16:31] ## 2nd indiv's gg-grandparents
+        indi1GGGGP <- ancestors[ancestors[,1] == pairs[i,1],32:63] ## 1st indiv's ggg-grandparents
+        indi2GGGGP <- ancestors[ancestors[,1] == pairs[i,2],32:63] ## 2nd indiv's ggg-grandparents
+        indi1GGGGGP <- ancestors[ancestors[,1] == pairs[i,1],64:127] ## 1st indiv's gggg-grandparents
+        indi2GGGGGP <- ancestors[ancestors[,1] == pairs[i,2],64:127] ## 2nd indiv's gggg-grandparents
+
+        related[i] <- any(allAncestors)
+        totalRelatives[i] <- sum(allAncestors)
+
+        ## Identify pairs where one indiv is the other indiv's n-parent
+        OneTwo[i] <- sum(c(indi1 %in% indi2Par, indi2 %in% indi1Par))
+        OneThree[i] <- sum(c(indi1 %in% indi2GP, indi2 %in% indi1GP))
+        OneFour[i] <- sum(c(indi1 %in% indi2GGP, indi2 %in% indi1GGP))
+        OneFive[i] <- sum(c(indi1 %in% indi2GGGP, indi2 %in% indi1GGGP))
+        OneSix[i] <- sum(c(indi1 %in% indi2GGGGP, indi2 %in% indi1GGGGP))
+        OneSeven[i] <- sum(c(indi1 %in% indi2GGGGGP, indi2 %in% indi1GGGGGP))
+
+        ## Identify pairs where one indiv's parent is the other's n-parent
+        TwoTwo[i] <- sum(c(indi1Par %in% indi2Par))
+        TwoThree[i] <- sum(c(indi1Par %in% indi2GP, indi2Par %in% indi1GP))
+        TwoFour[i] <- sum(c(indi1Par %in% indi2GGP, indi2Par %in% indi1GGP))
+        TwoFive[i] <- sum(c(indi1Par %in% indi2GGGP, indi2Par %in% indi1GGGP))
+        TwoSix[i] <- sum(c(indi1Par %in% indi2GGGGP, indi2Par %in% indi1GGGGP))
+        TwoSeven[i] <- sum(c(indi1Par %in% indi2GGGGGP, indi2Par %in% indi1GGGGGP))
+
+        ## Identify pairs where one indiv's grandparent is the other's n-parent
+        ThreeThree[i] <- sum(c(indi1GP %in% indi2GP))
+        ThreeFour[i] <- sum(c(indi1GP %in% indi2GGP, indi2GP %in% indi1GGP))
+        ThreeFive[i] <- sum(c(indi1GP %in% indi2GGGP, indi2GP %in% indi1GGGP))
+        ThreeSix[i] <- sum(c(indi1GP %in% indi2GGGGP, indi2GP %in% indi1GGGGP))
+        ThreeSeven[i] <- sum(c(indi1GP %in% indi2GGGGGP, indi2GP %in% indi1GGGGGP))
+
+        ## Identify pairs where one indiv's g-grandparent is the other's n-parent
+        FourFour[i] <- sum(c(indi1GGP %in% indi2GGP))
+        FourFive[i] <- sum(c(indi1GGP %in% indi2GGGP, indi2GGP %in% indi1GGGP))
+        FourSix[i] <- sum(c(indi1GGP %in% indi2GGGGP, indi2GGP %in% indi1GGGGP))
+        FourSeven[i] <- sum(c(indi1GGP %in% indi2GGGGGP, indi2GGP %in% indi1GGGGGP))
+
+        ## Identify pairs where one indiv's gg-grandparent is the other's n-parent
+        FiveFive[i] <- sum(c(indi1GGGP %in% indi2GGGP))
+        FiveSix[i] <- sum(c(indi1GGGP %in% indi2GGGGP, indi2GGGP %in% indi1GGGGP))
+        FiveSeven[i] <- sum(c(indi1GGGP %in% indi2GGGGGP, indi2GGGP %in% indi1GGGGGP))
+
+        ## Identify pairs where one indiv's ggg-grandparent is the other's n-parent
+        SixSix[i] <- sum(c(indi1GGGGP %in% indi2GGGGP))
+        SixSeven[i] <- sum(c(indi1GGGGP %in% indi2GGGGGP, indi2GGGGP %in% indi1GGGGGP))
+
+        ## Identify pairs where one indiv's gggg-grandparent is the other's gggg-grandparent
+        SevenSeven[i] <- sum(c(indi1GGGGGP %in% indi2GGGGGP))
+        if(i / 1000 == floor(i/1000) ) { print(paste(i," of ", length(related),
+                                                     " comparisons at ",
+                                                     Sys.time(), sep = "")) }
+    }
+
+    pairs <- data.frame(pairs, related, totalRelatives,
+                        OneTwo, OneThree, OneFour, OneFive, OneSix, OneSeven,
+                        TwoTwo, TwoThree, TwoFour, TwoFive, TwoSix, TwoSeven,
+                        ThreeThree, ThreeFour, ThreeFive, ThreeSix, ThreeSeven,
+                        FourFour, FourFive, FourSix, FourSeven,
+                        FiveFive, FiveSix, FiveSeven,
+                        SixSix, SixSeven, SevenSeven)
+
+    ## Up to here: 'pairs' holds the number of instances of [i,j]-parent-pairs between
+    ## each pair of individuals, where [i,j] is [n-parent of indiv 1, n-parent of indiv 2].
+    ## This allows very simple identification of the most recent common ancestor for any pair
+    ## of animals.
+    stopImplicitCluster()  ## cleanup the cluster afterwards; not important but clean.
+    return(pairs)
 }
 
 
@@ -1410,11 +1629,12 @@ return(pairs)
 #' 5  .  .  4  .  .  1 16
 #' 6  .  .  .  8  1  .  3
 #' 7  .  .  .  . 16  3  .
-#' shows a pair where one individual is the other's grandparent (shown by the 1 in [1,X3] ),
+#' shows a pair where one individual is the other's grandparent (shown by the 1 in [1,X3], and
+#' doubling series proceeding diagonally down from that point),
 #' further related via shared great-great-grandparent / great-great-great-grandparent
-#' (the 1 in [5,X6]), and a shared great-great-great-grandparent /
-#' great-great-great-great-grandparent (the 3 in [6,X7], where we would otherwise expect a
-#' 2 from the previous shared ancestor).
+#' (the 1 in [5,X6], and doubling series proceeding diagonally from that point), and a shared
+#' great-great-great-grandparent / great-great-great-great-grandparent (the 3 in [6,X7], where
+#' we would otherwise expect a 2 from the previous shared ancestor).
 #' 
 #' @param pair a data.frame object, with structure identical to a row from findRelatives()
 #' @seealso [fishSim::findRelatives()]
@@ -1422,7 +1642,7 @@ return(pairs)
 
 lookAtPair <- function(pair) {
     outs <- matrix(data = 0, nrow = 7, ncol = 7)
-   
+    
     outs[1,2] <- pair$OneTwo
     outs[2,1] <- pair$OneTwo
     outs[1,3] <- pair$OneThree
@@ -1483,10 +1703,60 @@ lookAtPair <- function(pair) {
 }
 
 
+#' namedRelatives(): show numbers of pairs in named relationship classes 
+#'
+#' namedRelatives takes output from findRelatives() or findRelativesPar(), and returns
+#' counts of named relationship classes within the set of pair comparisons. Relationship
+#' classes are defined based on the closest relative shared between two individuals. So
+#' for instance, if two animals share a single parent, they will be classed as an HSP, even
+#' if there is ancestral inbreeding - for instances, in cases where the shared parent is also
+#' a half-cousin of the other parent of both individuals.
+#'
+#' The named relationship classes are:
+#' POPs: Parent-offspring pairs. One is the other's parent.
+#' GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
+#' dGGPs: Double Grandparent-grandoffspring pairs. One is the other's grandparent, twice.
+#'        That is, the grandparent has had offspring by two different mates, and those
+#'        offspring have mated to generate the grandoffspring. 
+#' GGGGPs: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
+#' dGGGGPs: Double Great-grandparent-great-grandoffspring pairs. One is the other's
+#'          great-grandparent, twice. That is, the great-grandparent has had offspring by two
+#'          different mates, those offspring have produced outbred offspring, and *they* have
+#'          mated to generate the great-grandoffspring.
+#' HSPs: Half-sibling pairs. The individuals share one parent.
+#' FSPs: Full-sibling pairs. The individuals share two parents.
+#' HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
+#' FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other individual's
+#'       parents.
+#' HCPs: Half-cousin pairs. The individuals share one grandparent.
+#' FCPs: Full-cousin pairs. The individuals share two grandparents.
+#' ORCs: Other Relationship Classes. Within the seven-generation search space, at least one
+#'       shared ancestor was detected, but the relationship does not fall into one of the
+#'       listed relationship classes.
+#' 
+#' @param pair a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()
+#' @seealso [fishSim::findRelatives()]
+#' @export
 
+namedRelatives <- function(pairs) {
 
-
-
+    POPs <- nrow(pairs[pairs$OneTwo == 1,]) ## POPs
+    GGPs <- nrow(pairs[pairs$OneThree == 1,]) ## GGPs
+    dGGPs <- nrow(pairs[pairs$OneThree == 2,]) ## Double GGPs
+    GGGGPs <- nrow(pairs[pairs$OneFour == 1,]) ## Great-grandparent/Great-grandoffspring pairs
+    dGGGGPs <- nrow(pairs[pairs$OneFour == 2,]) ## Double GGparent/GGoffspring pairs
+    HSPs <- nrow(pairs[pairs$TwoTwo == 1,]) ## HSPs
+    FSPs <- nrow(pairs[pairs$TwoTwo == 2,]) ## FSPs
+    HTPs <- nrow(pairs[pairs$TwoThree == 1,])  ## half thiatic pairs
+    FTPs <- nrow(pairs[pairs$TwoThree == 2 & pairs$OneTwo != 1,])  ## full thiatic pairs
+    HCPs <- nrow(pairs[pairs$ThreeThree == 1,]) ## HCPs
+    FCPs <- nrow(pairs[pairs$ThreeThree == 2 & pairs$TwoTwo != 1,]) ## FCPs
+    ORCs <- sum(pairs$related) - sum(POPs, GGPs, dGGPs, GGGGPs, dGGGGPs,
+                                     HSPs, FSPs, HTPs, FTPs, HCPs, FCPs)
+    ## related individuals whose closest relationship is not a named relationship class.
+    return(data.frame(POPs, GGPs, dGGPs, GGGGPs, dGGGGPs, HSPs, FSPs,
+                      HTPs, FTPs, HCPs, FCPs, ORCs))
+}
 
 
 

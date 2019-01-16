@@ -23,11 +23,12 @@ displaying departures from expected relationship structures. For instance, the o
 5  .  .  4  .  .  1 16
 6  .  .  .  8  1  .  3
 7  .  .  .  . 16  3  .
-shows a pair where one individual is the other's grandparent (shown by the 1 in [1,X3] ),
+shows a pair where one individual is the other's grandparent (shown by the 1 in [1,X3], and
+doubling series proceeding diagonally down from that point),
 further related via shared great-great-grandparent / great-great-great-grandparent
-(the 1 in [5,X6]), and a shared great-great-great-grandparent /
-great-great-great-great-grandparent (the 3 in [6,X7], where we would otherwise expect a
-2 from the previous shared ancestor).
+(the 1 in [5,X6], and doubling series proceeding diagonally from that point), and a shared
+great-great-great-grandparent / great-great-great-great-grandparent (the 3 in [6,X7], where
+we would otherwise expect a 2 from the previous shared ancestor).
 }
 \seealso{
 [fishSim::findRelatives()]
