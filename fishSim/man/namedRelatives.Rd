@@ -24,11 +24,18 @@ GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
 dGGPs: Double Grandparent-grandoffspring pairs. One is the other's grandparent, twice.
        That is, the grandparent has had offspring by two different mates, and those
        offspring have mated to generate the grandoffspring. 
-GGGGPs: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
-dGGGGPs: Double Great-grandparent-great-grandoffspring pairs. One is the other's
+G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
+dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the other's
          great-grandparent, twice. That is, the great-grandparent has had offspring by two
          different mates, those offspring have produced outbred offspring, and *they* have
          mated to generate the great-grandoffspring.
+G6Ps: Great-great-grandparent-great-great-grandoffspring pairs. One is the other's
+      great-great-grandparent.
+dG6Ps: Double Great-great-grandparent-great-great-grandoffspring pairs. One is the other's
+         great-great-grandparent, twice. That is, the great-great-grandparent has had
+         offspring by two different mates, those offspring have produced outbred offspring,
+         and those offspring have produced outbred offspring, and *they* have
+         mated to generate the great-great-grandoffspring.
 HSPs: Half-sibling pairs. The individuals share one parent.
 FSPs: Full-sibling pairs. The individuals share two parents.
 HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
@@ -36,6 +43,10 @@ FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other ind
       parents.
 HCPs: Half-cousin pairs. The individuals share one grandparent.
 FCPs: Full-cousin pairs. The individuals share two grandparents.
+GHCPs: Generalised half-cousin pairs. One individual's great-grandparent is the other
+       individual's parent.
+GFCPs: Generalised full-cousin pairs. Two of one individual's great-grandparents are the
+       other individual's parents.
 ORCs: Other Relationship Classes. Within the seven-generation search space, at least one
       shared ancestor was detected, but the relationship does not fall into one of the
       listed relationship classes.
