@@ -39,6 +39,12 @@ for each pair of sampled individuals, with columns:
    and so on. Note that relationship classes are identical by reversal - ThreeFour is the
    same as FourThree, and so only relationship classes with increasing order are presented
    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
+Note that, if there is an object called 'ancestors' in the global environment, the
+foreach() loops may refer to that copy of 'ancestors', rather than the one generated inside
+findRelativesPar(). This is a known bug. Rename and delete 'ancestors'.
+If it occurs, this bug will cause the following error:
+Error in cbind(ancestors, parents.o, grandparents.o, ggrandparents.o:
+number of rows of matrices must match (see arg 3).
 }
 \seealso{
 [fishSim::findRelatives()]

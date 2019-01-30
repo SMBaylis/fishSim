@@ -1055,7 +1055,7 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
         if(mortType == "ageStock") {
             testPoints.m <- matrix(data = testPoints, nrow = length(testPoints),
                                    ncol = ncol(ageStockMort))
-            outs.m <- matrix(data = data, nrow = length(testPoints), ncol = ncol(ageStockMort))
+            outs.m <- matrix(data = outs, nrow = length(testPoints), ncol = ncol(ageStockMort))
         }
         for( i in 1:length(testPoints)) {
             outs.m[i,] <- Re(check_growthrate(mateType = mateType, mortType = mortType,
@@ -1426,7 +1426,13 @@ findRelatives <- function(indiv, sampled) {
 #'    share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
 #'    and so on. Note that relationship classes are identical by reversal - ThreeFour is the
 #'    same as FourThree, and so only relationship classes with increasing order are presented
-#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo). 
+#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
+#' Note that, if there is an object called 'ancestors' in the global environment, the
+#' foreach() loops may refer to that copy of 'ancestors', rather than the one generated inside
+#' findRelativesPar(). This is a known bug. Rename and delete 'ancestors'.
+#' If it occurs, this bug will cause the following error:
+#' Error in cbind(ancestors, parents.o, grandparents.o, ggrandparents.o:
+#' number of rows of matrices must match (see arg 3).
 #' @param indiv A matrix of individuals, as from mort(), but which will need to contain
 #'              long strings of parent-offspring relationships, so will most likely come
 #'              from a multi-generation simulation.
