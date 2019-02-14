@@ -1287,8 +1287,20 @@ findRelatives <- function(indiv, sampled) {
     }   ## Work out each individual's ancestors from the full ('indiv');
     ## trim out the sampled individuals and save to 'ancestors'.
 
-    pairs <- expand.grid(ancestors[,1], ancestors[,1])
-    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
+    expand.grid.unique <- function(x, y, include.equals=FALSE) {
+        x <- unique(x)
+        y <- unique(y)
+        g <- function(i) {
+            z <- setdiff(y, x[seq_len(i-include.equals)])
+            if(length(z)) cbind(x[i], z, deparse.level=0)
+        }
+        do.call(rbind, lapply(seq_along(x), g))
+    } ## with thanks to stack overflow user Ferdinand.kraft
+
+    pairs <- expand.grid.unique(ancestors[,1], ancestors[,1])
+    colnames(pairs) <- c("Var1", "Var2")
+##    pairs <- expand.grid(ancestors[,1], ancestors[,1])
+##    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
 
     related <- c(rep(NA, nrow(pairs)))  
     totalRelatives <- c(rep(NA, nrow(pairs))) ##mainly here for imagined post-hoc diagnostics
@@ -1502,9 +1514,22 @@ findRelativesPar <- function(indiv, sampled) {
                              "MMFFFM","MMFFMF","MMFFMM","MMFMFF","MMFMFM","MMFMMF","MMFMMM",
                              "MMMFFF","MMMFFM","MMMFMF","MMMFMM","MMMMFF","MMMMFM","MMMMMF",
                              "MMMMMM") # gggg-grandparents                        
+
+    expand.grid.unique <- function(x, y, include.equals=FALSE) {
+        x <- unique(x)
+        y <- unique(y)
+        g <- function(i) {
+            z <- setdiff(y, x[seq_len(i-include.equals)])
+            if(length(z)) cbind(x[i], z, deparse.level=0)
+        }
+        do.call(rbind, lapply(seq_along(x), g))
+    } ## with thanks to stack overflow user Ferdinand.kraft
+
+    pairs <- expand.grid.unique(ancestors[,1], ancestors[,1])
+    colnames(pairs) <- c("Var1", "Var2")
     
-    pairs <- expand.grid(ancestors[,1], ancestors[,1])
-    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
+##    pairs <- expand.grid(ancestors[,1], ancestors[,1])
+##    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
 
     related <- c(rep(NA, nrow(pairs)))  
     totalRelatives <- c(rep(NA, nrow(pairs))) ##mainly here for imagined post-hoc diagnostics

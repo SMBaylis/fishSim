@@ -176,7 +176,7 @@ In this second scenario, we will simulate a metapopulation with:
 - a growing population.
 - archiving for speed (?)
 
-We set up the population basically as before, with a couple of slight tweaks. First, we should make sure the founding population has multiple stocks (we'll give it three). Second, we will set up an archive matrix. The archive matrix is intended to hold the records of dead animals in large, long-running simulations: dead animals do not take part in any further mating, movement, sex-switching, aging, or mortality events, but if they stay in `indiv`, `indiv` can become huge and unweildy, slowing down all of those processes. There is of course a trade-off, in that writing dead animals to the archive takes system time, so the optimum may be to only archive dead animals omce every few 'years'.
+We set up the population basically as before, with a couple of slight tweaks. First, we should make sure the founding population has multiple stocks (we'll give it three). Second, we will set up an archive matrix. The archive matrix is intended to hold the records of dead animals in large, long-running simulations: dead animals do not take part in any further mating, movement, sex-switching, aging, or mortality events, but if they stay in `indiv`, `indiv` can become huge and unweildy, slowing down all of those processes. There is of course a trade-off, in that writing dead animals to the archive takes system time, so the optimum may be to only archive dead animals once every few 'years'.
 
 ```{r}
 ## set up founders with three stocks: two that each contain 30% of the population,
