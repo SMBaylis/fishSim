@@ -228,7 +228,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
                     if ((ticker + n.sprogs) <= nrow(sprog.m)) {
                         sprog.m[ticker:(ticker+n.sprogs-1),] <- batch
                     } else if ((ticker + n.sprogs) > nrow(sprog.m)) {
-                        sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:8]
+                        sprog.m[ticker:nrow(sprog.m),] <- batch[1:(nrow(sprog.m)-(ticker-1)),1:9]
                     }
                 }
             }
@@ -391,7 +391,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                            s, ", so ", nrow(mothersInStock),
                            " mature females did not produce offspring",
                            sep = ""))
-            sprog.stock <- matrix(data = NA, nrow = 0, ncol = 8)
+            sprog.stock <- matrix(data = NA, nrow = 0, ncol = 9)
         } else if(nrow(fathersInStock > 0)) {
             sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 9)
             ticker <- 1
@@ -567,6 +567,47 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple", maxAge = 
     }
     return(indiv)
 }
+
+#############################################################################################
+
+#' capture(): identify genetic captures/samples in population.
+#'
+#' Works in a manner similar to \code{mort()}, assigning a year to captured individuals and killing
+#' them if sampling is fatal.
+#'
+#' @param indiv A matrix of individuals, as from makeFounders(), mate(), or mort().
+#' @param n Number of captures (genetic samples)
+#' @param year Capture year
+#' @param fatal Is sampling fatal?
+#' @export
+
+capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE) {
+    
+    # alive or dead
+    is.alive <- is.na(indiv[,6])
+    is.dead  <- !is.alive
+    
+    # sample support
+    n.alive <- sum(is.alive)
+  
+    # sample captures have to be alive
+    n <- min(n, n.alive)
+    
+    if(n > 0) {
+        
+        # sample row location in indiv data.frame
+        sample.loc <- sample.int(n.alive, size = n)
+        
+        # record capture
+        indiv[is.alive,][sample.loc, 9] <- year
+        
+        # kill if capture sampling is fatal
+        if (fatal) {
+            indiv[is.alive,][sample.loc, 6] <- year
+        }
+    }   
+}
+
 
 #############################################################################################
 
