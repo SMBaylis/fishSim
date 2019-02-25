@@ -36,7 +36,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
     if(sum(survCurv) != 1) warning("survCurv does not sum to 1")
     if(length(survCurv) != maxAge) warning("survCurv and maxAge imply different maximum ages")
     
-    indiv <- matrix(data = NA ,nrow = pop, ncol = 8)
+    indiv <- matrix(data = NA ,nrow = pop, ncol = 9)
     indiv[,1] <- uuid(n = nrow(indiv), drop_hyphens=TRUE)  ## uuid IDs for each animal.
     indiv[,2] <- sample(c("M", "F"), nrow(indiv), TRUE, prob = osr)
                                         # assign sexes by probability
