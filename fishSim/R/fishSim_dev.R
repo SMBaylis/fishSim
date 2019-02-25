@@ -12,6 +12,7 @@
 #' [,7] is the stock membership for each animal.
 #' [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
 #'      given that birthdays occur at the very end.
+#' [,9] is NA for all animals
 #' makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
 #' not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
 #' but error-checking and readability is easiest if they do sum to 1.
@@ -47,6 +48,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
                                         # assign founder stock membership
     indiv[,8] <- sample.int(maxAge, nrow(indiv), TRUE, prob = survCurv)
     indiv[,5] <- 1 - as.numeric(indiv[,8]) ## back-infer birth year from age
+    indiv[,9] <- c(rep(NA, nrow(indiv))) ## founders are not yet sampled
 
     return(indiv)
 }
@@ -185,7 +187,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
     if(nrow(fathers) == 0) stop("There are no males in the population")
 
     sprog.m <- matrix(data = NA, nrow = floor(nrow(indiv[is.na(indiv[,6]),])*fecundity),
-                      ncol = 8)  ## Number of sprogs is a proportion of the number of
+                      ncol = 9)  ## Number of sprogs is a proportion of the number of
                                  ## *live* animals in the matrix.
     ticker <- 1
     while(ticker <= nrow(sprog.m)) {
@@ -378,7 +380,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
     }
 
     clutch[clutch > maxClutch] <- maxClutch ## delimits clutch sizes to not exceed maxClutch
-    sprog.m <- matrix(data = NA, nrow = 0, ncol = 8) ## left empty if no-one breeds.
+    sprog.m <- matrix(data = NA, nrow = 0, ncol = 9) ## left empty if no-one breeds.
     
     for (s in unique(mothers[,7])) { ## s for 'stock'.
         mothersInStock <- mothers[mothers[,7] == s , , drop = FALSE]
@@ -391,7 +393,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                            sep = ""))
             sprog.stock <- matrix(data = NA, nrow = 0, ncol = 8)
         } else if(nrow(fathersInStock > 0)) {
-            sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 8)
+            sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 9)
             ticker <- 1
             for (m in 1:nrow(mothersInStock)) { ## m for 'mothers'
                 if(nrow(fathersInStock) == 0) {
@@ -430,6 +432,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         sprog.stock[,5] <- year
         sprog.stock[,7] <- s
         sprog.stock[,8] <- 0
+        
         sprog.m <- rbind(sprog.m, sprog.stock)
     }
     indiv <- rbind(indiv, sprog.m)
@@ -626,7 +629,7 @@ birthdays <- function(indiv = makeFounders() ) {
 #' @export
 
 make_archive <- function() {
-    archive <- matrix(data = NA, nrow = 0, ncol = 8)
+    archive <- matrix(data = NA, nrow = 0, ncol = 9)
     return(archive)
 }
 
