@@ -605,7 +605,8 @@ capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE) {
         if (fatal) {
             indiv[is.alive,][sample.loc, 6] <- year
         }
-    }   
+    }
+    return(indiv)
 }
 
 
