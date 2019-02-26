@@ -573,18 +573,24 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple", maxAge = 
 #' capture(): identify genetic captures/samples in population.
 #'
 #' Works in a manner similar to \code{mort()}, assigning a year to captured individuals and killing
-#' them if sampling is fatal.
+#' them if sampling is fatal. Sex specific sampling is allowed. 
 #'
 #' @param indiv A matrix of individuals, as from makeFounders(), mate(), or mort().
 #' @param n Number of captures (genetic samples)
 #' @param year Capture year
 #' @param fatal Is sampling fatal?
+#' @param sex Sex specific sampling (either \code{"M"}, \code{"F"} or \code{NULL})
 #' @export
 
-capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE) {
+capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE, sex = NULL) {
+  
+    if (!is.null(sex)) {
+        is.sex <- indiv[,2] == sex
+    } else is.sex <- TRUE
     
-    # alive or dead
-    is.alive <- is.na(indiv[,6])
+    # alive (and of the correct sex)
+    # or considered dead
+    is.alive <- is.na(indiv[,6]) & is.sex
     is.dead  <- !is.alive
     
     # sample support
