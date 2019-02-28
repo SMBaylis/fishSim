@@ -1467,7 +1467,9 @@ findRelatives <- function(indiv, sampled) {
 #' findRelativesPar(): partially-parallelized findRelatives()
 #'
 #' findRelativesPar is a partially-parallelized version of findRelatives. Its use is
-#' exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
+#' exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'. 
+#' 'findRelativesAlt' uses the sample indicator in indiv[,9] to decide which individuals
+#' to compare, whereas 'findRelativesPar' compares between all individuals in 'sampled'.
 #' 
 #' Lookup operations to find each member's ancestors are parallelized, but comparisons
 #' between ancestor-sets are not. On a test-set of 100 sampled individuals, this partial-
@@ -1499,11 +1501,16 @@ findRelatives <- function(indiv, sampled) {
 #' @param indiv A matrix of individuals, as from mort(), but which will need to contain
 #'              long strings of parent-offspring relationships, so will most likely come
 #'              from a multi-generation simulation.
-#' @param sampled A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param sampled For findRelativesPar(), a character vector containing one or more IDs, 
+#'                e.g., from mort()[,1]. For findRelativesAlt, TRUE or FALSE. If TRUE, 
+#'                compares only individuals marked as sampled in indiv[,9].
+#' @param verbose TRUE or FALSE. If TRUE for findRelativesAlt, prints a table of sampling
+#'                years for sampled individuals.
 #' @import foreach
 #' @import parallel
 #' @import doParallel
 #' @seealso [fishSim::findRelatives()]
+#' @seealso [fishSim::capture()]
 #' @export
 
 findRelativesPar <- function(indiv, sampled) {
@@ -1699,6 +1706,7 @@ findRelativesPar <- function(indiv, sampled) {
     return(pairs)
 }
 
+#' @rdname findRelativesPar
 #' @export
 findRelativesAlt <- function(indiv, sampled = TRUE, verbose = TRUE) {
 

@@ -2,20 +2,30 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{findRelativesPar}
 \alias{findRelativesPar}
+\alias{findRelativesAlt}
 \title{findRelativesPar(): partially-parallelized findRelatives()}
 \usage{
 findRelativesPar(indiv, sampled)
+
+findRelativesAlt(indiv, sampled = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
 long strings of parent-offspring relationships, so will most likely come
 from a multi-generation simulation.}
 
-\item{sampled}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{sampled}{For findRelativesPar(), a character vector containing one or more IDs, 
+e.g., from mort()[,1]. For findRelativesAlt, TRUE or FALSE. If TRUE, 
+compares only individuals marked as sampled in indiv[,9].}
+
+\item{verbose}{TRUE or FALSE. If TRUE for findRelativesAlt, prints a table of sampling
+years for sampled individuals.}
 }
 \description{
 findRelativesPar is a partially-parallelized version of findRelatives. Its use is
-exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
+exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'. 
+'findRelativesAlt' uses the sample indicator in indiv[,9] to decide which individuals
+to compare, whereas 'findRelativesPar' compares between all individuals in 'sampled'.
 }
 \details{
 Lookup operations to find each member's ancestors are parallelized, but comparisons
@@ -48,4 +58,6 @@ number of rows of matrices must match (see arg 3).
 }
 \seealso{
 [fishSim::findRelatives()]
+
+[fishSim::capture()]
 }

@@ -33,6 +33,7 @@ founder population.
 [,7] is the stock membership for each animal.
 [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
      given that birthdays occur at the very end.
+[,9] is NA for all animals
 makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
 not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
 but error-checking and readability is easiest if they do sum to 1.
