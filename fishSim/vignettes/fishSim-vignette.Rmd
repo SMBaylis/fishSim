@@ -30,6 +30,7 @@ fishSim is developed in response to the demands of close-kin mark-recapture proj
 - a single population with no subdivisions (i.e., one 'stock'),
 - no sex-switching, and
 - first-year survival set by `PoNG()`, giving a flat population size through time,
+- one-shot sampling of animals from the population
 
 ...and a one designed to show off the bells and whistles, with:
 
@@ -37,7 +38,8 @@ fishSim is developed in response to the demands of close-kin mark-recapture proj
 - age-specific, sex-specific survival,
 - three subpopulations ('stocks') with markovian movement between subpopulations,
 - male-to-female sex-switching,
-- a growing population.
+- a growing population,
+- lethal sampling, occurring through time during the simulation.
 
 In the 'bells-and-whistles' scenario, we will also cover archiving tools. For both scenarios, we will take a brief look at relationship patterns between pairs of animals.
 
@@ -54,7 +56,7 @@ indiv <- makeFounders(stocks = c(1))
 head(indiv)
 ```
 
-Now, what's here? `indiv` has one line per individual, and each individual has an ID code (`indiv[,1]`), a sex (`indiv[,2]`), a father's ID code (`indiv[,3]` - but which is 'founder' here, because founding animals can't really be said to have parents), a mother's ID code (`indiv[,4]` - ditto), a birth year `indiv[,5]`, a death year (`indiv[,6]` - NA for any animals that are still alive), a stock membership (`indiv[,7]`), and an age in years (`indiv[,8]`).
+Now, what's here? `indiv` has one line per individual, and each individual has an ID code (`indiv[,1]`), a sex (`indiv[,2]`), a father's ID code (`indiv[,3]` - but which is 'founder' here, because founding animals can't really be said to have parents), a mother's ID code (`indiv[,4]` - ditto), a birth year `indiv[,5]`, a death year (`indiv[,6]` - NA for any animals that are still alive), a stock membership (`indiv[,7]`), an age in years (`indiv[,8]`), and a flag indicating whether the individual has been sampled (`indiv[,9]`).
 
 The age structure, sex ratio, and stock memberships of founders can all be specified in the `makeFounders()` call. We've only changed one of the default values - instead of the default 3 stocks, we're going to have a single panmictic founder population. The other defaults give us 1000 founders, with an even sex ratio, with an age-structure that implies 70% annual survival, but with a hard age-limit of 20 years.
 
@@ -123,6 +125,17 @@ PoNG(mateType = "flat", mortType = "flat", batchSize = 0.9, firstBreed = 2,
 ## from the plot.
 ```
 
+### Sampling from the population
+
+It is often useful to keep track of which animals in the population have been captured, and if capture is lethal, to mark captured animals as dead through a separate process from the normal 'mort' functions. The function `capture()` takes a sample of individuals, marks them as 'captured' by updating their 'captured' value, and, if capture is lethal, marks them as dead by updating their death year, as in `mort()`. It is possible to make `capture()` sex-specific, so that only males or only females may be captured.
+
+```{r}
+## non-lethal sampling of 5 females
+indiv <- capture(indiv, n = 5, year = 1, fatal = FALSE, sex = "F")
+## lethal sampling of 5 animals, from either sex
+indiv <- capture(indiv, n = 5, year = 1, fatal = TRUE)
+```
+
 ### Turning processes into a simple simulation
 
 To turn those processes into a full demographic simulation, all that is needed is to repeat the processes in a loop. Let's do that, but set age-specific mortality so that the long-run average population growth rate is zero using the first-year mortality rate we got from `PoNG()`, so that our population is unlikely to explode or become extinct.
@@ -130,7 +143,7 @@ To turn those processes into a full demographic simulation, all that is needed i
 ```{r}
 indiv <- makeFounders(stocks = c(1))
 ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality is 0.305 for first-years,
-                                   ## 0.2 for all older age-classes.
+## 0.2 for all older age-classes.
 
 for (y in 1:60) {
     indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y) ## y for year
@@ -151,12 +164,12 @@ Internally, these relationships are stored in terms of 'shared ancestors at the 
 If a pair shares a parent (i.e., `pairs$TwoTwo == 1`), then they also share at least two grandparents (`pairs$ThreeThree >= 2`), four great-grandparents (`pairs$FourFour >= 4`), and so on. This pattern holds generally: a half thiatic pair (`pairs$TwoThree == 1`) will also share at least two `pairs$ThreeFour >= 2` ancestors and at least four `pairs$FourFive >= 4` ancestors. It is also possible, for example, for a pair to share two grandparents, but no parents - that is the case for full cousin pairs.
 
 ```{r}
-## take a sample of 100 individuals born in the last 10 years of the simulation
-sampled <- sample(indiv[indiv[,5] > 50,][,1] , size = 100) 
+## mark 100 individuals alive at the end of the simulation as 'captured'.
+indiv <- capture(indiv, n = 100, year = 60, fatal = FALSE) 
 
 ## look up each animal's ancestors and look for shared ancestors between each
-## pair of animals:
-pairs <- findRelativesPar(indiv = indiv, sampled = sampled)
+## pair of sampled animals:
+pairs <- findRelativesPar(indiv = indiv, sampled = TRUE)
 
 POPs <- pairs[pairs$OneTwo == 1,] ## Parent-Offspring pairs
 GGPs <- pairs[pairs$OneThree == 1,] ## Grandparent-Grandoffspring pairs
@@ -260,10 +273,11 @@ for (k in 1:60) {
     indiv <- birthdays(indiv = indiv) 
     indiv <- mort(indiv = indiv, year = k, type = "ageStock", ageStockMort = ageStockMort)
     if(k %in% c(10,20,30,40,50,60)) {
+	    indiv <- capture(indiv, n = 20, fatal = TRUE, year = k)
         archive <- archive_dead(indiv = indiv, archive = archive)
-	indiv <- remove_dead(indiv = indiv)
-	print(paste("Iteration ", k, " complete", sep = ""))
-	## do some clean-up, but only occasionally. And report on progress.
+	    indiv <- remove_dead(indiv = indiv)
+	    print(paste("Iteration ", k, " complete", sep = ""))
+	## occasionally sample from the population and do some clean-up. And report on progress.
     }
 }
 archive <- rbind(archive, indiv)
@@ -271,15 +285,12 @@ indiv <- archive  ## merge 'indiv' and 'archive', since they were only separated
 
 ```
 
-Now that the simulation is finished, examining kin relationships is *exactly* the same as the simple scenario:
+Now that the simulation is finished, examining kin relationships is the same as the simple scenario, except that we integrated capture into the simulation, so we don't need to call `capture()` now:
 
 ```{r}
-## take a sample of 100 individuals born in the last 10 years of the simulation
-sampled <- sample(indiv[indiv[,5] > 50,][,1] , size = 100) 
-
 ## look up each animal's ancestors and look for shared ancestors between each
-## pair of animals:
-pairs <- findRelativesPar(indiv = indiv, sampled = sampled)
+## pair of sampled animals:
+pairs <- findRelativesPar(indiv = indiv, sampled = TRUE)
 
 POPs <- pairs[pairs$OneTwo == 1,] ## Parent-Offspring pairs
 GGPs <- pairs[pairs$OneThree == 1,] ## Grandparent-Grandoffspring pairs
@@ -294,4 +305,32 @@ lookAtPair(HSPs[1,])
 
 relatives <- namedRelatives(pairs) ## shows the number of pairs of each relationship type
 relatives
+```
+
+## A note on mark-dependent survival or movement
+
+It is possible to simulate mark-dependent survival or movement by working on subsets of the 'indiv' matrix within the main simulation loop, and applying different mortality or movement operations to each subset. Note that this should *not* be done for `mate()` operations - if `mate()` is run on a subset of the population, mating will only occur between members of that subset. In the case of subsets for marked and unmarked individuals, this would imply that marked animals only mate with other marked animals, and _vice versa_.
+
+```{r, eval = FALSE}
+indiv <- makeFounders(stocks = c(1))
+ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality is 0.305 for first-years,
+## 0.2 for all older age-classes.
+
+for (y in 1:60) {
+    indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y) ## y for year
+
+    indiv <- capture(indiv, n = 5, year = y, fatal = FALSE)
+    indiv_unmarked <- indiv[is.na(indiv[,9]),] ## all the unmarked animals
+    indiv_marked <- indiv[!is.na(indiv[,9]),]  ## all the marked animals
+
+    indiv_unmarked <- mort(indiv_unmarked, year = y, type = "age", ageMort = ageMort) 
+        ## normal mort for unmarked animals
+    indiv_marked <- mort(indiv_marked, year = y, type = "age", ageMort = ageMort*2)  
+        ## double mort for marked animals
+    indiv <- rbind(indiv_unmarked, indiv_marked) 
+        ## stick them back together and proceed as normal
+    rm(indiv_marked, indiv_unmarked) ## clean up
+
+    indiv <- birthdays(indiv)
+}
 ```

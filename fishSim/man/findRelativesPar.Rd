@@ -2,23 +2,19 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{findRelativesPar}
 \alias{findRelativesPar}
-\alias{findRelativesAlt}
 \title{findRelativesPar(): partially-parallelized findRelatives()}
 \usage{
-findRelativesPar(indiv, sampled)
-
-findRelativesAlt(indiv, sampled = TRUE, verbose = TRUE)
+findRelativesPar(indiv, sampled = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
 long strings of parent-offspring relationships, so will most likely come
 from a multi-generation simulation.}
 
-\item{sampled}{For findRelativesPar(), a character vector containing one or more IDs, 
-e.g., from mort()[,1]. For findRelativesAlt, TRUE or FALSE. If TRUE, 
-compares only individuals marked as sampled in indiv[,9].}
+\item{sampled}{TRUE or FALSE. If TRUE, compares only individuals marked as sampled in
+indiv[,9]. If FALSE, compares all individuals in 'indiv'.}
 
-\item{verbose}{TRUE or FALSE. If TRUE for findRelativesAlt, prints a table of sampling
+\item{verbose}{TRUE or FALSE. If TRUE, prints a table of sampling
 years for sampled individuals.}
 }
 \description{
