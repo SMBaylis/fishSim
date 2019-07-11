@@ -10,7 +10,7 @@ License: MIT
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.0.9000
-Imports: ids
+Imports: ids, doParallel, foreach, parallel
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr

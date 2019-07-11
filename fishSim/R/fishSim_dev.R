@@ -181,9 +181,9 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
 
-    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
+    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) stop("There are no females in the population")
-    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
+    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) stop("There are no males in the population")
 
     sprog.m <- matrix(data = NA, nrow = floor(nrow(indiv[is.na(indiv[,6]),])*fecundity),
@@ -330,9 +330,9 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', or 'binomial'.")
     }
 
-    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
+    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) warning("There are no mature females in the population")
-    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) > firstBreed & is.na(indiv[,6]))
+    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) warning("There are no mature males in the population")
 
     if (type == "flat") {
