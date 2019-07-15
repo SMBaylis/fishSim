@@ -11,6 +11,8 @@ mort(indiv = makeFounders(), year = "-1", type = "simple",
 \arguments{
 \item{indiv}{A matrix of inidviduals, as from makeFounders(), move(), or mate().}
 
+\item{year}{An integer, denoting the year in which we're killing animals}
+
 \item{type}{One of "simple", "flat", "age", "stock", or "ageStock".
 If type = "simple" and the living pop > maxPop, individuals are killed at random until
 the living pop == maxPop. Can easily be set to never cause extinctions.

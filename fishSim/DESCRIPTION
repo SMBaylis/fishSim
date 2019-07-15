@@ -6,7 +6,7 @@ Description: Simulates population demography of an arbitrary number of stocks po
              with full parentage record-keeping. Includes functions for movement, mating, mortality, and aging,
              plus convenience functions to handle data archiving.
 Depends: R (>= 3.4.4)
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.0.9000

@@ -14,6 +14,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+options(mc.cores = 2)
 ```
 
 # fishSim vignette
@@ -165,11 +166,11 @@ If a pair shares a parent (i.e., `pairs$TwoTwo == 1`), then they also share at l
 
 ```{r}
 ## mark 100 individuals alive at the end of the simulation as 'captured'.
-indiv <- capture(indiv, n = 100, year = 60, fatal = FALSE) 
+indiv <- capture(indiv, n = 200, year = 60, fatal = FALSE) 
 
 ## look up each animal's ancestors and look for shared ancestors between each
 ## pair of sampled animals:
-pairs <- findRelativesPar(indiv = indiv, sampled = TRUE)
+pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
 
 POPs <- pairs[pairs$OneTwo == 1,] ## Parent-Offspring pairs
 GGPs <- pairs[pairs$OneThree == 1,] ## Grandparent-Grandoffspring pairs
@@ -273,7 +274,7 @@ for (k in 1:60) {
     indiv <- birthdays(indiv = indiv) 
     indiv <- mort(indiv = indiv, year = k, type = "ageStock", ageStockMort = ageStockMort)
     if(k %in% c(10,20,30,40,50,60)) {
-	    indiv <- capture(indiv, n = 20, fatal = TRUE, year = k)
+	    indiv <- capture(indiv, n = 40, fatal = TRUE, year = k)
         archive <- archive_dead(indiv = indiv, archive = archive)
 	    indiv <- remove_dead(indiv = indiv)
 	    print(paste("Iteration ", k, " complete", sep = ""))
@@ -290,7 +291,7 @@ Now that the simulation is finished, examining kin relationships is the same as 
 ```{r}
 ## look up each animal's ancestors and look for shared ancestors between each
 ## pair of sampled animals:
-pairs <- findRelativesPar(indiv = indiv, sampled = TRUE)
+pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
 
 POPs <- pairs[pairs$OneTwo == 1,] ## Parent-Offspring pairs
 GGPs <- pairs[pairs$OneThree == 1,] ## Grandparent-Grandoffspring pairs

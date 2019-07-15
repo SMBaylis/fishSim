@@ -1,3 +1,17 @@
+#' fishSim
+#'
+#' R tool for simulation of population dynamics; originally written for fish
+#'
+#' @docType package
+#' @name fishSim
+#' @import foreach
+#' @import parallel
+#' @import doParallel
+#' @import ids
+#' @importFrom graphics abline lines plot
+#' @importFrom stats rbinom rpois runif uniroot
+NULL
+
 #' makeFounders(): makes a matrix of individuals to act as a founding population.
 #'
 #' Returns a pop-by-8 character matrix, with each row being an individual in the
@@ -29,8 +43,7 @@
 
 makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
                          maxAge = 20, survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))) {
-    require(ids)
-    
+  
     if(sum(osr) != 1) warning("osr does not sum to 1")
     if(sum(stocks) != 1) warning("stocks do not sum to 1")
     if(sum(survCurv) != 1) warning("survCurv does not sum to 1")
@@ -67,25 +80,25 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
 
 #' move(): markovian movement between breeding stocks.
 #'
-#' returns a pop-by-8 character matrix, defined in the makeFounders documentation. Dev note:
-#' this version will still apply movement to dead individuals, but most users would probably
-#' expect the dead to stay in the stock where they died. Update that.
+#' returns a pop-by-8 character matrix, defined in the makeFounders documentation.
 #'
 #' @param indiv Individual matrix, e.g. from makeFounders(). Can also be a non-founder matrix.
 #' @param moveMat An s-by-s matrix describing the probability of moving from each stock to
-#'                each other stock, with 'from' by row and 'to' by column.
+#'                each other stock, with 'from' by row and 'to' by column. Cannot be blank.
 #' @export
 
-move <- function(indiv = makeFounders(), moveMat = admix.m) {
+move <- function(indiv = makeFounders(), moveMat) {
     if(nrow(moveMat) != ncol(moveMat)) warning("movement matrix is not square")
     if(nrow(moveMat) > length(unique(indiv[,7]))) warning("One or more stocks start empty")
-    
+
+    oldStock <- indiv[,7]
     newStock <- matrix(data = NA, nrow = nrow(indiv))
     for(i in 1:length(newStock)) {
         newStock[i] <- sample(1:nrow(moveMat), 1, TRUE,
                               prob = moveMat[as.numeric(indiv[i,7]),])
     }
     indiv[,7] <- newStock
+    indiv[,7][!is.na(indiv[,6])] <- oldStock[!is.na(indiv[,6])]
     return(indiv)
 }
 
@@ -176,7 +189,6 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
                  osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
                  exhaustMothers = FALSE, exhaustFathers = FALSE,
                  fecundityCurve, maleCurve, femaleCurve) {
-    require(ids)
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
@@ -322,7 +334,6 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                  osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
                  singlePaternity = TRUE, exhaustFathers = FALSE,
                  maturityCurve, maleCurve, femaleCurve) {
-    require(ids)
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
@@ -463,6 +474,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 #' or a probability that depends on age, stock, or age:stock.
 #'
 #' @param indiv A matrix of inidviduals, as from makeFounders(), move(), or mate().
+#' @param year An integer, denoting the year in which we're killing animals
 #' @param type One of "simple", "flat", "age", "stock", or "ageStock".
 #'             If type = "simple" and the living pop > maxPop, individuals are killed at random until
 #'             the living pop == maxPop. Can easily be set to never cause extinctions.
@@ -693,7 +705,8 @@ make_archive <- function() {
 #' @export
 #' @examples
 #' archive <- make_archive()
-#' ages <- min(as.numeric(indiv[,8])):max(as.numeric(indiv[,8]))
+#' indiv <- makeFounders()
+#' ages <- min(as.numeric(indiv[,8])):200
 #' ageMort <- 0.1 + (0.2*1/(ages+1))  ## placeholder ageMort with (extreme) negative senescence
 #' stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
 #' admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
@@ -1505,19 +1518,14 @@ findRelatives <- function(indiv, sampled) {
 #'                indiv[,9]. If FALSE, compares all individuals in 'indiv'.
 #' @param verbose TRUE or FALSE. If TRUE, prints a table of sampling
 #'                years for sampled individuals.
-#' @import foreach
-#' @import parallel
-#' @import doParallel
+#' @param nCores the number of cores to use for parallel processes. Defaults to one less than
+#'               the number of cores on the machine.
 #' @seealso [fishSim::findRelatives()]
 #' @seealso [fishSim::capture()]
 #' @export
 
-findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE) {
+findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = detectCores()-1) {
 
-    require(foreach)
-    require(parallel)
-    require(doParallel)
-    nCores <- detectCores()-1 ## 8 cores on my system. Use 7?
     registerDoParallel(nCores)
   
     if (sampled) {
@@ -1806,7 +1814,8 @@ lookAtPair <- function(pair) {
 }
 
 
-#' namedRelatives(): show numbers of pairs in named relationship classes 
+#' namedRelatives(): show numbers of pairs in named relationship
+#' classes
 #'
 #' namedRelatives takes output from findRelatives() or findRelativesPar(), and returns
 #' counts of named relationship classes within the set of pair comparisons. Relationship
@@ -1848,7 +1857,7 @@ lookAtPair <- function(pair) {
 #'       shared ancestor was detected, but the relationship does not fall into one of the
 #'       listed relationship classes.
 #' 
-#' @param pair a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()
+#' @param pairs a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()
 #' @seealso [fishSim::findRelatives()]
 #' @export
 
@@ -1876,9 +1885,312 @@ namedRelatives <- function(pairs) {
                       HTPs, FTPs, HCPs, FCPs, GHCPs, GFCPs, ORCs))
 }
 
+#' Quick lookup of CKMR-relevant relationships
+#'
+#' quickin performs quick lookup of the kinships directly relevant to
+#' close-kin mark-recapture. It returns a list of eight character
+#' arrays, with each array holding one kinship in one pair of animals
+#' per row.
+#'
+#' The named relationship classes (in list order) are:
+#' POPs: Parent-offspring pairs. One is the other's parent.
+#' HSPs: Half-sibling pairs. The individuals share one parent.
+#' FSPs: Full-sibling pairs. The individuals share two parents.
+#' GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
+#' HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
+#' FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other individual's
+#'       parents.
+#' HCPs: Half-cousin pairs. The individuals share one grandparent.
+#' FCPs: Full-cousin pairs. The individuals share two grandparents.
+#' 
+#' @param inds an 'indiv' matrix, as from 'mort()', with some
+#'     individuals marked as 'captured'
+#' @param max_gen the maximum depth to look up relatives, in
+#'     generations. max_gen = 2 is sufficient for relatives used in
+#'     CKMR
+#' @seealso [fishSim::findRelatives()]
+#' @seealso [fishSim::capture()]
+#' @export
+
+quickin <- function( inds, max_gen=2) {
+  if( class( inds) != 'data.frame') {
+    inds <- dfify( inds)
+  }
+  gc() # spaaaace; paranoia
+
+  xpairs <- function( anc1s, anc2s, same) {
+      ## Targeting one specific shared ancestor-type--- eg Mum of 1st == Grandma of 2nd
+      ## anc1s & anc2s should be matrices
+
+      ##  if( FALSE && too_smart) {
+      ##    crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
+      ##    ranc1s <- ...
+      ##  }
+
+      if( is.null( dim( anc1s))) {
+          anc1s <- matrix( anc1s, ncol=1)
+      }
+
+      if( is.null( dim( anc2s))) {
+          anc2s <- matrix( anc2s, ncol=1)
+      }
+
+      ## Find all ancestors that fit the bill
+      N <- nrow( anc1s)
+      stopifnot( nrow( anc2s)==N)
+
+      shareds <- integer()
+      for( i1 in ncol( anc1s)) {
+          for( i2 in ncol( anc2s)) {
+              if( same) { # check to see if anc1 matches any anc2 *except* itself
+                  mm <- match( anc1s[,i1], rev( anc2s[,i2]), 0L)
+                  mm[ mm != 0] <- N+1-mm[ mm != 0]
+                  mm[ mm==seq_along( mm)] <- 0
+                  new_shareds <- anc1s[ mm>0, i1] # should be same as:
+                  test <- anc2s[ mm[ mm>0], i1]
+              } else {
+                  combo <- c( anc1s[,i1], anc2s[,i2])
+                  new_shareds <- combo[ duplicated( combo)]
+              }
+
+              shareds <- c( shareds, new_shareds)
+          }
+      }
+      ## desc1 <- match( anc1s, shareds, 0)
+      ## desc2 <- match( anc2s, shareds, 0)
+
+      ## Find all descendent-pairs of each ancestor
+      keeps1 <- keeps2 <- integer()
+      for( i in shareds) {
+          desc1 <- which( rowSums( anc1s==i)>0)
+          desc2 <- which( rowSums( anc2s==i)>0)
+          keeps1 <- c( keeps1, rep( desc1, length( desc2)))
+          keeps2 <- c( keeps2, rep( desc2, each=length( desc1)))
+      }
+
+      ## Zap dups (A/B but not B/A or A/A)
+      swap <- keeps1 > keeps2
+      temp <- keeps1[ swap]
+      keeps1[ swap] <- keeps2[ swap]
+      keeps2[ swap] <- temp
+      keep <- (keeps1 != keeps2) & !duplicated( keeps1 + 0.5/keeps2)
+      keeps1 <- keeps1[ keep]
+      keeps2 <- keeps2[ keep]
+
+      return( cbind( keeps1, keeps2))
+  }
 
 
+  toKeep <- function(inds, max_gen) {
+      keep_me <- which( !is.na( inds$SampY))
 
+      prev_keep_me <- keep_me
+      for( gen in 1:max_gen) {
+          '%!in%' <- function(x,y)!('%in%'(x,y))
+          ## keep_me_too1 <- match( inds$Mum[ prev_keep_me], inds$Me, 0L) %except% keep_me
+          keep_me_too1 <- match( inds$Mum[ prev_keep_me], inds$Me, 0L)[match( inds$Mum[ prev_keep_me], inds$Me, 0L) %!in% keep_me] ## refactored to base funs
+        # NB sex switching--- hence, drop Dads that are also Mums that generation...
+          ## keep_me_too2 <- match( inds$Dad[ prev_keep_me], inds$Me, 0L) %except% c( keep_me, keep_me_too1)
+          keep_me_too2 <- match( inds$Dad[ prev_keep_me], inds$Me, 0L) [match( inds$Dad[ prev_keep_me], inds$Me, 0L) %!in% c( keep_me, keep_me_too1)] ## refactored to base funs
+        prev_keep_me <- c( keep_me_too1, keep_me_too2)
+        keep_me <- c( keep_me, prev_keep_me)
+      }
+    return( unique( keep_me))
+  }
+  keep_me <- toKeep(inds, max_gen = max_gen)
+  
+  ## # Must keep samples; also their relatives yea even unto the N-th generation
+  ## keep_me <- with( inds, {
+  ##     keep_me <- which( !is.na( SampY))
+
+  ##     prev_keep_me <- keep_me
+  ##     for( gen in 1:max_gen) {
+  ##       keep_me_too1 <- match( Mum[ prev_keep_me], Me, 0L) %except% keep_me
+  ##       # NB sex switching--- hence, drop Dads that are also Mums that generation...
+  ##       keep_me_too2 <- match( Dad[ prev_keep_me], Me, 0L) %except% c( keep_me, keep_me_too1)
+  ##       prev_keep_me <- c( keep_me_too1, keep_me_too2)
+  ##       keep_me <- c( keep_me, prev_keep_me)
+  ##     }
+  ##   return( unique( keep_me))
+  ##   })
+
+  # Produce a unique real number from two +ve integers...
+  # order matters, but xpairs() already ensures col1 < col2
+  both <- function( m) m[,1] + 0.5/m[,2]
+
+  ## extract.named( inds[ keep_me,])
+  Me <- inds[keep_me,][,1]
+  Sex <- inds[keep_me,][,2]
+  Dad <- inds[keep_me,][,3]
+  Mum <- inds[keep_me,][,4]
+  BirthY <- inds[keep_me,][,5]
+  DeathY <- inds[keep_me,][,6]
+  Stock <- inds[keep_me,][,7]
+  AgeLast <- inds[keep_me,][,8]
+  SampY <- inds[keep_me,][,9] ## all this, just to reproduce extract.named()!
+  
+  Sample <- which( !is.na( SampY))
+
+  # MOP etc are all row-numbers, rather than raw IDs
+  MOP <- xpairs( Me[ Sample], Mum[ Sample], same=FALSE)
+  FOP <- xpairs( Me[ Sample], Dad[ Sample], same=FALSE)
+  POP <- rbind( MOP, FOP)
+
+  # Sibs
+  MatSP <- xpairs( Mum[ Sample], Mum[ Sample], same=TRUE)
+  PatSP <- xpairs( Dad[ Sample], Dad[ Sample], same=TRUE)
+  is_FSP <- both( MatSP) %in% both( PatSP) # from Mum's PoV
+  MHSP <- MatSP[ !is_FSP,]
+  FSP <- MatSP[ is_FSP,]
+
+  is_FSP <- both( PatSP) %in% both( MatSP) # from Dad's PoV
+  PHSP <- PatSP[ !is_FSP,]
+  alt_FSP <- PatSP[ is_FSP,]
+  # check:
+##stopifnot(  my.all.equal( sort( both( alt_FSP)), sort( both( FSP)))) ## refactor to base
+  stopifnot(  all.equal( sort( both( alt_FSP)), sort( both( FSP))))
+  
+  HSP <- rbind( MHSP, PHSP)
+
+  # Anything more complicated needs a 2nd generation
+  isampMum <- match( Mum[ Sample], Me)
+  isampDad <- match( Dad[ Sample], Me)
+
+  GmM <- Mum[ isampMum]
+  GfM <- Mum[ isampDad]
+  GM_Sample <- cbind( GmM, GfM)
+  GmF <- Dad[ isampMum]
+  GfF <- Dad[ isampDad]
+  GF_Sample <- cbind( GmF, GfF)
+
+  # GGPs
+  MatGGP <- xpairs( Me[ Sample], GM_Sample, FALSE)
+  PatGGP <- xpairs( Me[ Sample], GF_Sample, FALSE)
+  GGP <- rbind( MatGGP, PatGGP)
+
+  # H/FTP
+  HTP1 <- xpairs( Mum[ Sample], GM_Sample, FALSE)
+  HTP2 <- xpairs( Dad[ Sample], GF_Sample, FALSE)
+  is_FTP <- both( HTP1) %in% both( HTP2)
+  FTP <- HTP1[ is_FTP,]
+  HTP1 <- HTP1[ !is_FTP,]
+
+  # and drop the other way...
+  is_FTP <- both( HTP2) %in% both( HTP1)
+  HTP2 <- HTP2[ !is_FTP,]
+  HTP <- rbind( HTP1, HTP2)
+
+  # Cousins
+  MatCP <- xpairs( GM_Sample, GM_Sample, same=TRUE)
+  PatCP <- xpairs( GF_Sample, GF_Sample, same=TRUE)
+  is_FCP <- both( MatCP) %in% both( PatCP)
+  MHCP <- MatCP[ !is_FCP,]
+  FCP <- MatCP[ is_FCP,]
+
+  is_FCP <- both( PatCP) %in% both( MatCP) # pat pov
+  PHCP <- PatCP[ !is_FCP,]
+  HCP <- rbind( MHCP, PHCP)
+
+  # Turn numbers into names...
+  ID <- function( m) {
+      m[] <- Me[ Sample[ c( m)]]
+      m
+    }
+
+  returnees <- c( "POP", "HSP", "FSP", "GGP", "HTP", "FTP", "HCP", "FCP")
+  retlist <- list()
+  for( returnee in returnees) {
+    retlist[[ returnee]] <- ID( get( returnee))
+  }
+
+return( retlist)
+}
+
+#' convert 'makeFounders'-type matrix to data.frame
+#'
+#' Internal operations are all performed on matrix objects lacking
+#' human-friendly features like column names. 'dfify' takes a matrix
+#' as output from makeFounders() and outputs a more human-readable
+#' data.frame
+#'
+#' @param inds A matrix of individuals, as from mort()
+#' @export
+
+dfify <- function( inds) {
+## Hack to convert fishSim matrix into data.frame
+## Should really be a DF in the first place, while it runs thru the simulation loop
+
+    charcols <- c( "Me", "Sex", "Dad", "Mum")
+    charcols_named <- charcols
+    names(charcols_named) <- charcols
+    numcols <- c( "BirthY", "DeathY", "Stock", "AgeLast", "SampY")
+    numcols_named <- numcols
+    names(numcols_named) <- numcols
+
+  if( class(inds) == 'data.frame') {
+    # Could just return it, but might as well be paranoid since we're here already
+      needio <- c( charcols, numcols)
+      names(needio) <- as.character(needio)
+      ## missingio <- needio %except% names( inds)
+      missingio <- needio[! needio %in% names( inds)]  ## refactor to base
+    if( length( missingio)) {
+stop( "Missing crucial names")
+    }
+
+    # Do "harmless" conversions (factor to character, and character to numeric)
+      ## fcl <- sapply( inds, is.factor) %except% FALSE
+      fcl <- sapply( inds, is.factor)[! sapply(inds,is.factor) %in% FALSE]  ##refactor to base
+    for( fc in names( fcl)) {
+      inds[[ fc]] <- as.character( inds[[ fc]])
+    }
+      ## cl <- sapply( inds, is.character) %except% FALSE
+      cl <- sapply( inds, is.character)[! sapply( inds, is.character) %in% FALSE]
+      ## for( cnc in names( cl) %that.are.in% numcols) {
+      for( cnc in names( cl)[names( cl) %in% numcols]) {    
+      inds[[ cnc]] <- as.integer( inds[[ cnc]])
+    }
+
+    # NB it's OK to have extra columns--- shouldn't be affected
+
+    ##  missing_nums <- numcols_named %except% names( inds)
+      missing_nums <- numcols_named[! numcols_named %in% names( inds)] ## refactor to base
+    if( length( missing_nums)) {
+stop( sprintf( "Missing numeric columns: %s", paste( missing_nums, collapse=', ')))
+    }
+
+##  missing_chars <- charcols_named %except% names( inds)
+  missing_chars <- charcols_named[! charcols_named %in% names( inds)]
+    if( length( missing_chars)) {
+stop( sprintf( "Missing char columns: %s", paste( missing_chars, collapse=', ')))
+    }
+
+return( inds)
+
+  }
+
+  # Char matrix straight from fishSim, with/without colnames
+stopifnot( is.character( inds) && is.matrix( inds) && ncol( inds)==length( charcols) + length( numcols))
+  if( is.null( colnames( inds))) {
+    colnames( inds) <- c( charcols, numcols)
+  }
+
+  ## Ensure columns are in order...
+  ## ... trying to avoid too much memory duplication (prob unnec)
+    ## if( !my.all.equal( colnames( inds), c( charcols, numcols))) { ## refactor to base
+    if( !all.equal( colnames( inds), c( charcols, numcols))) {
+        
+    inds <- inds[ , c( charcols, numcols)]
+  }
+
+  numz <- inds[ , -seq_along( charcols)]
+  storage.mode( numz) <- 'integer'
+
+  inds <- cbind(
+      data.frame( inds[,seq_along( charcols)], stringsAsFactors=FALSE),
+      data.frame( numz)
+    )
+return( inds)
+}
 
 
 

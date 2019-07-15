@@ -2,12 +2,13 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{namedRelatives}
 \alias{namedRelatives}
-\title{namedRelatives(): show numbers of pairs in named relationship classes}
+\title{namedRelatives(): show numbers of pairs in named relationship
+classes}
 \usage{
 namedRelatives(pairs)
 }
 \arguments{
-\item{pair}{a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()}
+\item{pairs}{a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()}
 }
 \description{
 namedRelatives takes output from findRelatives() or findRelativesPar(), and returns

@@ -4,7 +4,8 @@
 \alias{findRelativesPar}
 \title{findRelativesPar(): partially-parallelized findRelatives()}
 \usage{
-findRelativesPar(indiv, sampled = TRUE, verbose = TRUE)
+findRelativesPar(indiv, sampled = TRUE, verbose = TRUE,
+  nCores = detectCores() - 1)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
@@ -16,6 +17,9 @@ indiv[,9]. If FALSE, compares all individuals in 'indiv'.}
 
 \item{verbose}{TRUE or FALSE. If TRUE, prints a table of sampling
 years for sampled individuals.}
+
+\item{nCores}{the number of cores to use for parallel processes. Defaults to one less than
+the number of cores on the machine.}
 }
 \description{
 findRelativesPar is a partially-parallelized version of findRelatives. Its use is

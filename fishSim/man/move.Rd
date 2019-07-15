@@ -4,16 +4,14 @@
 \alias{move}
 \title{move(): markovian movement between breeding stocks.}
 \usage{
-move(indiv = makeFounders(), moveMat = admix.m)
+move(indiv = makeFounders(), moveMat)
 }
 \arguments{
 \item{indiv}{Individual matrix, e.g. from makeFounders(). Can also be a non-founder matrix.}
 
 \item{moveMat}{An s-by-s matrix describing the probability of moving from each stock to
-each other stock, with 'from' by row and 'to' by column.}
+each other stock, with 'from' by row and 'to' by column. Cannot be blank.}
 }
 \description{
-returns a pop-by-8 character matrix, defined in the makeFounders documentation. Dev note:
-this version will still apply movement to dead individuals, but most users would probably
-expect the dead to stay in the stock where they died. Update that.
+returns a pop-by-8 character matrix, defined in the makeFounders documentation.
 }
