@@ -6,7 +6,7 @@
 \usage{
 altMate(indiv = makeFounders(), batchSize = 0.5,
   fecundityDist = "poisson", osr = c(0.5, 0.5), year = "-1",
-  firstBreed = 0, type = "flat", maxClutch = Inf,
+  firstBreed = 1, type = "flat", maxClutch = Inf,
   singlePaternity = TRUE, exhaustFathers = FALSE, maturityCurve,
   maleCurve, femaleCurve)
 }
@@ -32,7 +32,7 @@ number of offspring per mature female. Defaults to "poisson".}
 \item{year}{Intended to be used in a simulation loop - this will be the iteration number, and
 holds the 'birthyear' value to give to new recruits.}
 
-\item{firstBreed}{Integer variable. The age at first breeding, default zero. The minimum age
+\item{firstBreed}{Integer variable. The age at first breeding, default 1. The minimum age
 at which individuals can breed. Applies to potential mothers and potential
 fathers. 'firstBreed', 'maturityCurve', 'maleCurve, and 'femaleCurve' are
 all capable of specifying an age at first breeding, and 'firstBreed' takes

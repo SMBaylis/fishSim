@@ -6,7 +6,7 @@
 until a recruitment quota is filled.}
 \usage{
 mate(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
-  osr = c(0.5, 0.5), year = "-1", firstBreed = 0, type = "flat",
+  osr = c(0.5, 0.5), year = "-1", firstBreed = 1, type = "flat",
   maxClutch = Inf, exhaustMothers = FALSE, exhaustFathers = FALSE,
   fecundityCurve, maleCurve, femaleCurve)
 }
@@ -29,7 +29,7 @@ age-class 1', as some mortality may occur at age 0.}
 \item{year}{Intended to be used in a simulation loop - this will be the iteration number, and
 holds the 'birthyear' value to give to new recruits.}
 
-\item{firstBreed}{Integer variable. The age at first breeding, default zero. The minimum age
+\item{firstBreed}{Integer variable. The age at first breeding, default 1. The minimum age
 at which individuals can breed. Applies to potential mothers and potential
 fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
 capable of specifying an age at first breeding, and firstBreed takes precedence.}

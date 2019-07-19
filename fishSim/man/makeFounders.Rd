@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{makeFounders}
 \alias{makeFounders}
-\title{makeFounders(): makes a matrix of individuals to act as a founding population.}
+\title{makeFounders(): makes a data.frame of individuals to act as a founding population.}
 \usage{
 makeFounders(pop = 1000, osr = c(0.5, 0.5), stocks = c(0.3, 0.3,
   0.4), maxAge = 20, survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge)))
@@ -21,7 +21,7 @@ is in each stock.}
 to each age-class for age=-classes 1:maxAge. Cannot be blank.}
 }
 \description{
-Returns a pop-by-8 character matrix, with each row being an individual in the
+Returns a pop-by-8 data.frame, with each row being an individual in the
 founder population.
 [,1] is a unique (uuid) identifier for each animal.
 [,2] is sex, values "M" or "F".

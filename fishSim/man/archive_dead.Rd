@@ -20,7 +20,7 @@ archive that is read and written less frequently than 'indiv'.
 \examples{
 archive <- make_archive()
 indiv <- makeFounders()
-ages <- min(as.numeric(indiv[,8])):200
+ages <- min(indiv[,8]):200
 ageMort <- 0.1 + (0.2*1/(ages+1))  ## placeholder ageMort with (extreme) negative senescence
 stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
 admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))

@@ -12,9 +12,9 @@
 #' @importFrom stats rbinom rpois runif uniroot
 NULL
 
-#' makeFounders(): makes a matrix of individuals to act as a founding population.
+#' makeFounders(): makes a data.frame of individuals to act as a founding population.
 #'
-#' Returns a pop-by-8 character matrix, with each row being an individual in the
+#' Returns a pop-by-8 data.frame, with each row being an individual in the
 #' founder population.
 #' [,1] is a unique (uuid) identifier for each animal.
 #' [,2] is sex, values "M" or "F".
@@ -49,19 +49,22 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
     if(sum(survCurv) != 1) warning("survCurv does not sum to 1")
     if(length(survCurv) != maxAge) warning("survCurv and maxAge imply different maximum ages")
     
-    indiv <- matrix(data = NA ,nrow = pop, ncol = 9)
-    indiv[,1] <- uuid(n = nrow(indiv), drop_hyphens=TRUE)  ## uuid IDs for each animal.
-    indiv[,2] <- sample(c("M", "F"), nrow(indiv), TRUE, prob = osr)
+### indiv <- matrix(data = NA ,nrow = pop, ncol = 9)
+    indiv <- data.frame(Me = character(pop), Sex = character(pop), Dad = character(pop),
+                        Mum = character(pop), BirthY = integer(pop), DeathY = integer(pop),
+                        Stock = integer(pop), AgeLast = integer(pop), SampY = integer(pop))
+    indiv[,1] <- uuid(n = pop, drop_hyphens=TRUE)  ## uuid IDs for each animal.
+    indiv[,2] <- sample(c("M", "F"), pop, TRUE, prob = osr)
                                         # assign sexes by probability
-    indiv[,3] <- c(rep("founder", nrow(indiv))) ## has no father
-    indiv[,4] <- c(rep("founder", nrow(indiv))) ## has no mother
+    indiv[,3] <- c(rep("founder", pop)) ## has no father
+    indiv[,4] <- c(rep("founder", pop)) ## has no mother
 ##  indiv[,5] <- c(rep(-1, nrow(indiv))) ## founders are born at year -1
-    indiv[,6] <- c(rep(NA, nrow(indiv))) ## founders are not yet dead
-    indiv[,7] <- sample(1:length(stocks), nrow(indiv), TRUE, prob = stocks)
+    indiv[,6] <- as.integer(c(rep(NA, pop))) ## founders are not yet dead
+    indiv[,7] <- as.integer(sample(1:length(stocks), pop, TRUE, prob = stocks))
                                         # assign founder stock membership
-    indiv[,8] <- sample.int(maxAge, nrow(indiv), TRUE, prob = survCurv)
-    indiv[,5] <- 1 - as.numeric(indiv[,8]) ## back-infer birth year from age
-    indiv[,9] <- c(rep(NA, nrow(indiv))) ## founders are not yet sampled
+    indiv[,8] <- sample.int(maxAge, pop, TRUE, prob = survCurv)
+    indiv[,5] <- 1L - indiv[,8] ## back-infer birth year from age
+    indiv[,9] <- as.integer(c(rep(NA, pop))) ## founders are not yet sampled
 
     return(indiv)
 }
@@ -95,10 +98,11 @@ move <- function(indiv = makeFounders(), moveMat) {
     newStock <- matrix(data = NA, nrow = nrow(indiv))
     for(i in 1:length(newStock)) {
         newStock[i] <- sample(1:nrow(moveMat), 1, TRUE,
-                              prob = moveMat[as.numeric(indiv[i,7]),])
+                              prob = moveMat[indiv[i,7],])
     }
     indiv[,7] <- newStock
     indiv[,7][!is.na(indiv[,6])] <- oldStock[!is.na(indiv[,6])]
+    indiv[,7] <- as.integer(indiv[,7])
     return(indiv)
 }
 
@@ -147,7 +151,7 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
 #'             holds the 'birthyear' value to give to new recruits.
-#' @param firstBreed Integer variable. The age at first breeding, default zero. The minimum age
+#' @param firstBreed Integer variable. The age at first breeding, default 1. The minimum age
 #'                   at which individuals can breed. Applies to potential mothers and potential
 #'                   fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
 #'                   capable of specifying an age at first breeding, and firstBreed takes precedence.
@@ -186,16 +190,16 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' @export
 
 mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
-                 osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
+                 osr = c(0.5,0.5), year = "-1", firstBreed = 1, type = "flat", maxClutch = Inf,
                  exhaustMothers = FALSE, exhaustFathers = FALSE,
                  fecundityCurve, maleCurve, femaleCurve) {
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
 
-    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
+    mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) stop("There are no females in the population")
-    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
+    fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) stop("There are no males in the population")
 
     sprog.m <- matrix(data = NA, nrow = floor(nrow(indiv[is.na(indiv[,6]),])*fecundity),
@@ -207,36 +211,37 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         if(nrow(mothers) == 0) stop("All potential mothers are exhausted")        
         drawMother <- mothers[sample(nrow(mothers), size = 1, replace = FALSE),]
                                         # Note: character vector, not matrix
-        fathersInStock <- subset(fathers, fathers[,7] == drawMother[7])
+        fathersInStock <- subset(fathers, fathers[,7] == drawMother[,7])
         n.sprogs <- 0
         if(nrow(fathersInStock) > 1) {
             drawFather <- fathersInStock[sample(nrow(fathersInStock), size = 1, replace = FALSE),]
-            if(as.numeric(drawMother[8]) >= firstBreed & as.numeric(drawFather[8]) >= firstBreed) {
+            if(drawMother[1,8] >= firstBreed & drawFather[1,8] >= firstBreed) {
                 if(type == "flat") {
                     n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity here?
                 } else if (type == "age") {
                     n.sprogs <- rpois(n = 1,
-                                           lambda = min(c(fecundityCurve[as.numeric(drawFather[8])+1],
-                                                          fecundityCurve[as.numeric(drawMother[8])+1]))
+                                           lambda = min(c(fecundityCurve[drawFather[1,8]+1],
+                                                          fecundityCurve[drawMother[1,8]+1]))
                                       )
                 } else if (type == "ageSex") {
                     n.sprogs <- rpois(n = 1,
-                                      lambda = min(c(maleCurve[as.numeric(drawFather[8])+1],
-                                                     femaleCurve[as.numeric(drawMother[8])+1]))
+                                      lambda = min(c(maleCurve[drawFather[1,8]+1],
+                                                     femaleCurve[drawMother[1,8]+1]))
                                       )
                 }
                 if(n.sprogs > maxClutch) n.sprogs <- maxClutch
                 batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
-                batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
-                batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
-                batch[,3] <- drawFather[1]
-                batch[,4] <- drawMother[1]
-                batch[,5] <- year
-                ## [,6] stays 'NA', because no death year yet.
-                batch[,7] <- drawMother[7] ## always recruits into the parents' stock.
-                batch[,8] <- 0 ## it's a zero-year-old until the first 'birthday' step.
-
                 if(n.sprogs > 0) {
+                    batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
+                    batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
+                    batch[,3] <- drawFather[1,1]
+                    batch[,4] <- drawMother[1,1]
+                    batch[,5] <- year
+                    ## [,6] stays 'NA', because no death year yet.
+                    batch[,7] <- drawMother[1,7] ## always recruits into the parents' stock.
+                    batch[,8] <- 0 ## it's a zero-year-old until the first 'birthday' step.
+
+                    ## if(n.sprogs > 0) { ## moved up
                     if ((ticker + n.sprogs) <= nrow(sprog.m)) {
                         sprog.m[ticker:(ticker+n.sprogs-1),] <- batch
                     } else if ((ticker + n.sprogs) > nrow(sprog.m)) {
@@ -253,7 +258,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         } ## remove exhausted father from potential fathers.
         ticker <- ticker+n.sprogs
     }
-    indiv <- rbind(indiv, sprog.m)  
+    indiv <- rbind(indiv, dfify(sprog.m))  
     return(indiv)
 }
 
@@ -289,7 +294,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #'            (recruitment). Used to assign sexes to new offspring.
 #' @param year Intended to be used in a simulation loop - this will be the iteration number, and
 #'             holds the 'birthyear' value to give to new recruits.
-#' @param firstBreed Integer variable. The age at first breeding, default zero. The minimum age
+#' @param firstBreed Integer variable. The age at first breeding, default 1. The minimum age
 #'                   at which individuals can breed. Applies to potential mothers and potential
 #'                   fathers. 'firstBreed', 'maturityCurve', 'maleCurve, and 'femaleCurve' are
 #'                   all capable of specifying an age at first breeding, and 'firstBreed' takes
@@ -331,7 +336,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #' @export
 
 altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "poisson",
-                 osr = c(0.5,0.5), year = "-1", firstBreed = 0, type = "flat", maxClutch = Inf,
+                 osr = c(0.5,0.5), year = "-1", firstBreed = 1, type = "flat", maxClutch = Inf,
                  singlePaternity = TRUE, exhaustFathers = FALSE,
                  maturityCurve, maleCurve, femaleCurve) {
     if (!(type %in% c("flat", "age", "ageSex"))) {
@@ -341,9 +346,9 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', or 'binomial'.")
     }
 
-    mothers <- subset(indiv, indiv[,2] == "F" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
+    mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
     if(nrow(mothers) == 0) warning("There are no mature females in the population")
-    fathers <- subset(indiv, indiv[,2] == "M" & as.numeric(indiv[,8]) >= firstBreed & is.na(indiv[,6]))
+    fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) warning("There are no mature males in the population")
 
     if (type == "flat") {
@@ -357,10 +362,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         
     } else if (type == "age") {
 
-        mothers <- mothers[runif(nrow(mothers)) < maturityCurve[as.numeric(mothers[,8])],
+        mothers <- mothers[runif(nrow(mothers)) < maturityCurve[mothers[,8]],
                          , drop = FALSE] ## trims 'mothers' to those that pass a random
                                          ## maturity test.
-        fathers <- fathers[runif(nrow(fathers)) < maturityCurve[as.numeric(fathers[,8])],
+        fathers <- fathers[runif(nrow(fathers)) < maturityCurve[fathers[,8]],
                          , drop = FALSE] ## trims 'fathers' to those that pass a random
                                          ## maturity test.
         
@@ -374,13 +379,11 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         
     } else if (type == "ageSex") {
 
-        mothers <- mothers[runif(nrow(mothers)) < femaleCurve[as.numeric(mothers[,8])] ,
-                          ,drop = FALSE] ## trims 'mothers' to just those that pass a random
-                                         ## maturity test.
+        mothers <- mothers[runif(nrow(mothers)) < femaleCurve[mothers[,8]] , ,drop = FALSE]
+        ## trims 'mothers' to just those that pass a random maturity test.
         
-        fathers <- fathers[runif(nrow(fathers)) < maleCurve[as.numeric(fathers[,8])] ,
-                          ,drop = FALSE]  ## trims 'fathers' to just those that pass a random
-                                          ## maturity test.
+        fathers <- fathers[runif(nrow(fathers)) < maleCurve[fathers[,8]] , ,drop = FALSE]
+        ## trims 'fathers' to just those that pass a random maturity test.
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
         if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
         if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
@@ -391,7 +394,8 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
     }
 
     clutch[clutch > maxClutch] <- maxClutch ## delimits clutch sizes to not exceed maxClutch
-    sprog.m <- matrix(data = NA, nrow = 0, ncol = 9) ## left empty if no-one breeds.
+    ## sprog.m <- matrix(data = NA, nrow = 0, ncol = 9) ## left empty if no-one breeds.
+    sprog.m <- makeFounders(pop = 0) ## left empty if no-one breeds.
     
     for (s in unique(mothers[,7])) { ## s for 'stock'.
         mothersInStock <- mothers[mothers[,7] == s , , drop = FALSE]
@@ -441,11 +445,13 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
         sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
         sprog.stock[,5] <- year
-        sprog.stock[,7] <- s
+        sprog.stock[,7] <- as.integer(rep(s), nrow(sprog.stock))
         sprog.stock[,8] <- 0
+        sprog.stock <- dfify(sprog.stock)
         
         sprog.m <- rbind(sprog.m, sprog.stock)
     }
+    names(sprog.m) <- names(indiv)
     indiv <- rbind(indiv, sprog.m)
 
     return(indiv)
@@ -453,10 +459,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
 ###################################################################################################
 
-## ages <- min(as.numeric(indiv[,8])):max(as.numeric(indiv[,8]))
+## ages <- min(indiv[,8]):max(indiv[,8])
 ## ageMort <- 0.1 + (0.2*1/(ages+1))  ## placeholder ageMort with (extreme) negative senescence
 
-## stocks <- min(as.numeric(indiv[,7])):max(as.numeric(indiv[,7]))
+## stocks <- min(indiv[,7]):max(indiv[,7])
 ## stockMort <- sample(c(0.1,0.5,0.2), length(stocks), replace = TRUE)
                                         # placeholder stockMort with variable mortality
 
@@ -501,14 +507,16 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 #'                     and 'stockMort' for structure of rows and columns.
 #' @export
 
-mort <- function(indiv = makeFounders(), year = "-1", type = "simple", maxAge = Inf,
+mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
+                 ## maxAge = Inf,
+                 maxAge = if(type == "age") length(ageMort) else Inf,
                  maxPop = 1000, mortRate, ageMort, stockMort, ageStockMort) {
 
     if (!(type %in% c("simple", "flat", "age", "stock", "ageStock"))) {
         stop("selected 'type' must be 'simple', 'flat', 'age', 'stock', or 'ageStock'")
     }
 
-    geriatrics <- is.na(indiv[,6]) & as.numeric(indiv[,8]) > maxAge
+    geriatrics <- is.na(indiv[,6]) & indiv[,8] > maxAge
     indiv[,6][geriatrics] <- year  ## marks geriatrics as dead this year, unless they
                                    ## already have a non-NA death year.
     if(type == "simple") {
@@ -529,49 +537,49 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple", maxAge = 
         ## mortRate.
     } else if (type == "age") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for(i in min(as.numeric(indiv[,8])):max(as.numeric(indiv[,8]))) {
-            ageProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&as.numeric(indiv[,8])==i,,drop = FALSE]))
+        for(i in min(indiv[,8]):max(indiv[,8])) {
+            ageProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&indiv[,8]==i,,drop = FALSE]))
             ## for the individuals at age i, make a vector of runif numbers between 0 and 1
             if(length(ageProbs) > 1) {
-                indiv[is.na(indiv[,6])&as.numeric(indiv[,8])==i,][ageProbs<ageMort[i+1],6] <- year
+                indiv[is.na(indiv[,6])&indiv[,8]==i,][ageProbs<ageMort[i+1],6] <- year
                 ## if there are any individuals, compare the random number to the mortality rate for
                 ## that age-class, and assign a death year if random number < mortality rate.
             } else if(length(ageProbs) == 1) {
                 if(ageProbs<ageMort[i]) {
-                    indiv[is.na(indiv[,6])&as.numeric(indiv[,8])==i,6] <- year
+                    indiv[is.na(indiv[,6])&indiv[,8]==i,6] <- year
                 }
             }  ## special error-handling for age-classes with only one individual.
         }
     } else if (type == "stock") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for(j in min(as.numeric(indiv[,7])):max(as.numeric(indiv[,7]))) {
-            stockProbs <- runif(n=nrow(indiv[is.na(indiv[,6])&as.numeric(indiv[,7])==j,,drop=FALSE]))
+        for(j in min(indiv[,7]):max(indiv[,7])) {
+            stockProbs <- runif(n=nrow(indiv[is.na(indiv[,6])&indiv[,7]==j,,drop=FALSE]))
 
             if(length(stockProbs) > 1) {
-                indiv[is.na(indiv[,6])&as.numeric(indiv[,7])==j,][stockProbs<stockMort[j],6] <- year
+                indiv[is.na(indiv[,6])&indiv[,7]==j,][stockProbs<stockMort[j],6] <- year
             } else if(length(stockProbs == 1)) {
                 if(stockProbs<stockMort[j]) {
-                    indiv[is.na(indiv[,6])&as.numeric(indiv[,7])==j,6] <- year
+                    indiv[is.na(indiv[,6])&indiv[,7]==j,6] <- year
                 }
             }  ## almost exactly the same as age-specific mort, but no 'stock 0' synonymous with
                ## 'age 0'.
         }
     } else if (type == "ageStock") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for (i in min(as.numeric(indiv[,8])):max(as.numeric(indiv[,8]))) {
-            for (j in min(as.numeric(indiv[,7])):max(as.numeric(indiv[,7]))) {
+        for (i in min(indiv[,8]):max(indiv[,8])) {
+            for (j in min(indiv[,7]):max(indiv[,7])) {
                 ageStockProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&
-                                                      as.numeric(indiv[,8])==i&
-                                                      as.numeric(indiv[,7])==j,,drop = FALSE]))
+                                                      indiv[,8]==i&
+                                                      indiv[,7]==j,,drop = FALSE]))
                 if(length(ageStockProbs) > 1) {
                     indiv[is.na(indiv[,6])&
-                          as.numeric(indiv[,8])==i&
-                          as.numeric(indiv[,7])==j,][ageStockProbs<ageStockMort[i+1,j],6] <- year
+                          indiv[,8]==i&
+                          indiv[,7]==j,][ageStockProbs<ageStockMort[i+1,j],6] <- year
                 } else if(length(ageStockProbs) == 1) {
                     if(ageStockProbs<ageStockMort[i,j]) {
                         indiv[is.na(indiv[,6])&
-                              as.numeric(indiv[,8])==i&
-                              as.numeric(indiv[,7])==j,6] <- year
+                              indiv[,8]==i&
+                              indiv[,7]==j,6] <- year
                     }
                 }
             }
@@ -670,7 +678,7 @@ sexSwitch <- function(indiv = makeFounders(), direction = "both", prob = 0.0001)
 #' @export
 
 birthdays <- function(indiv = makeFounders() ) {
-    indiv[is.na(indiv[,6]) ,8] <- as.numeric(indiv[is.na(indiv[,6]),8]) + 1
+    indiv[is.na(indiv[,6]) ,8] <- indiv[is.na(indiv[,6]),8] + 1L
     return(indiv)
 }
 
@@ -706,7 +714,7 @@ make_archive <- function() {
 #' @examples
 #' archive <- make_archive()
 #' indiv <- makeFounders()
-#' ages <- min(as.numeric(indiv[,8])):200
+#' ages <- min(indiv[,8]):200
 #' ageMort <- 0.1 + (0.2*1/(ages+1))  ## placeholder ageMort with (extreme) negative senescence
 #' stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
 #' admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
@@ -2201,7 +2209,7 @@ return( inds)
 ## 1) setup:
 #archive <- make_archive()
 
-#ages <- min(as.numeric(indiv[,8])):max(as.numeric(indiv[,8]))
+#ages <- min(indiv[,8]):max(indiv[,8])
 #ageMort <- 0.1 + (0.2*1/(ages+1))  ## placeholder ageMort with (extreme) negative senescence
 
 #stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
