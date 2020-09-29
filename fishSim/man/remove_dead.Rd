@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{remove_dead}
 \alias{remove_dead}
-\title{remove_dead(): removes the dead from an individual-data matrix.}
+\title{remove the dead from a population}
 \usage{
 remove_dead(indiv = mort())
 }

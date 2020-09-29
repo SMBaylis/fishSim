@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{move}
 \alias{move}
-\title{move(): markovian movement between breeding stocks.}
+\title{markovian movement between breeding stocks}
 \usage{
 move(indiv = makeFounders(), moveMat)
 }

@@ -2,13 +2,23 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{mate}
 \alias{mate}
-\title{mate(): find male-female pairs within the same stock, and generate batches of offspring
-until a recruitment quota is filled.}
+\title{find male-female pairs and breed until a quota is filled}
 \usage{
-mate(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
-  osr = c(0.5, 0.5), year = "-1", firstBreed = 1, type = "flat",
-  maxClutch = Inf, exhaustMothers = FALSE, exhaustFathers = FALSE,
-  fecundityCurve, maleCurve, femaleCurve)
+mate(
+  indiv = makeFounders(),
+  fecundity = 0.2,
+  batchSize = 0.5,
+  osr = c(0.5, 0.5),
+  year = "-1",
+  firstBreed = 1,
+  type = "flat",
+  maxClutch = Inf,
+  exhaustMothers = FALSE,
+  exhaustFathers = FALSE,
+  fecundityCurve,
+  maleCurve,
+  femaleCurve
+)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}

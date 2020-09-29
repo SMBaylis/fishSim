@@ -2,11 +2,19 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{mort}
 \alias{mort}
-\title{mort(): sets death year to a constant for some members of the population.}
+\title{kill some members of the population}
 \usage{
-mort(indiv = makeFounders(), year = "-1", type = "simple",
-  maxAge = if (type == "age") length(ageMort) else Inf, maxPop = 1000,
-  mortRate, ageMort, stockMort, ageStockMort)
+mort(
+  indiv = makeFounders(),
+  year = "-1",
+  type = "simple",
+  maxAge = if (type == "age") length(ageMort) else Inf,
+  maxPop = 1000,
+  mortRate,
+  ageMort,
+  stockMort,
+  ageStockMort
+)
 }
 \arguments{
 \item{indiv}{A matrix of inidviduals, as from makeFounders(), move(), or mate().}

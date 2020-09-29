@@ -2,10 +2,16 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{capture}
 \alias{capture}
-\title{capture(): identify genetic captures/samples in population.}
+\title{identify genetic captures/samples in population}
 \usage{
-capture(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE,
-  sex = NULL)
+capture(
+  indiv = makeFounders(),
+  n = 1,
+  year = "-1",
+  fatal = TRUE,
+  sex = NULL,
+  age = NULL
+)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, as from makeFounders(), mate(), or mort().}
@@ -17,6 +23,8 @@ capture(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE,
 \item{fatal}{Is sampling fatal?}
 
 \item{sex}{Sex specific sampling (either \code{"M"}, \code{"F"} or \code{NULL})}
+
+\item{age}{Integer vector. The age class(es) at which sampling occurs}
 }
 \description{
 Works in a manner similar to \code{mort()}, assigning a year to captured individuals and killing

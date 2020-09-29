@@ -2,11 +2,23 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{PoNG}
 \alias{PoNG}
-\title{PoNG(): find a Point of No Growth (by tweaking first-year mortality).}
+\title{find a Point of No Growth (by tweaking first-year mortality)}
 \usage{
-PoNG(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
-  maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
-  maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort)
+PoNG(
+  mateType = "flat",
+  mortType = "flat",
+  batchSize,
+  firstBreed = 0,
+  maxClutch = Inf,
+  osr = c(0.5, 0.5),
+  maturityCurve,
+  femaleCurve,
+  maxAge = Inf,
+  mortRate,
+  ageMort,
+  stockMort,
+  ageStockMort
+)
 }
 \arguments{
 \item{mateType}{the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',

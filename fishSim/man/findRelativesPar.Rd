@@ -2,10 +2,14 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{findRelativesPar}
 \alias{findRelativesPar}
-\title{findRelativesPar(): partially-parallelized findRelatives()}
+\title{partially-parallelized findRelatives()}
 \usage{
-findRelativesPar(indiv, sampled = TRUE, verbose = TRUE,
-  nCores = detectCores() - 1)
+findRelativesPar(
+  indiv,
+  sampled = TRUE,
+  verbose = TRUE,
+  nCores = detectCores() - 1
+)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
@@ -23,7 +27,7 @@ the number of cores on the machine.}
 }
 \description{
 findRelativesPar is a partially-parallelized version of findRelatives. Its use is
-exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'. 
+exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
 'findRelativesAlt' uses the sample indicator in indiv[,9] to decide which individuals
 to compare, whereas 'findRelativesPar' compares between all individuals in 'sampled'.
 }

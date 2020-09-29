@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{archive_dead}
 \alias{archive_dead}
-\title{archive_dead(): takes all the dead individuals and copies them to an archive matrix.}
+\title{take dead individuals and copy them to an archive}
 \usage{
 archive_dead(indiv = mort(), archive = make_archive())
 }
@@ -26,7 +26,7 @@ stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
 admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
 for (i in 1:nrow(admix.m)) {
      admix.m[i,] <- stocks*stocks[i]
-} 
+}
 indiv <- makeFounders()
 for(k in 1:30) {
    indiv <- move(indiv = indiv, moveMat = admix.m)
@@ -35,7 +35,7 @@ for(k in 1:30) {
    indiv <- birthdays(indiv = indiv)
    archive <- archive_dead(indiv = indiv, archive = archive) # archives a copy of dead animals'
                                                              # data
-   indiv <- remove_dead(indiv = indiv) # actually removes the dead from 'indiv'. 
+   indiv <- remove_dead(indiv = indiv) # actually removes the dead from 'indiv'.
 }
 }
 \seealso{

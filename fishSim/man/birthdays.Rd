@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{birthdays}
 \alias{birthdays}
-\title{birthdays(): takes an individual-data matrix, and adds one to each individual's age}
+\title{add one to each individual's age}
 \usage{
 birthdays(indiv = makeFounders())
 }

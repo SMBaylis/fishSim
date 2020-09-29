@@ -2,8 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{namedRelatives}
 \alias{namedRelatives}
-\title{namedRelatives(): show numbers of pairs in named relationship
-classes}
+\title{show numbers of pairs in named relationship classes}
 \usage{
 namedRelatives(pairs)
 }
@@ -24,7 +23,7 @@ POPs: Parent-offspring pairs. One is the other's parent.
 GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
 dGGPs: Double Grandparent-grandoffspring pairs. One is the other's grandparent, twice.
        That is, the grandparent has had offspring by two different mates, and those
-       offspring have mated to generate the grandoffspring. 
+       offspring have mated to generate the grandoffspring.
 G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
 dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the other's
          great-grandparent, twice. That is, the great-grandparent has had offspring by two

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{parents}
 \alias{parents}
-\title{parents(): look up the parents of one or more individuals.}
+\title{look up the parents of one or more individuals}
 \usage{
 parents(ID, indiv)
 }

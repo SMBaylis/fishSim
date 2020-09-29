@@ -2,12 +2,24 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{check_growthrate}
 \alias{check_growthrate}
-\title{check_growthrate(): estimate population growth under some mate() and mort() conditions.}
+\title{estimate population growth under some mate() and mort() conditions}
 \usage{
-check_growthrate(forceY1 = NA, mateType = "flat", mortType = "flat",
-  batchSize, firstBreed = 0, maxClutch = Inf, osr = c(0.5, 0.5),
-  maturityCurve, femaleCurve, maxAge = Inf, mortRate, ageMort, stockMort,
-  ageStockMort)
+check_growthrate(
+  forceY1 = NA,
+  mateType = "flat",
+  mortType = "flat",
+  batchSize,
+  firstBreed = 0,
+  maxClutch = Inf,
+  osr = c(0.5, 0.5),
+  maturityCurve,
+  femaleCurve,
+  maxAge = Inf,
+  mortRate,
+  ageMort,
+  stockMort,
+  ageStockMort
+)
 }
 \arguments{
 \item{forceY1}{optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,

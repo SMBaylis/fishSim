@@ -2,10 +2,15 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{makeFounders}
 \alias{makeFounders}
-\title{makeFounders(): makes a data.frame of individuals to act as a founding population.}
+\title{make a founding population}
 \usage{
-makeFounders(pop = 1000, osr = c(0.5, 0.5), stocks = c(0.3, 0.3,
-  0.4), maxAge = 20, survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge)))
+makeFounders(
+  pop = 1000,
+  osr = c(0.5, 0.5),
+  stocks = c(0.3, 0.3, 0.4),
+  maxAge = 20,
+  survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))
+)
 }
 \arguments{
 \item{pop}{The size of the founder population.}

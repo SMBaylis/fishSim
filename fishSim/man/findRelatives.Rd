@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{findRelatives}
 \alias{findRelatives}
-\title{findRelatives(): find shared ancestors between pairs of individuals}
+\title{find shared ancestors between pairs of individuals}
 \usage{
 findRelatives(indiv, sampled)
 }

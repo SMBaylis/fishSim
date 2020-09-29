@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{lookAtPair}
 \alias{lookAtPair}
-\title{lookAtPair(): given a pair from findRelatives(), show a readable relationship summary}
+\title{show a readable relationship summary for a pair of relatives}
 \usage{
 lookAtPair(pair)
 }

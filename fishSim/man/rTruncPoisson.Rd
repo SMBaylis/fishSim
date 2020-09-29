@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{rTruncPoisson}
 \alias{rTruncPoisson}
-\title{rTruncPoisson(): draw from a zero-truncated Poisson distribution.}
+\title{draw from a zero-truncated Poisson dist}
 \usage{
 rTruncPoisson(n = 1, T = 0.5)
 }

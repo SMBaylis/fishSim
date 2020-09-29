@@ -2,13 +2,23 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{altMate}
 \alias{altMate}
-\title{altMate(): breeding based on mature females, not quota-filling.}
+\title{breeding based on mature females}
 \usage{
-altMate(indiv = makeFounders(), batchSize = 0.5,
-  fecundityDist = "poisson", osr = c(0.5, 0.5), year = "-1",
-  firstBreed = 1, type = "flat", maxClutch = Inf,
-  singlePaternity = TRUE, exhaustFathers = FALSE, maturityCurve,
-  maleCurve, femaleCurve)
+altMate(
+  indiv = makeFounders(),
+  batchSize = 0.5,
+  fecundityDist = "poisson",
+  osr = c(0.5, 0.5),
+  year = "-1",
+  firstBreed = 1,
+  type = "flat",
+  maxClutch = Inf,
+  singlePaternity = TRUE,
+  exhaustFathers = FALSE,
+  maturityCurve,
+  maleCurve,
+  femaleCurve
+)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}

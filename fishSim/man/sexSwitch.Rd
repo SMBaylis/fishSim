@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{sexSwitch}
 \alias{sexSwitch}
-\title{sexSwitch(): induces sex-switching in a subset of the population.}
+\title{induce sex-switching in a subset of the population}
 \usage{
 sexSwitch(indiv = makeFounders(), direction = "both", prob = 1e-04)
 }

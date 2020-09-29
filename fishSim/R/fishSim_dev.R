@@ -12,7 +12,7 @@
 #' @importFrom stats rbinom rpois runif uniroot
 NULL
 
-#' makeFounders(): makes a data.frame of individuals to act as a founding population.
+#' make a founding population
 #'
 #' Returns a pop-by-8 data.frame, with each row being an individual in the
 #' founder population.
@@ -43,12 +43,12 @@ NULL
 
 makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
                          maxAge = 20, survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))) {
-  
+
     if(sum(osr) != 1) warning("osr does not sum to 1")
     if(sum(stocks) != 1) warning("stocks do not sum to 1")
     if(sum(survCurv) != 1) warning("survCurv does not sum to 1")
     if(length(survCurv) != maxAge) warning("survCurv and maxAge imply different maximum ages")
-    
+
 ### indiv <- matrix(data = NA ,nrow = pop, ncol = 9)
     indiv <- data.frame(Me = character(pop), Sex = character(pop), Dad = character(pop),
                         Mum = character(pop), BirthY = integer(pop), DeathY = integer(pop),
@@ -81,7 +81,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
 #}  ## probability of moving into a stock is proportional to the default size of that stock
    ## from makeFounders.
 
-#' move(): markovian movement between breeding stocks.
+#' markovian movement between breeding stocks
 #'
 #' returns a pop-by-8 character matrix, defined in the makeFounders documentation.
 #'
@@ -108,7 +108,7 @@ move <- function(indiv = makeFounders(), moveMat) {
 
 #############################################################################################
 
-#' rTruncPoisson(): draw from a zero-truncated Poisson distribution.
+#' draw from a zero-truncated Poisson dist
 #'
 #' Returns a vector of draws from a zero-truncated Poisson distribution, with specified
 #' lambda.
@@ -127,8 +127,7 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 
 ###############################################################################################
 
-#' mate(): find male-female pairs within the same stock, and generate batches of offspring
-#' until a recruitment quota is filled.
+#' find male-female pairs and breed until a quota is filled
 #'
 #' Returns an individual matrix with added newborns at age 0. This is the first
 #' mate method, where the number of newborns is a set as a proportion of the adult population,
@@ -137,7 +136,7 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 #' that 'quota' or newborns has been met, or all potential parents have reached breeding exhaustion.
 #' A second mate method exists, where the number of newborns is derived from the fecundities of all
 #' breeding females in the population - see altMate().
-#' 
+#'
 #' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
 #' @param fecundity Numeric variable. mean number of recruits to generate, as a proportion of
 #'                  the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
@@ -208,7 +207,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
     ticker <- 1
     while(ticker <= nrow(sprog.m)) {
         if(nrow(fathers) == 0) stop("All potential fathers are exhausted")
-        if(nrow(mothers) == 0) stop("All potential mothers are exhausted")        
+        if(nrow(mothers) == 0) stop("All potential mothers are exhausted")
         drawMother <- mothers[sample(nrow(mothers), size = 1, replace = FALSE),]
                                         # Note: character vector, not matrix
         fathersInStock <- subset(fathers, fathers[,7] == drawMother[,7])
@@ -258,12 +257,12 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         } ## remove exhausted father from potential fathers.
         ticker <- ticker+n.sprogs
     }
-    indiv <- rbind(indiv, dfify(sprog.m))  
+    indiv <- rbind(indiv, dfify(sprog.m))
     return(indiv)
 }
 
 
-#' altMate(): breeding based on mature females, not quota-filling.
+#' breeding based on mature females
 #'
 #' Returns an individual matrix with added newborns at age 0. This is the second
 #' mate method, where the number of offspring is derived from the number of mature females,
@@ -277,7 +276,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #' Another mate method exists, where the number of newborns is set as a proportion of the population
 #' size, and mating occurs until the required number of offspring are generated (if possible, given
 #' breeding constraints) - see mate().
-#' 
+#'
 #' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
 #' @param batchSize Numeric. The mean number of offspring produced per mature female if fecundityDist
 #'                  = "poisson"; the value of T from a zero-truncated Poisson distribution, if
@@ -356,10 +355,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
         if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
         if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
-        
+
         mothers <- subset(mothers, clutch > 0)  ## identify the mothers that truly breed,
         clutch <- clutch[clutch>0]              ## how many offspring each produces,
-        
+
     } else if (type == "age") {
 
         mothers <- mothers[runif(nrow(mothers)) < maturityCurve[mothers[,8]],
@@ -368,27 +367,27 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         fathers <- fathers[runif(nrow(fathers)) < maturityCurve[fathers[,8]],
                          , drop = FALSE] ## trims 'fathers' to those that pass a random
                                          ## maturity test.
-        
+
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
         if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
         if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
         if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
-        
+
         mothers <- subset(mothers, clutch > 0) ## trims 'mothers' to those that truly breed
         clutch <- clutch[clutch>0]
-        
+
     } else if (type == "ageSex") {
 
         mothers <- mothers[runif(nrow(mothers)) < femaleCurve[mothers[,8]] , ,drop = FALSE]
         ## trims 'mothers' to just those that pass a random maturity test.
-        
+
         fathers <- fathers[runif(nrow(fathers)) < maleCurve[fathers[,8]] , ,drop = FALSE]
         ## trims 'fathers' to just those that pass a random maturity test.
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
         if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
         if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
         if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
-        
+
         mothers <- subset(mothers, clutch > 0)
         clutch <- clutch[clutch>0]
     }
@@ -396,7 +395,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
     clutch[clutch > maxClutch] <- maxClutch ## delimits clutch sizes to not exceed maxClutch
     ## sprog.m <- matrix(data = NA, nrow = 0, ncol = 9) ## left empty if no-one breeds.
     sprog.m <- makeFounders(pop = 0) ## left empty if no-one breeds.
-    
+
     for (s in unique(mothers[,7])) { ## s for 'stock'.
         mothersInStock <- mothers[mothers[,7] == s , , drop = FALSE]
         clutchInStock <- clutch[mothers[,7] == s]
@@ -434,21 +433,21 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                     if(exhaustFathers == TRUE) {
                         fathersInStock <- fathersInStock[!fathersInStock[,1] %in% sprog.stock[,3],
                                                         ,drop = FALSE]
-                        ## remove the used fathers from 'fathersInStock'                        
+                        ## remove the used fathers from 'fathersInStock'
                     }
                     ticker <- ticker+clutchInStock[m]  ## increment ticker
                 }
             }
         }
         sprog.stock <- sprog.stock[!is.na(sprog.stock[,3]), , drop = FALSE]
-     
+
         sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
         sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
         sprog.stock[,5] <- year
         sprog.stock[,7] <- as.integer(rep(s), nrow(sprog.stock))
         sprog.stock[,8] <- 0
         sprog.stock <- dfify(sprog.stock)
-        
+
         sprog.m <- rbind(sprog.m, sprog.stock)
     }
     names(sprog.m) <- names(indiv)
@@ -466,15 +465,15 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 ## stockMort <- sample(c(0.1,0.5,0.2), length(stocks), replace = TRUE)
                                         # placeholder stockMort with variable mortality
 
-## ageStockMort <- matrix(data = ageMort, nrow = length(ages), ncol = length(stocks)) 
+## ageStockMort <- matrix(data = ageMort, nrow = length(ages), ncol = length(stocks))
 ## for(i in 1:ncol(ageStockMort)) ageStockMort[,i] <- ageStockMort[,i]*sample(c(1,2,1.3),1)
 ## placeholder ageStockMort with a simple multiplicative effect of stock on age-related mort.
 ## only works with these values because ageMort is never >= 0.5.
 
 ## Section 2b: mortality and aging.
 
-#' mort(): sets death year to a constant for some members of the population.
-#' 
+#' kill some members of the population
+#'
 #' Members are chosen according to one of several defined mortality structures.
 #' Mortality rates can bring the population to a specified size, or can be a flat probability,
 #' or a probability that depends on age, stock, or age:stock.
@@ -583,50 +582,55 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
                     }
                 }
             }
-        } ## the same structure as 'age' and 'stock', but iterating through both.     
+        } ## the same structure as 'age' and 'stock', but iterating through both.
     }
     return(indiv)
 }
 
 #############################################################################################
 
-#' capture(): identify genetic captures/samples in population.
+#' identify genetic captures/samples in population
 #'
 #' Works in a manner similar to \code{mort()}, assigning a year to captured individuals and killing
-#' them if sampling is fatal. Sex specific sampling is allowed. 
+#' them if sampling is fatal. Sex specific sampling is allowed.
 #'
 #' @param indiv A matrix of individuals, as from makeFounders(), mate(), or mort().
 #' @param n Number of captures (genetic samples)
 #' @param year Capture year
 #' @param fatal Is sampling fatal?
 #' @param sex Sex specific sampling (either \code{"M"}, \code{"F"} or \code{NULL})
+#' @param age Integer vector. The age class(es) at which sampling occurs
 #' @export
 
-capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE, sex = NULL) {
-  
+capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE, sex = NULL, age = NULL) {
+
     if (!is.null(sex)) {
         is.sex <- indiv[,2] == sex
     } else is.sex <- TRUE
-    
+
+    if (!is.null(age)) {
+        is.age <- indiv[,8] %in% age
+    } else is.age <- TRUE
+
     # alive (and of the correct sex)
     # or considered dead
-    is.alive <- is.na(indiv[,6]) & is.sex
+    is.alive <- is.na(indiv[,6]) & is.sex & is.age
     is.dead  <- !is.alive
-    
+
     # sample support
     n.alive <- sum(is.alive)
-  
+
     # sample captures have to be alive
     n <- min(n, n.alive)
-    
+
     if(n > 0) {
-        
+
         # sample row location in indiv data.frame
         sample.loc <- sample.int(n.alive, size = n)
-        
+
         # record capture
         indiv[is.alive,][sample.loc, 9] <- year
-        
+
         # kill if capture sampling is fatal
         if (fatal) {
             indiv[is.alive,][sample.loc, 6] <- year
@@ -638,7 +642,7 @@ capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE, se
 
 #############################################################################################
 
-#' sexSwitch(): induces sex-switching in a subset of the population.
+#' induce sex-switching in a subset of the population
 #'
 #' Given an individual-data matrix, this function stochastically switches the sex of individuals
 #' with a set probability. Can be one-directional (i.e., only male-to-female or only female-to-male
@@ -668,7 +672,7 @@ sexSwitch <- function(indiv = makeFounders(), direction = "both", prob = 0.0001)
 
 ################################################################################################
 
-#' birthdays(): takes an individual-data matrix, and adds one to each individual's age
+#' add one to each individual's age
 #'
 #' Nothing fancy: this is separated from the other functions to allow more flexible
 #' assignments of movement, mating and mortality within each year. Only updates ages
@@ -686,7 +690,7 @@ birthdays <- function(indiv = makeFounders() ) {
 
 ## Section 2c: archiving dead animals to keep the active data matrix small.
 
-#' make_archive(): sets up an archive matrix, for storing simulation outputs.
+#' set up an archive matrix for storing simulation outputs
 #'
 #' For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
 #' In these cases, run-times may be improved by periodically moving dead individuals into an
@@ -701,7 +705,7 @@ make_archive <- function() {
     return(archive)
 }
 
-#' archive_dead(): takes all the dead individuals and copies them to an archive matrix.
+#' take dead individuals and copy them to an archive
 #'
 #' For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
 #' In these cases, run-times may be improved by periodically moving dead individuals into an
@@ -720,7 +724,7 @@ make_archive <- function() {
 #' admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
 #' for (i in 1:nrow(admix.m)) {
 #'      admix.m[i,] <- stocks*stocks[i]
-#' } 
+#' }
 #' indiv <- makeFounders()
 #' for(k in 1:30) {
 #'    indiv <- move(indiv = indiv, moveMat = admix.m)
@@ -729,7 +733,7 @@ make_archive <- function() {
 #'    indiv <- birthdays(indiv = indiv)
 #'    archive <- archive_dead(indiv = indiv, archive = archive) # archives a copy of dead animals'
 #'                                                              # data
-#'    indiv <- remove_dead(indiv = indiv) # actually removes the dead from 'indiv'. 
+#'    indiv <- remove_dead(indiv = indiv) # actually removes the dead from 'indiv'.
 #' }
 
 archive_dead <- function(indiv = mort(), archive = make_archive() ) {
@@ -737,7 +741,7 @@ archive_dead <- function(indiv = mort(), archive = make_archive() ) {
     return(archive)
 }
 
-#' remove_dead(): removes the dead from an individual-data matrix.
+#' remove the dead from a population
 #'
 #' For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
 #' In these cases, run-times may be improved by periodically moving dead individuals into an
@@ -753,7 +757,7 @@ remove_dead <- function(indiv = mort() ) {
 
 ################################################################################################
 
-#' check_growthrate(): estimate population growth under some mate() and mort() conditions.
+#' estimate population growth under some mate() and mort() conditions
 #'
 #' In complex models, population trends may not be immediately clear from the settings. Yet
 #' it can be important to know population trends in advance: growing populations take progressively
@@ -831,14 +835,14 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
     if(!(mateType %in% c("flat", "age", "ageSex"))) {
         stop("'mateType' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    
+
     if(!(mortType %in% c("flat", "age", "stock", "ageStock"))) {
         stop("'mortType' must be one of 'flat', 'age', 'stock', or 'ageStock'.")
     }
 
     if(missing(batchSize)) stop("'batchSize' must be specified.")
 
-    ## re-calculate batchSize if maxClutch is non-Inf    
+    ## re-calculate batchSize if maxClutch is non-Inf
     if(batchSize != Inf) {
         batches <- rpois(1000000, lambda = batchSize)
         batchSize <- mean(batches[batches <= maxClutch])
@@ -851,7 +855,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
             for(i in 1:ncol(mat) ) {
                 if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-mortRate
             }
-            mat[nrow(mat), ncol(mat)] <- 1-mortRate            
+            mat[nrow(mat), ncol(mat)] <- 1-mortRate
             ## build a Leslie matrix
         } else if(mortType == "age") {
             mat <- matrix(data = 0, nrow = length(ageMort)+1, ncol = length(ageMort)+1)
@@ -1001,7 +1005,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
         if(mortType %in% c("flat", "age")) mat[2,1] <- 1-forceY1
         if(mortType %in% c("stock", "ageStock")) for(i in 1:length(mat.l)) mat.l[[i]][2,1] <- 1-forceY1
     }  ## optionally forces year 1 mortality rate to a specific value.
-        
+
     if(mortType %in% c("flat", "age")) {
         return(eigen(mat)$values[1]) ## this is a numeric growth rate.
     }
@@ -1014,7 +1018,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 
 ##################################################################################################
 
-#' PoNG(): find a Point of No Growth (by tweaking first-year mortality).
+#' find a Point of No Growth (by tweaking first-year mortality)
 #'
 #' This is essentially a wrapper for check_growthrate(), taking all the same inputs. It returns
 #' a plot of projected growth-rates across all possible first-year survival rates and the numeric
@@ -1029,7 +1033,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 #' situations. Note that PoNG() uses some brute-force methods on the back end, so
 #' it's not terribly efficient. It takes around 5 - 10 seconds per stock on a fairly-modern
 #' (vintage 2018) laptop.
-#' 
+#'
 #' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
 #'                 or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
 #'                 and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
@@ -1169,7 +1173,7 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
 }
 
 
-#' parents(): look up the parents of one or more individuals.
+#' look up the parents of one or more individuals
 #'
 #' The parents() function searches an 'indiv' matrix for individuals with a given ID,
 #' and returns the IDs of its parents. If one or more of the parents were founders, it
@@ -1209,7 +1213,7 @@ parents <- function(ID, indiv) {
     return(outs)
 }
 
-#' grandparents(): look up the grandparents of one or more individuals.
+#' look up the grandparents of one or more individuals
 #'
 #' A convenience wrapper for 'parents()', returning the grandparents of one or more
 #' individuals. If FF is 'father's father', MF is 'mother's father', and so on,
@@ -1223,7 +1227,7 @@ grandparents <- function(ID, indiv) {
     parents(parents(ID, indiv), indiv)
 }
 
-#' great.grandparents(): look up the great-grandparents of one or more individuals.
+#' look up the great-grandparents of one or more individuals
 #'
 #' A convenience wrapper for 'parents()', returning the great-grandparents of one or more
 #' individuals. If FFF is 'father's father's father', MFM is 'mother's father's mother',
@@ -1238,7 +1242,7 @@ great.grandparents <- function(ID, indiv) {
     parents(parents(parents(ID, indiv), indiv), indiv)
 }
 
-#' great2.grandparents(): look up the great-great-grandparents of one or more individuals.
+#' look up the great-great-grandparents of one or more individuals
 #'
 #' A convenience wrapper for 'parents()', returning the great-great-grandparents of one
 #' or more individuals. If 'FFFF' is 'father's father's father's father', and
@@ -1254,7 +1258,7 @@ great2.grandparents <- function(ID, indiv) {
     parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv)
 }
 
-#' great3.grandparents(): look up the great-great-great-grandparents of one or more individuals.
+#' look up the great-great-great-grandparents of one or more individuals.
 #'
 #' A convenience wrapper for 'parents()', returning the great-great-great-grandparents
 #' of one or more individuals. If 'FFFFF' is 'father's father's father's father's father',
@@ -1273,7 +1277,7 @@ great3.grandparents <- function(ID, indiv) {
     parents(parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv), indiv)
 }
 
-#' great4.grandparents(): look up the great-great-great-great-grandparents of one or more individuals.
+#' look up the great-great-great-great-grandparents of one or more individuals
 #'
 #' A convenience wrapper for 'parents()', returning the
 #' great-great-great-great-grandparents of one or more individuals. If 'FFFFFF' is
@@ -1297,8 +1301,7 @@ great4.grandparents <- function(ID, indiv) {
 }
 
 
-
-#' findRelatives(): find shared ancestors between pairs of individuals
+#' find shared ancestors between pairs of individuals
 #'
 #' findRelatives takes a set of 'sampled' individuals and a population simulation output
 #' (i.e., an 'indiv' object, of the kind output by mort() ). It returns a data.frame
@@ -1317,7 +1320,7 @@ great4.grandparents <- function(ID, indiv) {
 #'    share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
 #'    and so on. Note that relationship classes are identical by reversal - ThreeFour is the
 #'    same as FourThree, and so only relationship classes with increasing order are presented
-#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo). 
+#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
 #' @param indiv A matrix of individuals, as from mort(), but which will need to contain
 #'              long strings of parent-offspring relationships, so will most likely come
 #'              from a multi-generation simulation.
@@ -1347,7 +1350,7 @@ findRelatives <- function(indiv, sampled) {
                              "MFMFMF","MFMFMM","MFMMFF","MFMMFM","MFMMMF","MFMMMM","MMFFFF",
                              "MMFFFM","MMFFMF","MMFFMM","MMFMFF","MMFMFM","MMFMMF","MMFMMM",
                              "MMMFFF","MMMFFM","MMMFMF","MMMFMM","MMMMFF","MMMMFM","MMMMMF",
-                             "MMMMMM") # gggg-grandparents                        
+                             "MMMMMM") # gggg-grandparents
 
     for(i in 1:nrow(ancestors)) {
         ancestors[i, 2:3] <- parents(ancestors[i,1], indiv)
@@ -1374,9 +1377,9 @@ findRelatives <- function(indiv, sampled) {
 ##    pairs <- expand.grid(ancestors[,1], ancestors[,1])
 ##    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
 
-    related <- c(rep(NA, nrow(pairs)))  
+    related <- c(rep(NA, nrow(pairs)))
     totalRelatives <- c(rep(NA, nrow(pairs))) ##mainly here for imagined post-hoc diagnostics
-    
+
     OneTwo <- c(rep(NA, nrow(pairs)))
     OneThree <- c(rep(NA, nrow(pairs)))
     OneFour <- c(rep(NA, nrow(pairs)))
@@ -1485,13 +1488,13 @@ findRelatives <- function(indiv, sampled) {
     return(pairs)
 }
 
-#' findRelativesPar(): partially-parallelized findRelatives()
+#' partially-parallelized findRelatives()
 #'
 #' findRelativesPar is a partially-parallelized version of findRelatives. Its use is
-#' exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'. 
+#' exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
 #' 'findRelativesAlt' uses the sample indicator in indiv[,9] to decide which individuals
 #' to compare, whereas 'findRelativesPar' compares between all individuals in 'sampled'.
-#' 
+#'
 #' Lookup operations to find each member's ancestors are parallelized, but comparisons
 #' between ancestor-sets are not. On a test-set of 100 sampled individuals, this partial-
 #' parallelization reduced runtime from 55 seconds to 22 seconds.
@@ -1535,16 +1538,16 @@ findRelatives <- function(indiv, sampled) {
 findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = detectCores()-1) {
 
     registerDoParallel(nCores)
-  
+
     if (sampled) {
-      if (sum(!is.na(indiv[,9])) == 0) 
+      if (sum(!is.na(indiv[,9])) == 0)
         stop("no sampled individuals")
       if (verbose)
         print(data.frame(table(indiv[!is.na(indiv[,9]),9], dnn = "Sample Year")))
       sampled <- indiv[!is.na(indiv[,9]),1]
-      
+
     } else sampled <- indiv[,1]
-   
+
     ancestors <- matrix(data = sampled, nrow = length(sampled))
 
     parents.o <- foreach(i = 1:nrow(ancestors), .combine = rbind) %dopar% {
@@ -1595,7 +1598,7 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
                              "MFMFMF","MFMFMM","MFMMFF","MFMMFM","MFMMMF","MFMMMM","MMFFFF",
                              "MMFFFM","MMFFMF","MMFFMM","MMFMFF","MMFMFM","MMFMMF","MMFMMM",
                              "MMMFFF","MMMFFM","MMMFMF","MMMFMM","MMMMFF","MMMMFM","MMMMMF",
-                             "MMMMMM") # gggg-grandparents                        
+                             "MMMMMM") # gggg-grandparents
 
     expand.grid.unique <- function(x, y, include.equals=FALSE) {
         x <- unique(x)
@@ -1609,13 +1612,13 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
 
     pairs <- expand.grid.unique(ancestors[,1], ancestors[,1])
     colnames(pairs) <- c("Var1", "Var2")
-    
+
 ##    pairs <- expand.grid(ancestors[,1], ancestors[,1])
 ##    pairs <- pairs[pairs$Var1 != pairs$Var2,] ## remove self-comparisons
 
-    related <- c(rep(NA, nrow(pairs)))  
+    related <- c(rep(NA, nrow(pairs)))
     totalRelatives <- c(rep(NA, nrow(pairs))) ##mainly here for imagined post-hoc diagnostics
-    
+
     OneTwo <- c(rep(NA, nrow(pairs)))
     OneThree <- c(rep(NA, nrow(pairs)))
     OneFour <- c(rep(NA, nrow(pairs)))
@@ -1638,7 +1641,7 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
     FourSix <- c(rep(NA, nrow(pairs))) ## PC
     FourSeven <- c(rep(NA, nrow(pairs))) #PC 'one's g-grandparent is the other's ggparent/gggpar/etc'
     FiveFive <- c(rep(NA, nrow(pairs)))  ## PC
-    FiveSix <- c(rep(NA, nrow(pairs)))  ## PC 
+    FiveSix <- c(rep(NA, nrow(pairs)))  ## PC
     FiveSeven <- c(rep(NA, nrow(pairs))) ##PC 'one's gg-grandparent is the other's ggparent/gggparent'
     SixSix <- c(rep(NA, nrow(pairs))) ## PC
     SixSeven <- c(rep(NA, nrow(pairs))) ##PC 'ggg-grandparent is the other's ggggparent/gggggparent'
@@ -1728,10 +1731,10 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
 
     stopImplicitCluster()  ## cleanup the cluster afterwards; not important but clean.
     return(pairs)
-}                            
-                            
+}
 
-#' lookAtPair(): given a pair from findRelatives(), show a readable relationship summary
+
+#' show a readable relationship summary for a pair of relatives
 #'
 #' lookAtPair takes a single row from the output of findRelatives(), and returns a 7-by-7
 #' matrix (as data.frame) showing the number of shared ancestors for each relationship class.
@@ -1752,14 +1755,14 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
 #' (the 1 in [5,X6], and doubling series proceeding diagonally from that point), and a shared
 #' great-great-great-grandparent / great-great-great-great-grandparent (the 3 in [6,X7], where
 #' we would otherwise expect a 2 from the previous shared ancestor).
-#' 
+#'
 #' @param pair a data.frame object, with structure identical to a row from findRelatives()
 #' @seealso [fishSim::findRelatives()]
 #' @export
 
 lookAtPair <- function(pair) {
     outs <- matrix(data = 0, nrow = 7, ncol = 7)
-    
+
     outs[1,2] <- pair$OneTwo
     outs[2,1] <- pair$OneTwo
     outs[1,3] <- pair$OneThree
@@ -1822,8 +1825,7 @@ lookAtPair <- function(pair) {
 }
 
 
-#' namedRelatives(): show numbers of pairs in named relationship
-#' classes
+#' show numbers of pairs in named relationship classes
 #'
 #' namedRelatives takes output from findRelatives() or findRelativesPar(), and returns
 #' counts of named relationship classes within the set of pair comparisons. Relationship
@@ -1837,7 +1839,7 @@ lookAtPair <- function(pair) {
 #' GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
 #' dGGPs: Double Grandparent-grandoffspring pairs. One is the other's grandparent, twice.
 #'        That is, the grandparent has had offspring by two different mates, and those
-#'        offspring have mated to generate the grandoffspring. 
+#'        offspring have mated to generate the grandoffspring.
 #' G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
 #' dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the other's
 #'          great-grandparent, twice. That is, the great-grandparent has had offspring by two
@@ -1864,7 +1866,7 @@ lookAtPair <- function(pair) {
 #' ORCs: Other Relationship Classes. Within the seven-generation search space, at least one
 #'       shared ancestor was detected, but the relationship does not fall into one of the
 #'       listed relationship classes.
-#' 
+#'
 #' @param pairs a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()
 #' @seealso [fishSim::findRelatives()]
 #' @export
@@ -1910,7 +1912,7 @@ namedRelatives <- function(pairs) {
 #'       parents.
 #' HCPs: Half-cousin pairs. The individuals share one grandparent.
 #' FCPs: Full-cousin pairs. The individuals share two grandparents.
-#' 
+#'
 #' @param inds an 'indiv' matrix, as from 'mort()', with some
 #'     individuals marked as 'captured'
 #' @param max_gen the maximum depth to look up relatives, in
@@ -2006,7 +2008,7 @@ quickin <- function( inds, max_gen=2) {
     return( unique( keep_me))
   }
   keep_me <- toKeep(inds, max_gen = max_gen)
-  
+
   ## # Must keep samples; also their relatives yea even unto the N-th generation
   ## keep_me <- with( inds, {
   ##     keep_me <- which( !is.na( SampY))
@@ -2036,7 +2038,7 @@ quickin <- function( inds, max_gen=2) {
   Stock <- inds[keep_me,][,7]
   AgeLast <- inds[keep_me,][,8]
   SampY <- inds[keep_me,][,9] ## all this, just to reproduce extract.named()!
-  
+
   Sample <- which( !is.na( SampY))
 
   # MOP etc are all row-numbers, rather than raw IDs
@@ -2057,7 +2059,7 @@ quickin <- function( inds, max_gen=2) {
   # check:
 ##stopifnot(  my.all.equal( sort( both( alt_FSP)), sort( both( FSP)))) ## refactor to base
   stopifnot(  all.equal( sort( both( alt_FSP)), sort( both( FSP))))
-  
+
   HSP <- rbind( MHSP, PHSP)
 
   # Anything more complicated needs a 2nd generation
@@ -2114,7 +2116,7 @@ quickin <- function( inds, max_gen=2) {
 return( retlist)
 }
 
-#' convert 'makeFounders'-type matrix to data.frame
+#' convert an early 'makeFounders'-type matrix to data.frame
 #'
 #' Internal operations are all performed on matrix objects lacking
 #' human-friendly features like column names. 'dfify' takes a matrix
@@ -2154,7 +2156,7 @@ stop( "Missing crucial names")
       ## cl <- sapply( inds, is.character) %except% FALSE
       cl <- sapply( inds, is.character)[! sapply( inds, is.character) %in% FALSE]
       ## for( cnc in names( cl) %that.are.in% numcols) {
-      for( cnc in names( cl)[names( cl) %in% numcols]) {    
+      for( cnc in names( cl)[names( cl) %in% numcols]) {
       inds[[ cnc]] <- as.integer( inds[[ cnc]])
     }
 
@@ -2186,7 +2188,7 @@ stopifnot( is.character( inds) && is.matrix( inds) && ncol( inds)==length( charc
   ## ... trying to avoid too much memory duplication (prob unnec)
     ## if( !my.all.equal( colnames( inds), c( charcols, numcols))) { ## refactor to base
     if( !all.equal( colnames( inds), c( charcols, numcols))) {
-        
+
     inds <- inds[ , c( charcols, numcols)]
   }
 
@@ -2216,7 +2218,7 @@ return( inds)
 #admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
 #for (i in 1:nrow(admix.m)) {
 #    admix.m[i,] <- stocks*stocks[i]
-#} 
+#}
 
 #indiv <- makeFounders(pop = 1000, osr = c(0.55, 0.45))
 

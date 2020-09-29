@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{make_archive}
 \alias{make_archive}
-\title{make_archive(): sets up an archive matrix, for storing simulation outputs.}
+\title{set up an archive matrix for storing simulation outputs}
 \usage{
 make_archive()
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{grandparents}
 \alias{grandparents}
-\title{grandparents(): look up the grandparents of one or more individuals.}
+\title{look up the grandparents of one or more individuals}
 \usage{
 grandparents(ID, indiv)
 }

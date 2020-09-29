@@ -3,7 +3,6 @@
 \docType{package}
 \name{fishSim}
 \alias{fishSim}
-\alias{fishSim-package}
 \title{fishSim}
 \description{
 R tool for simulation of population dynamics; originally written for fish

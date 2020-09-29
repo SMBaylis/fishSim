@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{dfify}
 \alias{dfify}
-\title{convert 'makeFounders'-type matrix to data.frame}
+\title{convert an early 'makeFounders'-type matrix to data.frame}
 \usage{
 dfify(inds)
 }
