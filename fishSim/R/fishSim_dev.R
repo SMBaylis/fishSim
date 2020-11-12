@@ -1469,8 +1469,10 @@ findRelatives <- function(indiv, sampled) {
 
         ## Identify pairs where one indiv's gggg-grandparent is the other's gggg-grandparent
         SevenSeven[i] <- sum(c(indi1GGGGGP %in% indi2GGGGGP))
-        if(i / 1000 == floor(i/1000) ) { print(paste(i," of ", length(related),
-                                                     " comparisons", sep = "")) }
+        if(i / 1000 == floor(i/1000) ) {
+            cat( sprintf( '\r', i, " of", length(related), " comparisons at ",
+                         Sys.time(), sep = ""))
+        }
     }
 
     pairs <- data.frame(pairs, related, totalRelatives,
@@ -1708,9 +1710,11 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
 
         ## Identify pairs where one indiv's gggg-grandparent is the other's gggg-grandparent
         SevenSeven[i] <- sum(c(indi1GGGGGP %in% indi2GGGGGP)) ## possibly cull
-        if(i / 1000 == floor(i/1000) ) { print(paste(i," of ", length(related),
-                                                     " comparisons at ",
-                                                     Sys.time(), sep = "")) }
+        if(i / 1000 == floor(i/1000) ) {
+            cat( sprintf( '\r', i, " of", length(related),
+                         " comparisons at ", Sys.time(), sep = ""))
+            # print(paste(i," of ", length(related), " comparisons at ", Sys.time(), sep = ""))
+        }
     }
 
     pairs <- data.frame(pairs, related, totalRelatives,
