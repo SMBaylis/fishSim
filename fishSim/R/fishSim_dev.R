@@ -2050,12 +2050,12 @@ quickin <- function( inds, max_gen=2) {
   MatSP <- xpairs( Mum[ Sample], Mum[ Sample], same=TRUE)
   PatSP <- xpairs( Dad[ Sample], Dad[ Sample], same=TRUE)
   is_FSP <- both( MatSP) %in% both( PatSP) # from Mum's PoV
-  MHSP <- MatSP[ !is_FSP,]
-  FSP <- MatSP[ is_FSP,]
+  MHSP <- MatSP[ !is_FSP,, drop = FALSE]
+  FSP <- MatSP[ is_FSP,, drop = FALSE]
 
   is_FSP <- both( PatSP) %in% both( MatSP) # from Dad's PoV
-  PHSP <- PatSP[ !is_FSP,]
-  alt_FSP <- PatSP[ is_FSP,]
+  PHSP <- PatSP[ !is_FSP,, drop = FALSE]
+  alt_FSP <- PatSP[ is_FSP,, drop = FALSE]
   # check:
 ##stopifnot(  my.all.equal( sort( both( alt_FSP)), sort( both( FSP)))) ## refactor to base
   stopifnot(  all.equal( sort( both( alt_FSP)), sort( both( FSP))))
@@ -2082,23 +2082,23 @@ quickin <- function( inds, max_gen=2) {
   HTP1 <- xpairs( Mum[ Sample], GM_Sample, FALSE)
   HTP2 <- xpairs( Dad[ Sample], GF_Sample, FALSE)
   is_FTP <- both( HTP1) %in% both( HTP2)
-  FTP <- HTP1[ is_FTP,]
-  HTP1 <- HTP1[ !is_FTP,]
+  FTP <- HTP1[ is_FTP,, drop = FALSE]
+  HTP1 <- HTP1[ !is_FTP,, drop = FALSE ]
 
   # and drop the other way...
   is_FTP <- both( HTP2) %in% both( HTP1)
-  HTP2 <- HTP2[ !is_FTP,]
+  HTP2 <- HTP2[ !is_FTP,, drop = FALSE]
   HTP <- rbind( HTP1, HTP2)
 
   # Cousins
   MatCP <- xpairs( GM_Sample, GM_Sample, same=TRUE)
   PatCP <- xpairs( GF_Sample, GF_Sample, same=TRUE)
   is_FCP <- both( MatCP) %in% both( PatCP)
-  MHCP <- MatCP[ !is_FCP,]
-  FCP <- MatCP[ is_FCP,]
+  MHCP <- MatCP[ !is_FCP,, drop = FALSE]
+  FCP <- MatCP[ is_FCP,, drop = FALSE]
 
   is_FCP <- both( PatCP) %in% both( MatCP) # pat pov
-  PHCP <- PatCP[ !is_FCP,]
+  PHCP <- PatCP[ !is_FCP,, drop = FALSE]
   HCP <- rbind( MHCP, PHCP)
 
   # Turn numbers into names...

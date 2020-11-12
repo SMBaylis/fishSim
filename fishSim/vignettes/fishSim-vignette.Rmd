@@ -2,7 +2,8 @@
 title: "fishSim-vignette"
 author: "Shane M Baylis"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+# output: rmarkdown::html_vignette
+output: rmarkdown::pdf_document
 vignette: >
   %\VignetteIndexEntry{fishSim-vignette}
   %\VignetteEngine{knitr::rmarkdown}
