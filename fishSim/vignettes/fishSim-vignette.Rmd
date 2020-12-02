@@ -166,7 +166,7 @@ Internally, these relationships are stored in terms of 'shared ancestors at the 
 If a pair shares a parent (i.e., `pairs$TwoTwo == 1`), then they also share at least two grandparents (`pairs$ThreeThree >= 2`), four great-grandparents (`pairs$FourFour >= 4`), and so on. This pattern holds generally: a half thiatic pair (`pairs$TwoThree == 1`) will also share at least two `pairs$ThreeFour >= 2` ancestors and at least four `pairs$FourFive >= 4` ancestors. It is also possible, for example, for a pair to share two grandparents, but no parents - that is the case for full cousin pairs.
 
 ```{r}
-## mark 100 individuals alive at the end of the simulation as 'captured'.
+## mark 200 individuals alive at the end of the simulation as 'captured'.
 indiv <- capture(indiv, n = 200, year = 60, fatal = FALSE) 
 
 ## look up each animal's ancestors and look for shared ancestors between each
@@ -336,3 +336,117 @@ for (y in 1:60) {
     indiv <- birthdays(indiv)
 }
 ```
+
+## A note on custom functions in fishSim
+
+The objects used in `fishSim` are deliberately kept simple, to
+encourage hacking wherever hacking is useful. To that end, most
+functions in `fishSim` both input and output a `data.frame` that we
+have called `indiv` throughout this vignette.
+
+If your species of interest has a life-history not readily captured by
+the existing `fishSim` functions, you may wish to write a custom
+function for just that step in the simulation. For instance, you may
+have a species in which each female mates with a handful of males each
+breeding season, and then uses stored sperm from these mates to
+fertilise a clutch of eggs. Let's call this the 'sperm storage'
+scenario. The sperm storage scenario can't be coded using the built-in
+`mate` or `altMate` functions - in those functions, each mating event
+either has single paternity (i.e., all offspring produced by each
+female have the same father) or completely random paternity (i.e., the
+father of each offspring is randomly selected from among all mature
+males in the same stock), or, using `mate`, within-clutch single
+paternity but potentially multiple clutches (each with a different
+father). In the situations handled by `mate` and `altMate`, the
+expected number of offspring for a female is linearly related to her
+number of mates, which doesn't fit with our 'sperm storage' scenario.
+
+To get around this problem, we will need to define a custom
+`mate`-like function, that inputs an `indiv`-like
+`data.frame`, generates new offspring the way the scenario demands,
+and outputs an `indiv`-like `data.frame` to be used by the other
+functions in `fishSim`. Such a function could look like this:
+
+```{r}
+# parameter 'indiv' is a standard indiv frame, as from makeFounders()
+#
+# parameter 'batchSize' is the lambda value for a Poisson
+# distribution, where the number of offspring per breeding female is 
+# ~Poisson(lambda = batchSize)
+#
+# parameter 'breedProb' is the probability that a mature female will 
+# breed this in this mating event (all mature males are assumed
+# breeding-capable)
+#
+# parameter 'maturityAge' is the knife-edge age at maturity, for both
+# males and females
+#
+# parameter 'year' is the year. It is used to set the $BirthY for new 
+# recruits
+#
+# myMate uses a zero-truncated Poisson dist to determine the number of 
+# mates for each female that breeds. Parameter 'meanMates' sets the T 
+# parameter for that distribution
+#
+myMate <- function(indiv, batchSize, breedProb, maturityAge, year, meanMates) {
+
+  library(ids)
+  
+  matureFemales <- indiv[indiv$Sex == "F" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY) ,]
+  matureMales <- indiv[indiv$Sex == "M" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY),]
+  iBreed_F <- matureFemales[sample(1:nrow(matureFemales), size = nrow(matureFemales)*breedProb),]
+  iBreed_M <- matureMales
+  
+  if(nrow(iBreed_F) == 0 | nrow(iBreed_M) == 0) { return(indiv) }
+  
+  recruits <- indiv[0,]
+  
+  for(i in 1:nrow(iBreed_F) ) {
+      clutchSize <- rpois(1, batchSize)
+      if(clutchSize >= 1) {
+        ## identify mates for this female
+        nMates <- rTruncPoisson(1, T = meanMates) ## at least one mate; otherwise Pois with mean 2.8
+        mates <- iBreed_M[sample(1:nrow(iBreed_M),nMates, replace = TRUE), ]
+        ## start building the clutch members
+        myClutch <- indiv[1:clutchSize,] ## just a hack for
+                                         ## formatting; content is overwritten
+        myClutch$Me <- uuid(clutchSize, drop_hyphens = TRUE)
+        myClutch$Sex <- sample(c("M", "F"), clutchSize, prob = c(0.5, 0.5), replace = TRUE)
+        myClutch$Dad <- mates[sample(1:nrow(mates), clutchSize, replace = TRUE),]$Me
+        myClutch$Mum <- iBreed_F[i,]$Me
+        myClutch$BirthY <- c(rep(year, clutchSize))
+        myClutch$DeathY <- c(rep(NA, clutchSize))
+        myClutch$Stock <- c(rep(1, clutchSize))
+        myClutch$AgeLast <- c(rep(0, clutchSize))
+        myClutch$SampY <- c(rep(NA, clutchSize))
+
+        recruits <- rbind(recruits, myClutch)
+    }
+  }
+  
+  outs <- rbind(indiv, recruits)
+  return(outs)
+}
+```
+
+With `myMate` defined, we can go on to write a simulation
+using the other `fishSim` tools, as in this stripped-down example:
+
+```{r}
+indiv <- makeFounders(stocks = c(1))
+ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality as in the
+## first, 'simple' example
+for (y in 1:10) {
+    indiv <- myMate(indiv = indiv, batchSize = 3, breedProb = 1,
+                      maturityAge = 5, year = y, meanMates = 3)
+    indiv <- mort(indiv, year = y, type = "age", ageMort = ageMort)
+    indiv <- birthdays(indiv)
+    if(y %in% c(6:10)) {
+	    indiv <- capture(indiv, n = 40, fatal = FALSE, year = y)
+    }
+}
+pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
+relatives <- namedRelatives(pairs)
+```
+
+To aid in hacking custom functions, 

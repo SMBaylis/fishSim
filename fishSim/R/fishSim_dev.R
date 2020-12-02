@@ -1929,68 +1929,70 @@ quickin <- function( inds, max_gen=2) {
   }
   gc() # spaaaace; paranoia
 
-  xpairs <- function( anc1s, anc2s, same) {
-      ## Targeting one specific shared ancestor-type--- eg Mum of 1st == Grandma of 2nd
-      ## anc1s & anc2s should be matrices
+  xpairs <-
+      function( anc1s, anc2s, same) {
+          ## Targeting one specific shared ancestor-type--- eg Mum of 1st == Grandma of 2nd
+          ## anc1s & anc2s should be matrices
 
-      ##  if( FALSE && too_smart) {
-      ##    crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
-      ##    ranc1s <- ...
-      ##  }
-
-      if( is.null( dim( anc1s))) {
-          anc1s <- matrix( anc1s, ncol=1)
-      }
-
-      if( is.null( dim( anc2s))) {
-          anc2s <- matrix( anc2s, ncol=1)
-      }
-
-      ## Find all ancestors that fit the bill
-      N <- nrow( anc1s)
-      stopifnot( nrow( anc2s)==N)
-
-      shareds <- integer()
-      for( i1 in ncol( anc1s)) {
-          for( i2 in ncol( anc2s)) {
-              if( same) { # check to see if anc1 matches any anc2 *except* itself
-                  mm <- match( anc1s[,i1], rev( anc2s[,i2]), 0L)
-                  mm[ mm != 0] <- N+1-mm[ mm != 0]
-                  mm[ mm==seq_along( mm)] <- 0
-                  new_shareds <- anc1s[ mm>0, i1] # should be same as:
-                  test <- anc2s[ mm[ mm>0], i1]
-              } else {
-                  combo <- c( anc1s[,i1], anc2s[,i2])
-                  new_shareds <- combo[ duplicated( combo)]
-              }
-
-              shareds <- c( shareds, new_shareds)
+          if( FALSE && too_smart) {
+              crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
+              ranc1s <- ...
           }
+
+          if( is.null( dim( anc1s))) {
+              anc1s <- matrix( anc1s, ncol=1)
+          }
+
+          if( is.null( dim( anc2s))) {
+              anc2s <- matrix( anc2s, ncol=1)
+          }
+
+                                        # Find all ancestors that fit the bill
+          N <- nrow( anc1s)
+          stopifnot( nrow( anc2s)==N)
+
+          shareds <- integer()
+          for( i1 in 1 %upto% ncol( anc1s)) {
+              for( i2 in 1 %upto% ncol( anc2s)) {
+                  if( same) { # check to see if anc1 matches any anc2 *except* itself
+                      mm <- match( anc1s[,i1], rev( anc2s[,i2]), 0L)
+                      mm[ mm != 0] <- N+1-mm[ mm != 0]
+                      mm[ mm==seq_along( mm)] <- 0
+                      new_shareds <- anc1s[ mm>0, i1] # should be same as:
+                      test <- anc2s[ mm[ mm>0], i1]
+                  } else {
+                      combo <- c( anc1s[,i1], anc2s[,i2])
+                      new_shareds <- combo[ duplicated( combo)]
+                  }
+
+                  shareds <- c( shareds, new_shareds)
+              }
+          }
+                                        # desc1 <- match( anc1s, shareds, 0)
+                                        # desc2 <- match( anc2s, shareds, 0)
+
+                                        # Find all descendent-pairs of each ancestor
+          keeps1 <- keeps2 <- integer()
+          for( i in shareds) {
+              desc1 <- which( rowSums( anc1s==i)>0)
+              desc2 <- which( rowSums( anc2s==i)>0)
+              keeps1 <- c( keeps1, rep( desc1, length( desc2)))
+              keeps2 <- c( keeps2, rep( desc2, each=length( desc1)))
+          }
+
+                                        # Zap dups (keep A/B but not B/A or A/A)
+          swap <- keeps1 > keeps2
+          temp <- keeps1[ swap]
+          keeps1[ swap] <- keeps2[ swap]
+          keeps2[ swap] <- temp
+
+          ## now they're in row-wise order, so just check uniqueness of "joint row"--- RHS expression is unique per integer-pair
+          keep <- (keeps1 != keeps2) & !duplicated( keeps1 + 0.5/keeps2)
+          keeps1 <- keeps1[ keep]
+          keeps2 <- keeps2[ keep]
+
+          return( cbind( keeps1, keeps2))
       }
-      ## desc1 <- match( anc1s, shareds, 0)
-      ## desc2 <- match( anc2s, shareds, 0)
-
-      ## Find all descendent-pairs of each ancestor
-      keeps1 <- keeps2 <- integer()
-      for( i in shareds) {
-          desc1 <- which( rowSums( anc1s==i)>0)
-          desc2 <- which( rowSums( anc2s==i)>0)
-          keeps1 <- c( keeps1, rep( desc1, length( desc2)))
-          keeps2 <- c( keeps2, rep( desc2, each=length( desc1)))
-      }
-
-      ## Zap dups (A/B but not B/A or A/A)
-      swap <- keeps1 > keeps2
-      temp <- keeps1[ swap]
-      keeps1[ swap] <- keeps2[ swap]
-      keeps2[ swap] <- temp
-      keep <- (keeps1 != keeps2) & !duplicated( keeps1 + 0.5/keeps2)
-      keeps1 <- keeps1[ keep]
-      keeps2 <- keeps2[ keep]
-
-      return( cbind( keeps1, keeps2))
-  }
-
 
   toKeep <- function(inds, max_gen) {
       keep_me <- which( !is.na( inds$SampY))
