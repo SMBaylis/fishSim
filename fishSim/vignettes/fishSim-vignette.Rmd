@@ -259,11 +259,11 @@ check_growthrate(mateType = "ageSex", mortType = "ageStock", batchSize = 1.6,
 ## of offspring per mature female per breeding attempt) a bit.
 ```
 
-Now we just run the population simulator, as we did for the simple population, but with a couple of extra things to specify. Let's give it 60 years.
+Now we just run the population simulator, as we did for the simple population, but with a couple of extra things to specify. Let's give it 100 years.
 
 
 ```{r}
-for (k in 1:60) {
+for (k in 1:100) {
     ## very rarely, switch some males to females
     indiv <- sexSwitch(indiv = indiv, direction = "MF", prob = 1e-04)
     ## move animals according to the markovian matrix we set up before
@@ -274,13 +274,15 @@ for (k in 1:60) {
     ## kill animals on the basis of their age and stock, as set up before   
     indiv <- birthdays(indiv = indiv) 
     indiv <- mort(indiv = indiv, year = k, type = "ageStock", ageStockMort = ageStockMort)
-    if(k %in% c(10,20,30,40,50,60)) {
-	    indiv <- capture(indiv, n = 40, fatal = TRUE, year = k)
+    if(k %in% c(seq(10,110,10))) {
         archive <- archive_dead(indiv = indiv, archive = archive)
 	    indiv <- remove_dead(indiv = indiv)
 	    print(paste("Iteration ", k, " complete", sep = ""))
 	## occasionally sample from the population and do some clean-up. And report on progress.
     }
+    if(k %in% c(94:100)) {
+	indiv <- capture(indiv, n = 40, fatal = TRUE, year = k)
+    }	
 }
 archive <- rbind(archive, indiv)
 indiv <- archive  ## merge 'indiv' and 'archive', since they were only separated for speed.
@@ -311,7 +313,16 @@ relatives
 
 ## A note on mark-dependent survival or movement
 
-It is possible to simulate mark-dependent survival or movement by working on subsets of the 'indiv' matrix within the main simulation loop, and applying different mortality or movement operations to each subset. Note that this should *not* be done for `mate()` operations - if `mate()` is run on a subset of the population, mating will only occur between members of that subset. In the case of subsets for marked and unmarked individuals, this would imply that marked animals only mate with other marked animals, and _vice versa_.
+It is possible to simulate mark-dependent survival or movement by
+working on subsets of the 'indiv' matrix within the main simulation
+loop, and applying different mortality or movement operations to each
+subset. Note that if `mate()`, `altMate()`, `birthdays()`, etc., are
+run on a subset of the population, the operation will only affect
+members of that subset. In the case of subsets for marked and unmarked
+individuals, this would imply that marked animals only mate with other
+marked animals, and _vice versa_. It is important to ensure that a
+combined `indiv` object is available for any operations that affect
+the whole population, or to repeat each opertation for each subset.
 
 ```{r, eval = FALSE}
 indiv <- makeFounders(stocks = c(1))
@@ -347,19 +358,20 @@ have called `indiv` throughout this vignette.
 If your species of interest has a life-history not readily captured by
 the existing `fishSim` functions, you may wish to write a custom
 function for just that step in the simulation. For instance, you may
-have a species in which each female mates with a handful of males each
-breeding season, and then uses stored sperm from these mates to
-fertilise a clutch of eggs. Let's call this the 'sperm storage'
-scenario. The sperm storage scenario can't be coded using the built-in
-`mate` or `altMate` functions - in those functions, each mating event
-either has single paternity (i.e., all offspring produced by each
-female have the same father) or completely random paternity (i.e., the
-father of each offspring is randomly selected from among all mature
-males in the same stock), or, using `mate`, within-clutch single
-paternity but potentially multiple clutches (each with a different
-father). In the situations handled by `mate` and `altMate`, the
-expected number of offspring for a female is linearly related to her
-number of mates, which doesn't fit with our 'sperm storage' scenario.
+have a species in which each female mates with a handful of males in
+the year preceding each breeding season, and then uses stored sperm
+from these mates to fertilise a clutch of eggs just before giving
+birth. Let's call this the 'sperm storage' scenario. The sperm storage
+scenario can't be coded using the built-in `mate` or `altMate`
+functions - in those functions, each mating event either has single
+paternity (i.e., all offspring produced by each female have the same
+father) or completely random paternity (i.e., the father of each
+offspring is randomly selected from among all mature males in the same
+stock), or, using `mate`, within-clutch single paternity but
+potentially multiple clutches (each with a different father). In the
+situations handled by `mate` and `altMate`, the expected number of
+offspring for a female is linearly related to her number of mates,
+which doesn't fit with our 'sperm storage' scenario.
 
 To get around this problem, we will need to define a custom
 `mate`-like function, that inputs an `indiv`-like
@@ -368,15 +380,15 @@ and outputs an `indiv`-like `data.frame` to be used by the other
 functions in `fishSim`. Such a function could look like this:
 
 ```{r}
+# A custom myMate function
+#
 # parameter 'indiv' is a standard indiv frame, as from makeFounders()
 #
-# parameter 'batchSize' is the lambda value for a Poisson
-# distribution, where the number of offspring per breeding female is 
-# ~Poisson(lambda = batchSize)
+# parameter 'batchSize' sets the number of offspring per breeding female
+# such that the number of offspring ~Poisson(lambda = batchSize)
 #
 # parameter 'breedProb' is the probability that a mature female will 
-# breed this in this mating event (all mature males are assumed
-# breeding-capable)
+# breed this in this mating event
 #
 # parameter 'maturityAge' is the knife-edge age at maturity, for both
 # males and females
@@ -384,10 +396,10 @@ functions in `fishSim`. Such a function could look like this:
 # parameter 'year' is the year. It is used to set the $BirthY for new 
 # recruits
 #
-# myMate uses a zero-truncated Poisson dist to determine the number of 
-# mates for each female that breeds. Parameter 'meanMates' sets the T 
-# parameter for that distribution
-#
+# myMate uses a zero-truncated Poisson distribution to determine the
+# number of mates for each female that breeds. Parameter 'meanMates'
+# sets the T parameter for that distribution
+
 myMate <- function(indiv, batchSize, breedProb, maturityAge, year, meanMates) {
 
   library(ids)
@@ -402,10 +414,12 @@ myMate <- function(indiv, batchSize, breedProb, maturityAge, year, meanMates) {
   recruits <- indiv[0,]
   
   for(i in 1:nrow(iBreed_F) ) {
-      clutchSize <- rpois(1, batchSize)
+      clutchSize <- rpois(1, batchSize) ## with minor changes, could use any
+        ## discrete distribution for which R provides a random-number generator here
       if(clutchSize >= 1) {
         ## identify mates for this female
-        nMates <- rTruncPoisson(1, T = meanMates) ## at least one mate; otherwise Pois with mean 2.8
+        nMates <- rTruncPoisson(1, T = meanMates) ## at least one mate; otherwise
+	## Poisson with mean set by meanMates
         mates <- iBreed_M[sample(1:nrow(iBreed_M),nMates, replace = TRUE), ]
         ## start building the clutch members
         myClutch <- indiv[1:clutchSize,] ## just a hack for
@@ -438,7 +452,7 @@ ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality as in the
 ## first, 'simple' example
 for (y in 1:10) {
     indiv <- myMate(indiv = indiv, batchSize = 3, breedProb = 1,
-                      maturityAge = 5, year = y, meanMates = 3)
+                      maturityAge = 4, year = y, meanMates = 3)
     indiv <- mort(indiv, year = y, type = "age", ageMort = ageMort)
     indiv <- birthdays(indiv)
     if(y %in% c(6:10)) {
@@ -446,7 +460,7 @@ for (y in 1:10) {
     }
 }
 pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
-relatives <- namedRelatives(pairs)
+namedRelatives(pairs)
 ```
 
-To aid in hacking custom functions, 
+
