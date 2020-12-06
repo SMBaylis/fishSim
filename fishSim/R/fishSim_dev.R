@@ -1325,10 +1325,18 @@ great4.grandparents <- function(ID, indiv) {
 #'              long strings of parent-offspring relationships, so will most likely come
 #'              from a multi-generation simulation.
 #' @param sampled A character vector containing one or more IDs, e.g., from mort()[,1]
+#' @param delimitIndiv TRUE/FALSE. Lookups can be sped up markedly by first delimiting
+#'                     indiv to only those animals that exist as parents, or that are
+#'                     marked as sampled. Default TRUE.
 #' @seealso [fishSim::lookAtPair()]
 #' @export
 
-findRelatives <- function(indiv, sampled) {
+findRelatives <- function(indiv, sampled, delimitIndiv = TRUE) {
+
+    if(delimitIndiv) {
+        keepers <- indiv$Me %in% sampled | indiv$Me %in% indiv$Mum | indiv$Me %in% indiv$Dad
+        indiv <- indiv[keepers,]
+    }
 
     ancestors <- matrix(data = c(sampled, rep("blanks", length(sampled)*126)), nrow = length(sampled))
     colnames(ancestors) <- c("self","father", "mother", # self and parents
@@ -1532,11 +1540,15 @@ findRelatives <- function(indiv, sampled) {
 #'                years for sampled individuals.
 #' @param nCores the number of cores to use for parallel processes. Defaults to one less than
 #'               the number of cores on the machine.
+#' @param delimitIndiv TRUE/FALSE. Lookups can be sped up markedly by first delimiting
+#'                     indiv to only those animals that exist as parents, or that are
+#'                     marked as sampled. Default TRUE.
 #' @seealso [fishSim::findRelatives()]
 #' @seealso [fishSim::capture()]
 #' @export
 
-findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = detectCores()-1) {
+findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = detectCores()-1,
+                                     delimitIndiv = TRUE) {
 
     registerDoParallel(nCores)
 
@@ -1548,6 +1560,11 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
       sampled <- indiv[!is.na(indiv[,9]),1]
 
     } else sampled <- indiv[,1]
+
+    if(delimitIndiv) {
+        keepers <- indiv$Me %in% sampled | indiv$Me %in% indiv$Mum | indiv$Me %in% indiv$Dad
+        indiv <- indiv[keepers,]
+    }
 
     ancestors <- matrix(data = sampled, nrow = length(sampled))
 
