@@ -4,7 +4,7 @@
 \alias{findRelatives}
 \title{find shared ancestors between pairs of individuals}
 \usage{
-findRelatives(indiv, sampled)
+findRelatives(indiv, sampled, delimitIndiv = TRUE)
 }
 \arguments{
 \item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
@@ -12,6 +12,10 @@ long strings of parent-offspring relationships, so will most likely come
 from a multi-generation simulation.}
 
 \item{sampled}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+
+\item{delimitIndiv}{TRUE/FALSE. Lookups can be sped up markedly by first delimiting
+indiv to only those animals that exist as parents, or that are
+marked as sampled. Default TRUE.}
 }
 \description{
 findRelatives takes a set of 'sampled' individuals and a population simulation output

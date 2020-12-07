@@ -8,7 +8,8 @@ findRelativesPar(
   indiv,
   sampled = TRUE,
   verbose = TRUE,
-  nCores = detectCores() - 1
+  nCores = detectCores() - 1,
+  delimitIndiv = TRUE
 )
 }
 \arguments{
@@ -24,6 +25,10 @@ years for sampled individuals.}
 
 \item{nCores}{the number of cores to use for parallel processes. Defaults to one less than
 the number of cores on the machine.}
+
+\item{delimitIndiv}{TRUE/FALSE. Lookups can be sped up markedly by first delimiting
+indiv to only those animals that exist as parents, or that are
+marked as sampled. Default TRUE.}
 }
 \description{
 findRelativesPar is a partially-parallelized version of findRelatives. Its use is

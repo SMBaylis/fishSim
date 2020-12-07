@@ -8,6 +8,7 @@
 #' @import parallel
 #' @import doParallel
 #' @import ids
+#' @import fastmatch
 #' @importFrom graphics abline lines plot
 #' @importFrom stats rbinom rpois runif uniroot
 NULL
@@ -1940,151 +1941,74 @@ namedRelatives <- function(pairs) {
 #' @seealso [fishSim::capture()]
 #' @export
 
-quickin <- function( inds, max_gen=2) {
-  if( class( inds) != 'data.frame') {
+"quickin" <-
+function( inds, max_gen=2) {
+  if( inds %is.not.a% 'data.frame') {
     inds <- dfify( inds)
   }
   gc() # spaaaace; paranoia
 
-  xpairs <-
-      function( anc1s, anc2s, same) {
-          ## Targeting one specific shared ancestor-type--- eg Mum of 1st == Grandma of 2nd
-          ## anc1s & anc2s should be matrices
+  match <- fastmatch::fmatch
 
-          if( FALSE && too_smart) {
-              crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
-              ranc1s <- ...
-          }
-
-          if( is.null( dim( anc1s))) {
-              anc1s <- matrix( anc1s, ncol=1)
-          }
-
-          if( is.null( dim( anc2s))) {
-              anc2s <- matrix( anc2s, ncol=1)
-          }
-
-                                        # Find all ancestors that fit the bill
-          N <- nrow( anc1s)
-          stopifnot( nrow( anc2s)==N)
-
-          shareds <- integer()
-          for( i1 in 1 %upto% ncol( anc1s)) {
-              for( i2 in 1 %upto% ncol( anc2s)) {
-                  if( same) { # check to see if anc1 matches any anc2 *except* itself
-                      mm <- match( anc1s[,i1], rev( anc2s[,i2]), 0L)
-                      mm[ mm != 0] <- N+1-mm[ mm != 0]
-                      mm[ mm==seq_along( mm)] <- 0
-                      new_shareds <- anc1s[ mm>0, i1] # should be same as:
-                      test <- anc2s[ mm[ mm>0], i1]
-                  } else {
-                      combo <- c( anc1s[,i1], anc2s[,i2])
-                      new_shareds <- combo[ duplicated( combo)]
-                  }
-
-                  shareds <- c( shareds, new_shareds)
-              }
-          }
-                                        # desc1 <- match( anc1s, shareds, 0)
-                                        # desc2 <- match( anc2s, shareds, 0)
-
-                                        # Find all descendent-pairs of each ancestor
-          keeps1 <- keeps2 <- integer()
-          for( i in shareds) {
-              desc1 <- which( rowSums( anc1s==i)>0)
-              desc2 <- which( rowSums( anc2s==i)>0)
-              keeps1 <- c( keeps1, rep( desc1, length( desc2)))
-              keeps2 <- c( keeps2, rep( desc2, each=length( desc1)))
-          }
-
-                                        # Zap dups (keep A/B but not B/A or A/A)
-          swap <- keeps1 > keeps2
-          temp <- keeps1[ swap]
-          keeps1[ swap] <- keeps2[ swap]
-          keeps2[ swap] <- temp
-
-          ## now they're in row-wise order, so just check uniqueness of "joint row"--- RHS expression is unique per integer-pair
-          keep <- (keeps1 != keeps2) & !duplicated( keeps1 + 0.5/keeps2)
-          keeps1 <- keeps1[ keep]
-          keeps2 <- keeps2[ keep]
-
-          return( cbind( keeps1, keeps2))
-      }
-
-  toKeep <- function(inds, max_gen) {
-      keep_me <- which( !is.na( inds$SampY))
+  # Must keep samples; also their relatives yea even unto the N-th generation
+  # NB if ancestor is "founder" they will NOT appear, which is OK
+  keep_me <- with( inds, {
+      keep_me <- which( !is.na( SampY))
 
       prev_keep_me <- keep_me
-      for( gen in 1:max_gen) {
-          '%!in%' <- function(x,y)!('%in%'(x,y))
-          ## keep_me_too1 <- match( inds$Mum[ prev_keep_me], inds$Me, 0L) %except% keep_me
-          keep_me_too1 <- match( inds$Mum[ prev_keep_me], inds$Me, 0L)[match( inds$Mum[ prev_keep_me], inds$Me, 0L) %!in% keep_me] ## refactored to base funs
+      for( gen in 1 %upto% max_gen) {
+        keep_me_too1 <- match( Mum[ prev_keep_me], Me, 0L) %except% keep_me
         # NB sex switching--- hence, drop Dads that are also Mums that generation...
-          ## keep_me_too2 <- match( inds$Dad[ prev_keep_me], inds$Me, 0L) %except% c( keep_me, keep_me_too1)
-          keep_me_too2 <- match( inds$Dad[ prev_keep_me], inds$Me, 0L) [match( inds$Dad[ prev_keep_me], inds$Me, 0L) %!in% c( keep_me, keep_me_too1)] ## refactored to base funs
+        keep_me_too2 <- match( Dad[ prev_keep_me], Me, 0L) %except% c( keep_me, keep_me_too1)
         prev_keep_me <- c( keep_me_too1, keep_me_too2)
-        keep_me <- c( keep_me, prev_keep_me)
+        keep_me <- c( keep_me, prev_keep_me %except% 0L) # absolutely positively exclude founders!
       }
     return( unique( keep_me))
-  }
-  keep_me <- toKeep(inds, max_gen = max_gen)
+    })
 
-  ## # Must keep samples; also their relatives yea even unto the N-th generation
-  ## keep_me <- with( inds, {
-  ##     keep_me <- which( !is.na( SampY))
+  HFsep <- function( H1, H2, keep_sex=FALSE) {
+      # To be used with '%<-%' so you can rename the output on-the-fly; see below
+      # A bit of self-discipline is required for that
+      iFull <- match( both( H1), both( H2), 0)
+      Full <- H1[ iFull>0,,drop=FALSE]
+      if( nrow( Full)) {
+        H1 <- H1[ iFull==0,,drop=FALSE]
+        # NB next line would fail if no Fulls because X[-numeric(0),...] returns *empty*...
+        # ... which is a basic flaw in R
+        H2 <- H2[ -(iFull %except% 0),,drop=FALSE]
+      }
+      Half <- rbind( H1, H2)
+      if( !keep_sex) {
+    returnList( Half, Full)
+      } else {
+    returnList( Half, Full, H1, H2)
+      }
+    }
 
-  ##     prev_keep_me <- keep_me
-  ##     for( gen in 1:max_gen) {
-  ##       keep_me_too1 <- match( Mum[ prev_keep_me], Me, 0L) %except% keep_me
-  ##       # NB sex switching--- hence, drop Dads that are also Mums that generation...
-  ##       keep_me_too2 <- match( Dad[ prev_keep_me], Me, 0L) %except% c( keep_me, keep_me_too1)
-  ##       prev_keep_me <- c( keep_me_too1, keep_me_too2)
-  ##       keep_me <- c( keep_me, prev_keep_me)
-  ##     }
-  ##   return( unique( keep_me))
-  ##   })
 
-  # Produce a unique real number from two +ve integers...
-  # order matters, but xpairs() already ensures col1 < col2
-  both <- function( m) m[,1] + 0.5/m[,2]
-
-  ## extract.named( inds[ keep_me,])
-  Me <- inds[keep_me,][,1]
-  Sex <- inds[keep_me,][,2]
-  Dad <- inds[keep_me,][,3]
-  Mum <- inds[keep_me,][,4]
-  BirthY <- inds[keep_me,][,5]
-  DeathY <- inds[keep_me,][,6]
-  Stock <- inds[keep_me,][,7]
-  AgeLast <- inds[keep_me,][,8]
-  SampY <- inds[keep_me,][,9] ## all this, just to reproduce extract.named()!
-
+  extract.named( inds[ keep_me,])
   Sample <- which( !is.na( SampY))
 
   # MOP etc are all row-numbers, rather than raw IDs
   MOP <- xpairs( Me[ Sample], Mum[ Sample], same=FALSE)
   FOP <- xpairs( Me[ Sample], Dad[ Sample], same=FALSE)
   POP <- rbind( MOP, FOP)
+  both_so_far <- both( POP)
 
-  # Sibs
-  MatSP <- xpairs( Mum[ Sample], Mum[ Sample], same=TRUE)
-  PatSP <- xpairs( Dad[ Sample], Dad[ Sample], same=TRUE)
-  is_FSP <- both( MatSP) %in% both( PatSP) # from Mum's PoV
-  MHSP <- MatSP[ !is_FSP,, drop = FALSE]
-  FSP <- MatSP[ is_FSP,, drop = FALSE]
-
-  is_FSP <- both( PatSP) %in% both( MatSP) # from Dad's PoV
-  PHSP <- PatSP[ !is_FSP,, drop = FALSE]
-  alt_FSP <- PatSP[ is_FSP,, drop = FALSE]
-  # check:
-##stopifnot(  my.all.equal( sort( both( alt_FSP)), sort( both( FSP)))) ## refactor to base
-  stopifnot(  all.equal( sort( both( alt_FSP)), sort( both( FSP))))
-
-  HSP <- rbind( MHSP, PHSP)
+  # Sibs; Do keep mat/patness of half-sibs.
+  MatSP <- xpairs( Mum[ Sample], Mum[ Sample], same=TRUE, weed=both_so_far)
+  PatSP <- xpairs( Dad[ Sample], Dad[ Sample], same=TRUE, weed=both_so_far)
+  {HSP;FSP;MatHSP;PatHSP} %<-% HFsep( MatSP, PatSP, TRUE)
 
   # Anything more complicated needs a 2nd generation
   isampMum <- match( Mum[ Sample], Me)
   isampDad <- match( Dad[ Sample], Me)
+
+  # Nomenclature is potentially confusing here--- blame English
+  # G.M means a GrandMother
+  # GmM means maternal grandmother
+  # GfM means paternal grandmother
+  # ie little m/f (and big M/F) stand for mMother/fFather, not the two sexes
 
   GmM <- Mum[ isampMum]
   GfM <- Mum[ isampDad]
@@ -2094,32 +2018,30 @@ quickin <- function( inds, max_gen=2) {
   GF_Sample <- cbind( GmF, GfF)
 
   # GGPs
-  MatGGP <- xpairs( Me[ Sample], GM_Sample, FALSE)
-  PatGGP <- xpairs( Me[ Sample], GF_Sample, FALSE)
+  both_so_far <- c( both( POP), both( HSP), both( FSP))
+  MatGGP <- xpairs( Me[ Sample], GM_Sample, same=FALSE, weed=both_so_far)
+  PatGGP <- xpairs( Me[ Sample], GF_Sample, same=FALSE, weed=both_so_far)
   GGP <- rbind( MatGGP, PatGGP)
+  # Also record if parent and grandparent are both female, since that affects mtDNA
+  # This is a _subset_ of GGP
+  onlyMatGGP <- xpairs( Me[ Sample], GM_Sample[,1], FALSE)  # where parent and grandparent are both female---
+
 
   # H/FTP
-  HTP1 <- xpairs( Mum[ Sample], GM_Sample, FALSE)
-  HTP2 <- xpairs( Dad[ Sample], GF_Sample, FALSE)
-  is_FTP <- both( HTP1) %in% both( HTP2)
-  FTP <- HTP1[ is_FTP,, drop = FALSE]
-  HTP1 <- HTP1[ !is_FTP,, drop = FALSE ]
+  both_so_far <- c( both_so_far, both( GGP))
+  MatHTP <- xpairs( Mum[ Sample], GM_Sample, FALSE, weed=both_so_far)
+  PatHTP <- xpairs( Dad[ Sample], GF_Sample, FALSE, weed=both_so_far)
+  { HTP; FTP} %<-%  HFsep( MatHTP, PatHTP, FALSE)
 
-  # and drop the other way...
-  is_FTP <- both( HTP2) %in% both( HTP1)
-  HTP2 <- HTP2[ !is_FTP,, drop = FALSE]
-  HTP <- rbind( HTP1, HTP2)
 
   # Cousins
-  MatCP <- xpairs( GM_Sample, GM_Sample, same=TRUE)
-  PatCP <- xpairs( GF_Sample, GF_Sample, same=TRUE)
-  is_FCP <- both( MatCP) %in% both( PatCP)
-  MHCP <- MatCP[ !is_FCP,, drop = FALSE]
-  FCP <- MatCP[ is_FCP,, drop = FALSE]
-
-  is_FCP <- both( PatCP) %in% both( MatCP) # pat pov
-  PHCP <- PatCP[ !is_FCP,, drop = FALSE]
-  HCP <- rbind( MHCP, PHCP)
+  both_so_far <- c( both_so_far, both( HTP), both( FTP))
+  MatCP <- xpairs( GM_Sample, GM_Sample, same=TRUE, weed=both_so_far)
+  PatCP <- xpairs( GF_Sample, GF_Sample, same=TRUE, weed=both_so_far)
+  {HCP;FCP} %<-% HFsep( MatCP, PatCP, FALSE)
+  # ... see GGP if you want to separately track cousins that are all-mat vs any-pat
+  onlyMatCP <- xpairs( GM_Sample[,1], GM_Sample[,1], same=TRUE)
+  onlyMatHCP <- HFsep( onlyMatCP, PatCP, TRUE)[[3]]
 
   # Turn numbers into names...
   ID <- function( m) {
@@ -2127,14 +2049,122 @@ quickin <- function( inds, max_gen=2) {
       m
     }
 
-  returnees <- c( "POP", "HSP", "FSP", "GGP", "HTP", "FTP", "HCP", "FCP")
+  returnees <- cq( POP, HSP, MatHSP, PatHSP, FSP, GGP, onlyMatGGP, HTP, FTP, HCP, FCP, onlyMatHCP)
   retlist <- list()
   for( returnee in returnees) {
     retlist[[ returnee]] <- ID( get( returnee))
   }
 
+
 return( retlist)
 }
+
+
+#' look up shared ancestors for quickin-style kinship reporting
+#'
+#' Targets one specific shared ancestor-type, matrix-wise between
+#' pairs of animals.
+#'
+#' @param anc1s a matrix of ancestors for animal 1
+#' @param anc2s a matrix of ancestors for animal 2
+#' @param same TRUE/FALSE. TRUE if you're looking for shared ancestors
+#'     at the same position from each member of the pair (e.g., if
+#'     you're looking for ancestors that are the mother of both pair
+#'     members.
+#' @param weed if non-NULL, will attempt to remove pairs given as the
+#'     parameter value.
+
+"xpairs" <-
+function( anc1s, anc2s, same, weed=NULL) {
+## Targeting one specific shared ancestor-type--- eg Mum of 1st == Grandma of 2nd
+## anc1s & anc2s should be matrices
+# same=TRUE if anc1s == anc2s ie looking for shared mums
+## weed: any stronger kin to remove from inbred pairs (eg to exclude known POPs from HTPs)--- result of 'both()'
+
+  if( FALSE && too_smart) {
+    crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
+    ranc1s <- ...
+  }
+
+  if( isNamespaceLoaded( 'fastmatch')) {
+    match <- fastmatch::fmatch
+  }
+
+  if( is.null( dim( anc1s))) {
+    anc1s <- matrix( anc1s, ncol=1)
+  }
+
+  if( is.null( dim( anc2s))) {
+    anc2s <- matrix( anc2s, ncol=1)
+  }
+
+  # Find all ancestors that fit the bill
+  N <- nrow( anc1s)
+stopifnot( nrow( anc2s)==N)
+
+  shareds <- integer()
+  for( i1 in 1 %upto% ncol( anc1s)) {
+    for( i2 in 1 %upto% ncol( anc2s)) {
+      if( same) { # check to see if anc1 matches any anc2 *except* itself
+        mm <- match( anc1s[,i1], rev( anc2s[,i2]), 0L)
+        mm[ mm != 0] <- N+1-mm[ mm != 0]
+        mm[ mm==seq_along( mm)] <- 0
+        new_shareds <- anc1s[ mm>0, i1] # should be same as:
+        # test <- anc2s[ mm[ mm>0], i1]
+      } else {
+        combo <- c( anc1s[,i1], anc2s[,i2])
+        new_shareds <- combo[ duplicated( combo)]
+      }
+
+      shareds <- c( shareds, new_shareds)
+    }
+  }
+  # desc1 <- match( anc1s, shareds, 0)
+  # desc2 <- match( anc2s, shareds, 0)
+
+  # Find all descendent-pairs of each ancestor
+  keeps1 <- keeps2 <- integer()
+  for( i in shareds) {
+    desc1 <- which( rowSums( anc1s==i)>0)
+    desc2 <- which( rowSums( anc2s==i)>0)
+    keeps1 <- c( keeps1, rep( desc1, length( desc2)))
+    keeps2 <- c( keeps2, rep( desc2, each=length( desc1)))
+  }
+
+  # Zap dups (keep A/B but not B/A or A/A)
+  swap <- keeps1 > keeps2
+  temp <- keeps1[ swap]
+  keeps1[ swap] <- keeps2[ swap]
+  keeps2[ swap] <- temp
+
+  # now they're in row-wise order, so just check uniqueness of "joint row"--- RHS expression is unique per integer-pair
+  both_keep <- both( keeps1, keeps2)
+  keep <- (keeps1 != keeps2) & !duplicated( both_keep)
+  keeps1 <- keeps1[ keep]
+  keeps2 <- keeps2[ keep]
+
+  keepair <- cbind( keeps1, keeps2)
+  if( !is.null( weed)) {
+    keepair <- keepair[ both_keep[ keep] %not.in% weed,,drop=FALSE]
+  }
+return( keepair)
+}
+
+#' Unique reals from ordered pairs of integers
+#'
+#' Return a vector of unique real-valued numbers from a pair of integers
+#' @param m1 a vector of integers
+#' @param m2 another vector of integers
+
+"both" <-
+function( m1, m2) {
+## Unique reals from ordered pairs of ints
+  if( missing( m2)) {
+    m1[,1] + 0.5/m1[,2]
+  } else
+    m1 + 0.5/m2
+  }
+
 
 #' convert an early 'makeFounders'-type matrix to data.frame
 #'
@@ -2144,86 +2174,101 @@ return( retlist)
 #' data.frame
 #'
 #' @param inds A matrix of individuals, as from mort()
-#' @export
 
-dfify <- function( inds) {
+"dfify" <-
+function( inds) {
 ## Hack to convert fishSim matrix into data.frame
 ## Should really be a DF in the first place, while it runs thru the simulation loop
 
-    charcols <- c( "Me", "Sex", "Dad", "Mum")
-    charcols_named <- charcols
-    names(charcols_named) <- charcols
-    numcols <- c( "BirthY", "DeathY", "Stock", "AgeLast", "SampY")
-    numcols_named <- numcols
-    names(numcols_named) <- numcols
+  charcols <- cq( Me, Sex, Dad, Mum)
+  numcols <- cq( BirthY, DeathY, Stock, AgeLast, SampY)
 
-  if( class(inds) == 'data.frame') {
+  if( inds %is.a% 'data.frame') {
     # Could just return it, but might as well be paranoid since we're here already
-      needio <- c( charcols, numcols)
-      names(needio) <- as.character(needio)
-      ## missingio <- needio %except% names( inds)
-      missingio <- needio[! needio %in% names( inds)]  ## refactor to base
+    needio <- named( c( charcols, numcols))
+    missingio <- needio %except% names( inds)
     if( length( missingio)) {
 stop( "Missing crucial names")
     }
 
     # Do "harmless" conversions (factor to character, and character to numeric)
-      ## fcl <- sapply( inds, is.factor) %except% FALSE
-      fcl <- sapply( inds, is.factor)[! sapply(inds,is.factor) %in% FALSE]  ##refactor to base
+    fcl <- sapply( inds, is.factor) %except% FALSE
     for( fc in names( fcl)) {
       inds[[ fc]] <- as.character( inds[[ fc]])
     }
-      ## cl <- sapply( inds, is.character) %except% FALSE
-      cl <- sapply( inds, is.character)[! sapply( inds, is.character) %in% FALSE]
-      ## for( cnc in names( cl) %that.are.in% numcols) {
-      for( cnc in names( cl)[names( cl) %in% numcols]) {
+    cl <- sapply( inds, is.character) %except% FALSE
+    for( cnc in names( cl) %that.are.in% numcols) {
       inds[[ cnc]] <- as.integer( inds[[ cnc]])
     }
 
     # NB it's OK to have extra columns--- shouldn't be affected
 
-    ##  missing_nums <- numcols_named %except% names( inds)
-      missing_nums <- numcols_named[! numcols_named %in% names( inds)] ## refactor to base
+    missing_nums <- named( numcols) %except% names( inds)
     if( length( missing_nums)) {
-stop( sprintf( "Missing numeric columns: %s", paste( missing_nums, collapse=', ')))
+stop( sprintf( "Missing numeric columns: %s", paste( missing_num, collapse=', ')))
     }
 
-##  missing_chars <- charcols_named %except% names( inds)
-  missing_chars <- charcols_named[! charcols_named %in% names( inds)]
+    missing_chars <- named( charcols) %except% names( inds)
     if( length( missing_chars)) {
 stop( sprintf( "Missing char columns: %s", paste( missing_chars, collapse=', ')))
     }
 
+    rownames( inds) <- NULL
 return( inds)
-
   }
 
+  extract.named( make_sim_names())
+
   # Char matrix straight from fishSim, with/without colnames
-stopifnot( is.character( inds) && is.matrix( inds) && ncol( inds)==length( charcols) + length( numcols))
+stopifnot( is.matrix( inds) && ncol( inds)==length( charcols) + length( numcols))
   if( is.null( colnames( inds))) {
     colnames( inds) <- c( charcols, numcols)
   }
 
-  ## Ensure columns are in order...
-  ## ... trying to avoid too much memory duplication (prob unnec)
-    ## if( !my.all.equal( colnames( inds), c( charcols, numcols))) { ## refactor to base
-    if( !all.equal( colnames( inds), c( charcols, numcols))) {
-
+  # Ensure columns are in order...
+  # ... trying to avoid too much memory duplication (prob unnec)
+  if( !my.all.equal( colnames( inds), c( charcols, numcols))) {
     inds <- inds[ , c( charcols, numcols)]
   }
-
+  charz <- inds[, seq_along( charcols)]
   numz <- inds[ , -seq_along( charcols)]
-  storage.mode( numz) <- 'integer'
+
+  if( is.character( inds)){ # currently the case for Shane's fishSim, though hopefully to change...
+    storage.mode( numz) <- 'integer'
+  } else { # numeric, currently from mark's version
+    Sex <- ifelse( charz[,SEX]==FEMALE, 'F', 'M')
+    charz <- double_barrel( charz)
+    charz[,SEX] <- Sex
+  }
 
   inds <- cbind(
-      data.frame( inds[,seq_along( charcols)], stringsAsFactors=FALSE),
+      data.frame( charz, stringsAsFactors=FALSE),
       data.frame( numz)
     )
+  rownames( inds) <- NULL
+
+
 return( inds)
 }
 
+#' make sim names, as a list
+#'
+#' makes a list of sim names for easy extraction in dfify, etc.
 
+"make_sim_names" <-
+function() {
+  # Column names for fishSim--- as a list, so you can...
+  # ... run extract.named( make_sim_names()) to get them in your function
+  cols <- cq( ID, SEX, DAD, MUM, BIRTHY, DEATHY, STOCK, AGE_LAST, SAMPY)
+  all <- as.list( structure( seq_along( cols), names=cols))
+  all <- c( all, list(
+    FEMALE=2L, # shane's
+    MALE=1L
+  ))
 
+  all$SEXES <- c( "F", "M")[ c( all$FEMALE, all$MALE)] # make F & M consistent with integers of full words!
+return( all)
+}
 
 
 ## an example implementation:
