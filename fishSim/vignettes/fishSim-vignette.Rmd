@@ -3,7 +3,9 @@ title: "fishSim-vignette"
 author: "Shane M Baylis"
 date: "`r Sys.Date()`"
 # output: rmarkdown::html_vignette
-output: rmarkdown::pdf_document
+output:
+    rmarkdown::pdf_document:
+       number_sections: true
 vignette: >
   %\VignetteIndexEntry{fishSim-vignette}
   %\VignetteEngine{knitr::rmarkdown}
@@ -18,14 +20,32 @@ knitr::opts_chunk$set(
 options(mc.cores = 2)
 ```
 
-# fishSim vignette
-## built `r Sys.Date()`.
+fishSim is a package for demographic simulation and exploration of kin
+relationships. It includes functions to build populations and move,
+mate, kill, age, and switch the sex of individuals within those
+populations or defined subpopulations. It _doesn't_ include any
+one-line functions that define and run an entire simulation. Instead,
+users will have to build their own for-loop over years, with each year
+containing mating, mortality, ageing, sampling, and/or movement events
+as needed. With a little planning, this makes fishSim _very_
+adaptable. Importantly, fishSim is individual-based and retains
+parentage information for all individuals, allowing full
+reconstruction of kin relationships to arbitrary depth.
 
-fishSim is a package for demographic simulation and exploration of kin relationships. It includes functions to build populations and move, mate, kill, age, and switch the sex of individuals within those populations or defined subpopulations. Importantly, fishSim is individual-based and retains parentage information for all individuals, allowing full reconstruction of kin relationships to arbitrary depth.
+In addition to population simulation features, fishSim includes a set
+of convenience functions allowing the user to check the scenario
+population growth rate, find simulation scenarios with null population
+growth (`PoNG()`), selectively archive subsets of the population for
+increased computational speed. For a given population, fishSim also
+includes functions to look up pairs of animals, compare their sets of
+ancestors, and classify them into kin categories based on their
+nearest shared ancestor(s), or show patterns of shared ancestors for
+members of a pair.
 
-In addition to population simulation features, fishSim includes a set of convenience functions allowing the user to check the scenario population growth rate, find simulation scenarios with null population growth (`PoNG()`), selectively archive subsets of the population for increased computational speed. For a given population, fishSim also includes functions to look up pairs of animals, compare their sets of ancestors, and classify them into kin categories based on their nearest shared ancestor(s), or show patterns of shared ancestors for members of a pair.
-
-fishSim is developed in response to the demands of close-kin mark-recapture projects. 'typical' use-cases therefore involve an understanding of both demography and kin relationships. This vignette will cover two use scenarios - one relatively simple one, with:
+fishSim is developed in response to the demands of close-kin
+mark-recapture projects. 'typical' use-cases therefore involve an
+understanding of both demography and kin relationships. This vignette
+will cover two use scenarios - one relatively simple one, with:
 
 - age-specific (but not sex-specific) fecundity,
 - constant adult survival,
@@ -43,14 +63,20 @@ fishSim is developed in response to the demands of close-kin mark-recapture proj
 - a growing population,
 - lethal sampling, occurring through time during the simulation.
 
-In the 'bells-and-whistles' scenario, we will also cover archiving tools. For both scenarios, we will take a brief look at relationship patterns between pairs of animals.
+In the 'bells-and-whistles' scenario, we will also cover archiving
+tools. For both scenarios, we will take a brief look at relationship
+patterns between pairs of animals.
 
+\newpage
 
-## The relatively-simple scenario
+# The relatively-simple scenario
 
-### Setup
+## Setup
 
-In order to simulate a population, we need an object to hold that population's data, and the population will need some founding members. Our data object will have one line per individual, so let's call it `indiv`.
+In order to simulate a population, we need an object to hold that
+population's data, and the population will need some founding
+members. Our data object will have one line per individual, so let's
+call it `indiv`.
 
 ```{r}
 library(fishSim)
@@ -58,13 +84,30 @@ indiv <- makeFounders(stocks = c(1))
 head(indiv)
 ```
 
-Now, what's here? `indiv` has one line per individual, and each individual has an ID code (`indiv[,1]`), a sex (`indiv[,2]`), a father's ID code (`indiv[,3]` - but which is 'founder' here, because founding animals can't really be said to have parents), a mother's ID code (`indiv[,4]` - ditto), a birth year `indiv[,5]`, a death year (`indiv[,6]` - NA for any animals that are still alive), a stock membership (`indiv[,7]`), an age in years (`indiv[,8]`), and a flag indicating whether the individual has been sampled (`indiv[,9]`).
+Now, what's here? `indiv` has one line per individual, and each
+individual has an ID code (`indiv$Me`), a sex (`indiv$Sex`), a
+father's ID code (`indiv$Dad` - but which is 'founder' here, because
+founding animals can't really be said to have parents), a mother's ID
+code (`indiv$Mum` - ditto), a birth year `indiv$BirthY`, a death year
+(`indiv$DeathY` - NA for any animals that are still alive), a stock
+membership (`indiv$Stock`), an age in years (`indiv$AgeLast`), and a flag
+indicating whether the individual has been sampled (`indiv$SampY`).
 
-The age structure, sex ratio, and stock memberships of founders can all be specified in the `makeFounders()` call. We've only changed one of the default values - instead of the default 3 stocks, we're going to have a single panmictic founder population. The other defaults give us 1000 founders, with an even sex ratio, with an age-structure that implies 70% annual survival, but with a hard age-limit of 20 years.
+The age structure, sex ratio, and stock memberships of founders can
+all be specified in the `makeFounders()` call. We've only changed one
+of the default values - instead of the default 3 stocks, we're going
+to have a single panmictic founder population. The other defaults give
+us 1000 founders, with an even sex ratio, with an age-structure that
+implies 70% annual survival, but with a hard age-limit of 20 years.
 
-### Mating
+## Mating
 
-Having set up our population, we can now get its members to breed, get older, switch sex and die, using the `mate()` (or `altMate()`), `birthdays()`, `sexSwitch()`, and `mort()` functions. If we had more than one stock, we could also get individuals to move between stocks with markovian movement probabilities, using `move()`. Let's look at those.
+Having set up our population, we can now get its members to breed, get
+older, switch sex and die, using the `mate()` (or `altMate()`),
+`birthdays()`, `sexSwitch()`, and `mort()` functions. If we had more
+than one stock, we could also get individuals to move between stocks
+with markovian movement probabilities, using `move()`. Let's look at
+those.
 
 ```{r}
 nrow(indiv)
@@ -73,9 +116,23 @@ nrow(indiv) ## 200 newborns
 tail(indiv) ## newborns are added to the end
 ```
 
-Here are some newborns, generated using the default `mate()` settings. Unlike founders, these newborns all have a father's ID and a mother's ID, are all aged 0, and all have a birth year of equal to the `year` argument. There are 200 newborns, because `mate()` generates new members as a proportion of the extant population size (i.e., we specify fecundity for the population, not the individuals), and that proportion (argument `fecundity`) is 0.2 by default. Each individual was born in a clutch, and each clutch contained a Poisson-distributed number of clutch-members, the default mean ('batchSize') of 0.5. `mate()` simply kept producing newborns by mating together random male/female pairs until `nrow(indiv) * 0.2` new offspring were produced.
+Here are some newborns, generated using the default `mate()`
+settings. Unlike founders, these newborns all have a father's ID and a
+mother's ID, are all aged 0, and all have a birth year of equal to the
+`year` argument. There are 200 newborns, because `mate()` generates
+new members as a proportion of the extant population size (i.e., we
+specify fecundity for the population, not the individuals), and that
+proportion (argument `fecundity`) is 0.2 by default. Each individual
+was born in a clutch, and each clutch contained a Poisson-distributed
+number of clutch-members, the default mean ('batchSize') of
+0.5. `mate()` simply kept producing newborns by mating together random
+male/female pairs until `nrow(indiv) * 0.2` new offspring were
+produced.
 
-Alternatively, we can mate our population using `altMate()`, which specifies individual maturities by age, and a probability distribution of number of offspring per mature female. Let's generate some new founders and try that.
+Alternatively, we can mate our population using `altMate()`, which
+specifies individual maturities by age, and a probability distribution
+of number of offspring per mature female. Let's generate some new
+founders and try that.
 
 ```{r}
 indiv <- makeFounders(stocks = c(1))
@@ -84,11 +141,25 @@ indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = 1)
 tail(indiv)
 ```
 
-In this call to `altMate()`, females became sexually mature at 2 years of age (`firstBreed = 2`), and each sexually-mature female produced a Poisson-distributed number of offspring with mean set by `batchSize`. It is possible to specify age-specific or sex-specific fecundities, set paternity within-clutch to be single or multiple, to exhaust fathers within each breeding season (females, in this system, always breed to exhaustion each season), and to set a sex ratio for offspring by additional arguments to `altMate()`, and these options can also be set in `mate()`.
+In this call to `altMate()`, females became sexually mature at 2 years
+of age (`firstBreed = 2`), and each sexually-mature female produced a
+Poisson-distributed number of offspring with mean set by
+`batchSize`. It is possible to specify age-specific or sex-specific
+fecundities, set paternity within-clutch to be single or multiple, to
+exhaust fathers within each breeding season (females, in this system,
+always breed to exhaustion each season), and to set a sex ratio for
+offspring by additional arguments to `altMate()`, and these options
+can also be set in `mate()`.
 
-### Mortality
+## Mortality
 
-Now, let's kill some of the population. Mortality probabilities can be flat, age-specific or stock-specific (and with a little extra effort, sex- or age:stock:sex-specific too), or we can randomly kill animals such that the population is reduced to a certain size, and we can set an age past which no animal will survive. For now, let's set a flat 20% mortality rate (i.e., the probability of death is equal for all animals).
+Now, let's kill some of the population. Mortality probabilities can be
+flat, age-specific or stock-specific (and with a little extra effort,
+sex- or age:stock:sex-specific too), or we can randomly kill animals
+such that the population is reduced to a certain size, and we can set
+an age past which no animal will survive. For now, let's set a flat
+20% mortality rate (i.e., the probability of death is equal for all
+animals).
 
 ```{r}
 nrow(indiv)
@@ -97,11 +168,19 @@ nrow(indiv)
 head(indiv, n = 15)
 ```
 
-Mortality does not remove dead animals from 'indiv' - we will need to refer to them later - it just updates their death year to the value given in `year`. In general, though, animals with a non-NA value for death year will not move, mate, switch sex, or have birthdays.
+Mortality does not remove dead animals from 'indiv' - we will need to
+refer to them later - it just updates their death year to the value
+given in `year`. In general, though, animals with a non-NA value for
+death year will not move, mate, switch sex, or have birthdays.
 
-### Birthdays
+## Birthdays
 
-On the topic of birthdays: that's the final thing that must be done before we can put this all together and run a full (albeit basic) demographic simulation: we need to be able to increase the age of our animals, and that is what the `birthdays()` function is for. It's very simple: it takes all living members of the population, and increments their age by 1.
+On the topic of birthdays: that's the final thing that must be done
+before we can put this all together and run a full (albeit basic)
+demographic simulation: we need to be able to increase the age of our
+animals, and that is what the `birthdays()` function is for. It's very
+simple: it takes all living members of the population, and increments
+their age by 1.
 
 ```{r}
 tail(indiv)
@@ -109,9 +188,39 @@ indiv <- birthdays(indiv)
 tail(indiv)
 ```
 
-### What's my population doing? Can I make it stay the same size?
+## Sampling from the population
 
-A couple more functions deserve a mention here: `check_growthrate()` and `PoNG()`. `check_growthrate()` tells you how quickly your population is growing. `PoNG()` tells you what you need first-year survival to be, in order for your population to maintain a constant size (within limits - the estimation is Leslie Matrix-based, and there are ways to fool Leslie Matrices that are out of scope for this vignette but covered briefly in the `PoNG()` and `check_growthrate()` documentation). Let's try both of those, using the mating and mortality settings we have already used.
+It is often useful to keep track of which animals in the population
+have been captured, and if capture is lethal, to mark captured animals
+as dead through a separate process from the normal 'mort'
+functions. The function `capture()` takes a sample of individuals,
+marks them as 'captured' by updating their 'captured' value, and, if
+capture is lethal, marks them as dead by updating their death year, as
+in `mort()`. It is possible to make `capture()` sex-specific,
+age-specific, or age:sex specific, so that only one sex may be
+captured, only one age-class may be captured, or only one sex at one
+age-class may be captured, respectively.
+
+```{r}
+## non-lethal sampling of 5 females
+indiv <- capture(indiv, n = 5, year = 1, fatal = FALSE, sex = "F")
+## lethal sampling of 5 animals, from either sex
+indiv <- capture(indiv, n = 5, year = 1, fatal = TRUE)
+## non-lethal sampling of 5 one-year-old females
+indiv <- capture(indiv, n = 5, year = 1, fatal = FALSE, sex = "F", age = 1)
+```
+
+## What's my population doing? Can I make it stay the same size?
+
+A couple more functions deserve a mention here: `check_growthrate()`
+and `PoNG()`. `check_growthrate()` tells you how quickly your
+population is growing. `PoNG()` tells you what you need first-year
+survival to be, in order for your population to maintain a constant
+size (within limits - the estimation is Leslie Matrix-based, and there
+are ways to fool Leslie Matrices that are out of scope for this
+vignette but covered briefly in the `PoNG()` and `check_growthrate()`
+documentation). Let's try both of those, using the mating and
+mortality settings we have already used.
 
 ```{r}
 check_growthrate(mateType = "flat", mortType = "flat",
@@ -127,20 +236,13 @@ PoNG(mateType = "flat", mortType = "flat", batchSize = 0.9, firstBreed = 2,
 ## from the plot.
 ```
 
-### Sampling from the population
+## Turning processes into a simple simulation
 
-It is often useful to keep track of which animals in the population have been captured, and if capture is lethal, to mark captured animals as dead through a separate process from the normal 'mort' functions. The function `capture()` takes a sample of individuals, marks them as 'captured' by updating their 'captured' value, and, if capture is lethal, marks them as dead by updating their death year, as in `mort()`. It is possible to make `capture()` sex-specific, so that only males or only females may be captured.
-
-```{r}
-## non-lethal sampling of 5 females
-indiv <- capture(indiv, n = 5, year = 1, fatal = FALSE, sex = "F")
-## lethal sampling of 5 animals, from either sex
-indiv <- capture(indiv, n = 5, year = 1, fatal = TRUE)
-```
-
-### Turning processes into a simple simulation
-
-To turn those processes into a full demographic simulation, all that is needed is to repeat the processes in a loop. Let's do that, but set age-specific mortality so that the long-run average population growth rate is zero using the first-year mortality rate we got from `PoNG()`, so that our population is unlikely to explode or become extinct.
+To turn those processes into a full demographic simulation, all that
+is needed is to repeat the processes in a loop. Let's do that, but set
+age-specific mortality so that the long-run average population growth
+rate is zero using the first-year mortality rate we got from `PoNG()`,
+so that our population is unlikely to explode or become extinct.
 
 ```{r}
 indiv <- makeFounders(stocks = c(1))
@@ -153,17 +255,33 @@ for (y in 1:60) {
     indiv <- birthdays(indiv)
 }
 tail(indiv) ## a population with 60 years of births, deaths, and birthdays
-nrow(indiv[is.na(indiv[,6]),]) ## the currently-alive population size. Note that population
+nrow(indiv[is.na(indiv$DeathY),]) ## the currently-alive population size. Note that population
                                ## growth only *averages* zero, and variability occurs!
 ```
 
-### Looking up relationships between pairs of animals
+## Looking up relationships between pairs of animals
 
-One of the key advantages of fishSim is its ability to report on different relationships between pairs of animals in a sample. Are these two each other's siblings? Half-siblings? Is one the parent of the other? The grandparent? Some obscure half-cousin, once removed?
+One of the key advantages of fishSim is its ability to report on
+different relationships between pairs of animals in a sample. Are
+these two each other's siblings? Half-siblings? Is one the parent of
+the other? The grandparent? Some obscure half-cousin, once removed?
 
-Internally, these relationships are stored in terms of 'shared ancestors at the n'th generation of each member', starting with the 'self' as generation 1. So a pair might have a shared `pairs$TwoThree` ancestor - that ancestor is the parent of one member, and the grandparent of the other. Or the pair might have a shared `pairs$OneTwo` ancestor - in which case, one member's _self_ is the other member's parent.
+Internally, these relationships are stored in terms of 'shared
+ancestors at the n'th generation of each member', starting with the
+'self' as generation 1. So a pair might have a shared `pairs$TwoThree`
+ancestor - that ancestor is the parent of one member, and the
+grandparent of the other. Or the pair might have a shared
+`pairs$OneTwo` ancestor - in which case, one member's _self_ is the
+other member's parent.
 
-If a pair shares a parent (i.e., `pairs$TwoTwo == 1`), then they also share at least two grandparents (`pairs$ThreeThree >= 2`), four great-grandparents (`pairs$FourFour >= 4`), and so on. This pattern holds generally: a half thiatic pair (`pairs$TwoThree == 1`) will also share at least two `pairs$ThreeFour >= 2` ancestors and at least four `pairs$FourFive >= 4` ancestors. It is also possible, for example, for a pair to share two grandparents, but no parents - that is the case for full cousin pairs.
+If a pair shares a parent (i.e., `pairs$TwoTwo == 1`), then they also
+share at least two grandparents (`pairs$ThreeThree >= 2`), four
+great-grandparents (`pairs$FourFour >= 4`), and so on. This pattern
+holds generally: a half thiatic pair (`pairs$TwoThree == 1`) will also
+share at least two `pairs$ThreeFour >= 2` ancestors and at least four
+`pairs$FourFive >= 4` ancestors. It is also possible, for example, for
+a pair to share two grandparents, but no parents - that is the case
+for full cousin pairs.
 
 ```{r}
 ## mark 200 individuals alive at the end of the simulation as 'captured'.
@@ -188,7 +306,9 @@ relatives <- namedRelatives(pairs) ## shows the number of pairs of each relation
 relatives
 ```
 
-## The 'bells and whistles' scenario
+\newpage
+
+# The 'bells and whistles' scenario
 
 In this second scenario, we will simulate a metapopulation with:
 
@@ -199,7 +319,19 @@ In this second scenario, we will simulate a metapopulation with:
 - a growing population.
 - archiving for speed (?)
 
-We set up the population basically as before, with a couple of slight tweaks. First, we should make sure the founding population has multiple stocks (we'll give it three). Second, we will set up an archive matrix. The archive matrix is intended to hold the records of dead animals in large, long-running simulations: dead animals do not take part in any further mating, movement, sex-switching, aging, or mortality events, but if they stay in `indiv`, `indiv` can become huge and unweildy, slowing down all of those processes. There is of course a trade-off, in that writing dead animals to the archive takes system time, so the optimum may be to only archive dead animals once every few 'years'.
+We set up the population basically as before, with a couple of slight
+tweaks. First, we should make sure the founding population has
+multiple stocks (we'll give it three). Second, we will set up an
+archive matrix. The archive matrix is intended to hold the records of
+dead animals in large, long-running simulations: dead animals do not
+take part in any further mating, movement, sex-switching, aging, or
+mortality events, but if they stay in `indiv`, `indiv` can become huge
+and unweildy, slowing down all of those processes. There is of course
+a trade-off, in that writing dead animals to the archive takes system
+time, so the optimum may be to only archive dead animals once every
+few 'years'.
+
+## Setting up the data objects
 
 ```{r}
 ## set up founders with three stocks: two that each contain 30% of the population,
@@ -213,7 +345,17 @@ archive <- make_archive()
 
 ```
 
-Because we will have inter-stock movement in this sim, we will also need to set up a matrix giving the probability that an individual will move into another stock, given its current stock membership. Because survival will be age- and stock-dependent, we will need a matrix of survival rates with as many columns as stocks, and as many rows as (at least) the age of the oldest plausible population-member. Because we will have age-specific, sex-specific fecundity, we will need a male age-specific maturity curve and a female age-specific maturity curve. Let's set those up now.
+## Parameterising movement, survival, and maturity structures
+
+Because we will have inter-stock movement in this sim, we will also
+need to set up a matrix giving the probability that an individual will
+move into another stock, given its current stock membership. Because
+survival will be age- and stock-dependent, we will need a matrix of
+survival rates with as many columns as stocks, and as many rows as (at
+least) the age of the oldest plausible population-member. Because we
+will have age-specific, sex-specific fecundity, we will need a male
+age-specific maturity curve and a female age-specific maturity
+curve. Let's set those up now.
 
 ```{r}
 ## Markovian movement matrix
@@ -248,6 +390,8 @@ head(femaleCurve)
 
 ```
 
+## Checking population growth rates with the new parameters
+
 Now, what's going to happen with these subpopulations, if we run with those parameters?
 
 ```{r}
@@ -259,7 +403,11 @@ check_growthrate(mateType = "ageSex", mortType = "ageStock", batchSize = 1.6,
 ## of offspring per mature female per breeding attempt) a bit.
 ```
 
-Now we just run the population simulator, as we did for the simple population, but with a couple of extra things to specify. Let's give it 100 years.
+## Running the simulation
+
+Now we just run the population simulator, as we did for the simple
+population, but with a couple of extra things to specify. Let's give
+it 100 years.
 
 
 ```{r}
@@ -271,13 +419,13 @@ for (k in 1:100) {
     ## mate animals using the age-specific, sex-specific curves we set up before
     indiv <- altMate(indiv = indiv, batchSize = 1.6, type = "ageSex", maleCurve = maleCurve,
                      femaleCurve = femaleCurve, year = k)
-    ## kill animals on the basis of their age and stock, as set up before   
     indiv <- birthdays(indiv = indiv) 
+    ## kill animals on the basis of their age and stock, as set up before   
     indiv <- mort(indiv = indiv, year = k, type = "ageStock", ageStockMort = ageStockMort)
-    if(k %in% c(seq(10,110,10))) {
+    if(k %% 10 == 0) {
         archive <- archive_dead(indiv = indiv, archive = archive)
 	    indiv <- remove_dead(indiv = indiv)
-	    print(paste("Iteration ", k, " complete", sep = ""))
+	    cat( sprintf( '\rIteration %i complete', k))
 	## occasionally sample from the population and do some clean-up. And report on progress.
     }
     if(k %in% c(94:100)) {
@@ -289,7 +437,13 @@ indiv <- archive  ## merge 'indiv' and 'archive', since they were only separated
 
 ```
 
-Now that the simulation is finished, examining kin relationships is the same as the simple scenario, except that we integrated capture into the simulation, so we don't need to call `capture()` now:
+## Looking up relationships between pairs of animals
+
+Now that the simulation is finished, examining kin relationships is
+the nearly same as the simple scenario. The only difference comes from
+the fact that we we integrated multiple years of sample-capture into
+the simulation, so we don't need to call `capture()` as a separate
+operation.
 
 ```{r}
 ## look up each animal's ancestors and look for shared ancestors between each
@@ -310,6 +464,10 @@ lookAtPair(HSPs[1,])
 relatives <- namedRelatives(pairs) ## shows the number of pairs of each relationship type
 relatives
 ```
+
+\newpage
+
+# Addenda
 
 ## A note on mark-dependent survival or movement
 
@@ -333,12 +491,12 @@ for (y in 1:60) {
     indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y) ## y for year
 
     indiv <- capture(indiv, n = 5, year = y, fatal = FALSE)
-    indiv_unmarked <- indiv[is.na(indiv[,9]),] ## all the unmarked animals
-    indiv_marked <- indiv[!is.na(indiv[,9]),]  ## all the marked animals
+    indiv_unmarked <- indiv[is.na(indiv$SampY),] ## all the unmarked animals
+    indiv_marked <- indiv[!is.na(indiv$SampY),]  ## all the marked animals
 
     indiv_unmarked <- mort(indiv_unmarked, year = y, type = "age", ageMort = ageMort) 
         ## normal mort for unmarked animals
-    indiv_marked <- mort(indiv_marked, year = y, type = "age", ageMort = ageMort*2)  
+    indiv_marked <- mort(indiv_marked, year = y, type = "age", ageMort = ageMort*2)
         ## double mort for marked animals
     indiv <- rbind(indiv_unmarked, indiv_marked) 
         ## stick them back together and proceed as normal

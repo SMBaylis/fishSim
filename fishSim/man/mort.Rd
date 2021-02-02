@@ -8,7 +8,7 @@ mort(
   indiv = makeFounders(),
   year = "-1",
   type = "simple",
-  maxAge = if (type == "age") length(ageMort) else Inf,
+  maxAge = if (type == "age") length(ageMort) - 1 else Inf,
   maxPop = 1000,
   mortRate,
   ageMort,
@@ -32,7 +32,7 @@ stockMort.
 If type = "ageStock", individuals are killed with probability for their age:stock
 combination set in ageStockMort.}
 
-\item{maxAge}{Sets an age at which animals *will* be killed before anything else happens. Allows
+\item{maxAge}{Sets an age above which animals *will* be killed before anything else happens. Allows
 a short age-specific mortality curve to be set, without checking if there are any
 individuals outside the range for each iteration.}
 

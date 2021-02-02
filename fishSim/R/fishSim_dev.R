@@ -491,7 +491,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 #'             stockMort.
 #'             If type = "ageStock", individuals are killed with probability for their age:stock
 #'             combination set in ageStockMort.
-#' @param maxAge Sets an age at which animals *will* be killed before anything else happens. Allows
+#' @param maxAge Sets an age above which animals *will* be killed before anything else happens. Allows
 #'               a short age-specific mortality curve to be set, without checking if there are any
 #'               individuals outside the range for each iteration.
 #' @param maxPop If type = "simple", the population will be reduced to this number, if not already
@@ -509,7 +509,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
 mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
                  ## maxAge = Inf,
-                 maxAge = if(type == "age") length(ageMort) else Inf,
+                 maxAge = if(type == "age") length(ageMort)-1 else Inf,
                  maxPop = 1000, mortRate, ageMort, stockMort, ageStockMort) {
 
     if (!(type %in% c("simple", "flat", "age", "stock", "ageStock"))) {
@@ -2305,3 +2305,6 @@ return( all)
 #end_time <- Sys.time()
 #end_time - start_time
 #nrow(archive)
+
+
+## just gimme some more text
