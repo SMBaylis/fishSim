@@ -2049,7 +2049,7 @@ function( inds, max_gen=2) {
       m
     }
 
-  returnees <- cq( POP, HSP, MatHSP, PatHSP, FSP, GGP, onlyMatGGP, HTP, FTP, HCP, FCP, onlyMatHCP)
+  returnees <- c( "POP", "HSP", "MatHSP", "PatHSP", "FSP", "GGP", "onlyMatGGP", "HTP", "FTP", "HCP", "FCP", "onlyMatHCP")
   retlist <- list()
   for( returnee in returnees) {
     retlist[[ returnee]] <- ID( get( returnee))
@@ -2180,8 +2180,8 @@ function( inds) {
 ## Hack to convert fishSim matrix into data.frame
 ## Should really be a DF in the first place, while it runs thru the simulation loop
 
-  charcols <- cq( Me, Sex, Dad, Mum)
-  numcols <- cq( BirthY, DeathY, Stock, AgeLast, SampY)
+  charcols <- c( "Me", "Sex", "Dad", "Mum")
+  numcols <- c( "BirthY", "DeathY", "Stock", "AgeLast", "SampY")
 
   if( inds %is.a% 'data.frame') {
     # Could just return it, but might as well be paranoid since we're here already
@@ -2259,7 +2259,7 @@ return( inds)
 function() {
   # Column names for fishSim--- as a list, so you can...
   # ... run extract.named( make_sim_names()) to get them in your function
-  cols <- cq( ID, SEX, DAD, MUM, BIRTHY, DEATHY, STOCK, AGE_LAST, SAMPY)
+  cols <- c( "ID", "SEX", "DAD", "MUM", "BIRTHY", "DEATHY", "STOCK", "AGE_LAST", "SAMPY")
   all <- as.list( structure( seq_along( cols), names=cols))
   all <- c( all, list(
     FEMALE=2L, # shane's
