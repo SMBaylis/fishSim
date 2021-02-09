@@ -9,6 +9,7 @@
 #' @import doParallel
 #' @import ids
 #' @import fastmatch
+#' @import mvbutils
 #' @importFrom graphics abline lines plot
 #' @importFrom stats rbinom rpois runif uniroot
 NULL
@@ -202,8 +203,15 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
     fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) stop("There are no males in the population")
 
-    sprog.m <- matrix(data = NA, nrow = floor(nrow(indiv[is.na(indiv[,6]),])*fecundity),
-                      ncol = 9)  ## Number of sprogs is a proportion of the number of
+    n.recs <- floor(nrow(indiv[is.na(indiv[,6]),])*fecundity)
+    sprog.m <- data.frame(Me = character(n.recs), Sex = character(n.recs),
+                          Dad = character(n.recs), Mum = character(n.recs),
+                          BirthY = integer(n.recs), DeathY = integer(n.recs),
+                          Stock = integer(n.recs), AgeLast = integer(n.recs),
+                          SampY = integer(n.recs))
+
+    ## sprog.m <- matrix(data = NA, nrow = floor(nrow(indiv[is.na(indiv[,6]),])*fecundity),
+    ##                   ncol = 9)  ## Number of sprogs is a proportion of the number of
                                  ## *live* animals in the matrix.
     ticker <- 1
     while(ticker <= nrow(sprog.m)) {
@@ -230,16 +238,22 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
                                       )
                 }
                 if(n.sprogs > maxClutch) n.sprogs <- maxClutch
-                batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
+                ## batch <- matrix(data = NA, nrow = n.sprogs, ncol = ncol(indiv))
+                batch <- data.frame(Me = character(n.sprogs), Sex = character(n.sprogs),
+                          Dad = character(n.sprogs), Mum = character(n.sprogs),
+                          BirthY = integer(n.sprogs), DeathY = integer(n.sprogs),
+                          Stock = integer(n.sprogs), AgeLast = integer(n.sprogs),
+                          SampY = integer(n.sprogs))
                 if(n.sprogs > 0) {
                     batch[,1] <- uuid(n = nrow(batch), drop_hyphens = TRUE)
                     batch[,2] <- sample(c("M", "F"), size = nrow(batch), replace = TRUE, prob = osr)
                     batch[,3] <- drawFather[1,1]
                     batch[,4] <- drawMother[1,1]
                     batch[,5] <- year
-                    ## [,6] stays 'NA', because no death year yet.
+                    batch[,6] <- NA ## stays 'NA', because no death year yet.
                     batch[,7] <- drawMother[1,7] ## always recruits into the parents' stock.
                     batch[,8] <- 0 ## it's a zero-year-old until the first 'birthday' step.
+                    batch[,9] <- NA
 
                     ## if(n.sprogs > 0) { ## moved up
                     if ((ticker + n.sprogs) <= nrow(sprog.m)) {
@@ -258,7 +272,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         } ## remove exhausted father from potential fathers.
         ticker <- ticker+n.sprogs
     }
-    indiv <- rbind(indiv, dfify(sprog.m))
+    indiv <- rbind(indiv, sprog.m)
     return(indiv)
 }
 
@@ -406,9 +420,16 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                            s, ", so ", nrow(mothersInStock),
                            " mature females did not produce offspring",
                            sep = ""))
-            sprog.stock <- matrix(data = NA, nrow = 0, ncol = 9)
+            ## sprog.stock <- matrix(data = NA, nrow = 0, ncol = 9)
+            sprog.stock <- makeFounders(pop = 0)
         } else if(nrow(fathersInStock > 0)) {
-            sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 9)
+            ## sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 9)
+            n.sprogs <- sum(clutchInStock)
+            sprog.stock <- data.frame(Me = character(n.sprogs), Sex = character(n.sprogs),
+                          Dad = character(n.sprogs), Mum = character(n.sprogs),
+                          BirthY = integer(n.sprogs), DeathY = integer(n.sprogs),
+                          Stock = integer(n.sprogs), AgeLast = integer(n.sprogs),
+                          SampY = integer(n.sprogs))
             ticker <- 1
             for (m in 1:nrow(mothersInStock)) { ## m for 'mothers'
                 if(nrow(fathersInStock) == 0) {
@@ -445,9 +466,11 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
         sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
         sprog.stock[,5] <- year
+        sprog.stock[,6] <- NA
         sprog.stock[,7] <- as.integer(rep(s), nrow(sprog.stock))
         sprog.stock[,8] <- 0
-        sprog.stock <- dfify(sprog.stock)
+        sprog.stock[,9] <- NA
+        ## sprog.stock <- dfify(sprog.stock)
 
         sprog.m <- rbind(sprog.m, sprog.stock)
     }
@@ -537,7 +560,7 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
         ## mortRate.
     } else if (type == "age") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for(i in min(indiv[,8]):max(indiv[,8])) {
+        for(i in (min(indiv[,8]):max(indiv[,8]))+1) {
             ageProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&indiv[,8]==i,,drop = FALSE]))
             ## for the individuals at age i, make a vector of runif numbers between 0 and 1
             if(length(ageProbs) > 1) {
@@ -566,7 +589,7 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
         }
     } else if (type == "ageStock") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for (i in min(indiv[,8]):max(indiv[,8])) {
+        for (i in (min(indiv[,8]):max(indiv[,8]))+1) {
             for (j in min(indiv[,7]):max(indiv[,7])) {
                 ageStockProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&
                                                       indiv[,8]==i&
