@@ -376,10 +376,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
     } else if (type == "age") {
 
-        mothers <- mothers[runif(nrow(mothers)) < maturityCurve[mothers[,8]],
+        mothers <- mothers[runif(nrow(mothers)) < maturityCurve[mothers[,8]+1],
                          , drop = FALSE] ## trims 'mothers' to those that pass a random
                                          ## maturity test.
-        fathers <- fathers[runif(nrow(fathers)) < maturityCurve[fathers[,8]],
+        fathers <- fathers[runif(nrow(fathers)) < maturityCurve[fathers[,8]+1],
                          , drop = FALSE] ## trims 'fathers' to those that pass a random
                                          ## maturity test.
 
@@ -393,10 +393,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
     } else if (type == "ageSex") {
 
-        mothers <- mothers[runif(nrow(mothers)) < femaleCurve[mothers[,8]] , ,drop = FALSE]
+        mothers <- mothers[runif(nrow(mothers)) < femaleCurve[mothers[,8]+1] , ,drop = FALSE]
         ## trims 'mothers' to just those that pass a random maturity test.
 
-        fathers <- fathers[runif(nrow(fathers)) < maleCurve[fathers[,8]] , ,drop = FALSE]
+        fathers <- fathers[runif(nrow(fathers)) < maleCurve[fathers[,8]+1] , ,drop = FALSE]
         ## trims 'fathers' to just those that pass a random maturity test.
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
         if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
@@ -560,7 +560,7 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
         ## mortRate.
     } else if (type == "age") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for(i in (min(indiv[,8]):max(indiv[,8]))+1) {
+        for(i in min(indiv[,8]):max(indiv[,8])) {
             ageProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&indiv[,8]==i,,drop = FALSE]))
             ## for the individuals at age i, make a vector of runif numbers between 0 and 1
             if(length(ageProbs) > 1) {
@@ -568,7 +568,7 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
                 ## if there are any individuals, compare the random number to the mortality rate for
                 ## that age-class, and assign a death year if random number < mortality rate.
             } else if(length(ageProbs) == 1) {
-                if(ageProbs<ageMort[i]) {
+                if(ageProbs<ageMort[i+1]) {
                     indiv[is.na(indiv[,6])&indiv[,8]==i,6] <- year
                 }
             }  ## special error-handling for age-classes with only one individual.
@@ -589,7 +589,7 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
         }
     } else if (type == "ageStock") {
         stillAlive <- nrow(indiv[is.na(indiv[,6]),])
-        for (i in (min(indiv[,8]):max(indiv[,8]))+1) {
+        for (i in min(indiv[,8]):max(indiv[,8])) {
             for (j in min(indiv[,7]):max(indiv[,7])) {
                 ageStockProbs <- runif(n = nrow(indiv[is.na(indiv[,6])&
                                                       indiv[,8]==i&
@@ -599,7 +599,7 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
                           indiv[,8]==i&
                           indiv[,7]==j,][ageStockProbs<ageStockMort[i+1,j],6] <- year
                 } else if(length(ageStockProbs) == 1) {
-                    if(ageStockProbs<ageStockMort[i,j]) {
+                    if(ageStockProbs<ageStockMort[i+1,j]) {
                         indiv[is.na(indiv[,6])&
                               indiv[,8]==i&
                               indiv[,7]==j,6] <- year
@@ -725,7 +725,10 @@ birthdays <- function(indiv = makeFounders() ) {
 #' @export
 
 make_archive <- function() {
-    archive <- matrix(data = NA, nrow = 0, ncol = 9)
+    ## archive <- matrix(data = NA, nrow = 0, ncol = 9)
+    archive <- data.frame(Me = character(0), Sex = character(0), Dad = character(0),
+                        Mum = character(0), BirthY = integer(0), DeathY = integer(0),
+                        Stock = integer(0), AgeLast = integer(0), SampY = integer(0))
     return(archive)
 }
 

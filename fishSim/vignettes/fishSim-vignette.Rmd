@@ -285,7 +285,7 @@ for full cousin pairs.
 
 ```{r}
 ## mark 200 individuals alive at the end of the simulation as 'captured'.
-indiv <- capture(indiv, n = 200, year = 60, fatal = FALSE) 
+indiv <- capture(indiv, n = 200, year = 60, fatal = FALSE)
 
 ## look up each animal's ancestors and look for shared ancestors between each
 ## pair of sampled animals:
@@ -294,13 +294,13 @@ pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
 POPs <- pairs[pairs$OneTwo == 1,] ## Parent-Offspring pairs
 GGPs <- pairs[pairs$OneThree == 1,] ## Grandparent-Grandoffspring pairs
 HSPs <- pairs[pairs$TwoTwo == 1,] ## Half-sibling pairs
-FSPs <- pairs[pairs$TwoTwo == 2,] ## Full Sibling pairs (self-comparisons 
+FSPs <- pairs[pairs$TwoTwo == 2,] ## Full Sibling pairs (self-comparisons
 ## are automatically excluded)
 FCPs <- pairs[pairs$ThreeThree == 2 & pairs$TwoTwo != 1,] ## Full Cousin pairs
 
 ## look at the number of shared ancestors at each ancestral
 ## generation, for one of the half-sibling pairs.
-lookAtPair(HSPs[1,]) 
+lookAtPair(HSPs[1,])
 
 relatives <- namedRelatives(pairs) ## shows the number of pairs of each relationship type
 relatives
@@ -409,7 +409,6 @@ Now we just run the population simulator, as we did for the simple
 population, but with a couple of extra things to specify. Let's give
 it 100 years.
 
-
 ```{r}
 for (k in 1:100) {
     ## very rarely, switch some males to females
@@ -419,8 +418,7 @@ for (k in 1:100) {
     ## mate animals using the age-specific, sex-specific curves we set up before
     indiv <- altMate(indiv = indiv, batchSize = 1.6, type = "ageSex", maleCurve = maleCurve,
                      femaleCurve = femaleCurve, year = k)
-    indiv <- birthdays(indiv = indiv) 
-    ## kill animals on the basis of their age and stock, as set up before   
+    ## kill animals on the basis of their age and stock, as set up before
     indiv <- mort(indiv = indiv, year = k, type = "ageStock", ageStockMort = ageStockMort)
     if(k %% 10 == 0) {
         archive <- archive_dead(indiv = indiv, archive = archive)
@@ -430,7 +428,8 @@ for (k in 1:100) {
     }
     if(k %in% c(94:100)) {
 	indiv <- capture(indiv, n = 40, fatal = TRUE, year = k)
-    }	
+    }
+    indiv <- birthdays(indiv = indiv)
 }
 archive <- rbind(archive, indiv)
 indiv <- archive  ## merge 'indiv' and 'archive', since they were only separated for speed.
@@ -453,13 +452,13 @@ pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
 POPs <- pairs[pairs$OneTwo == 1,] ## Parent-Offspring pairs
 GGPs <- pairs[pairs$OneThree == 1,] ## Grandparent-Grandoffspring pairs
 HSPs <- pairs[pairs$TwoTwo == 1,] ## Half-sibling pairs
-FSPs <- pairs[pairs$TwoTwo == 2,] ## Full Sibling pairs (self-comparisons 
+FSPs <- pairs[pairs$TwoTwo == 2,] ## Full Sibling pairs (self-comparisons
 ## are automatically excluded)
 FCPs <- pairs[pairs$ThreeThree == 2 & pairs$TwoTwo != 1,] ## Full Cousin pairs
 
 ## look at the number of shared ancestors at each ancestral
 ## generation, for one of the half-sibling pairs.
-lookAtPair(HSPs[1,]) 
+lookAtPair(HSPs[1,])
 
 relatives <- namedRelatives(pairs) ## shows the number of pairs of each relationship type
 relatives
@@ -494,11 +493,11 @@ for (y in 1:60) {
     indiv_unmarked <- indiv[is.na(indiv$SampY),] ## all the unmarked animals
     indiv_marked <- indiv[!is.na(indiv$SampY),]  ## all the marked animals
 
-    indiv_unmarked <- mort(indiv_unmarked, year = y, type = "age", ageMort = ageMort) 
+    indiv_unmarked <- mort(indiv_unmarked, year = y, type = "age", ageMort = ageMort)
         ## normal mort for unmarked animals
     indiv_marked <- mort(indiv_marked, year = y, type = "age", ageMort = ageMort*2)
         ## double mort for marked animals
-    indiv <- rbind(indiv_unmarked, indiv_marked) 
+    indiv <- rbind(indiv_unmarked, indiv_marked)
         ## stick them back together and proceed as normal
     rm(indiv_marked, indiv_unmarked) ## clean up
 
@@ -545,13 +544,13 @@ functions in `fishSim`. Such a function could look like this:
 # parameter 'batchSize' sets the number of offspring per breeding female
 # such that the number of offspring ~Poisson(lambda = batchSize)
 #
-# parameter 'breedProb' is the probability that a mature female will 
+# parameter 'breedProb' is the probability that a mature female will
 # breed this in this mating event
 #
 # parameter 'maturityAge' is the knife-edge age at maturity, for both
 # males and females
 #
-# parameter 'year' is the year. It is used to set the $BirthY for new 
+# parameter 'year' is the year. It is used to set the $BirthY for new
 # recruits
 #
 # myMate uses a zero-truncated Poisson distribution to determine the
@@ -561,16 +560,16 @@ functions in `fishSim`. Such a function could look like this:
 myMate <- function(indiv, batchSize, breedProb, maturityAge, year, meanMates) {
 
   library(ids)
-  
+
   matureFemales <- indiv[indiv$Sex == "F" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY) ,]
   matureMales <- indiv[indiv$Sex == "M" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY),]
   iBreed_F <- matureFemales[sample(1:nrow(matureFemales), size = nrow(matureFemales)*breedProb),]
   iBreed_M <- matureMales
-  
+
   if(nrow(iBreed_F) == 0 | nrow(iBreed_M) == 0) { return(indiv) }
-  
+
   recruits <- indiv[0,]
-  
+
   for(i in 1:nrow(iBreed_F) ) {
       clutchSize <- rpois(1, batchSize) ## with minor changes, could use any
         ## discrete distribution for which R provides a random-number generator here
@@ -595,7 +594,7 @@ myMate <- function(indiv, batchSize, breedProb, maturityAge, year, meanMates) {
         recruits <- rbind(recruits, myClutch)
     }
   }
-  
+
   outs <- rbind(indiv, recruits)
   return(outs)
 }
