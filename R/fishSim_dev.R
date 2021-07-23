@@ -465,11 +465,11 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
         sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
         sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
-        sprog.stock[,5] <- year
-        sprog.stock[,6] <- NA
+        sprog.stock[,5] <- c(rep(year, nrow(sprog.stock)))
+        sprog.stock[,6] <- c(rep(NA, nrow(sprog.stock)))
         sprog.stock[,7] <- as.integer(rep(s), nrow(sprog.stock))
-        sprog.stock[,8] <- 0
-        sprog.stock[,9] <- NA
+        sprog.stock[,8] <- c(rep(0, nrow(sprog.stock)))
+        sprog.stock[,9] <- c(rep(NA, nrow(sprog.stock)))
         ## sprog.stock <- dfify(sprog.stock)
 
         sprog.m <- rbind(sprog.m, sprog.stock)
