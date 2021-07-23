@@ -487,7 +487,8 @@ ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality is 0.305 for first-
 ## 0.2 for all older age-classes.
 
 for (y in 1:60) {
-    indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y) ## y for year
+    indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y)
+    ## 'mate' happens first, affecting the whole population
 
     indiv <- capture(indiv, n = 5, year = y, fatal = FALSE)
     indiv_unmarked <- indiv[is.na(indiv$SampY),] ## all the unmarked animals

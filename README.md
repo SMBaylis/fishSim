@@ -21,24 +21,20 @@ stochastic population growth), or to randomly kill individuals with a
 stock-specific probability, age-specific probability, or
 stock-and-age-specific probability.
 
-# Installing from GitHub
+# Installing from Github
 
-To install this package from GitHub, you can use the `remotes` package:
-
-``` r
-remotes::install_github(
-  repo = "eriqande/fishSim", 
-  ref = "make-installable-from-github", 
-  build_vignettes = TRUE
-)
-```
-
-Once the changes in this fork have been pulled into Shane’s master
-branch, it can be done via:
+To install this package directly from Github, you can use `devtools`:
 
 ``` r
-remotes::install_github(
-  repo = "SMBaylis/fishSim, 
-  build_vignettes = TRUE
-)
+devtools::install_github(repo = "SMBaylis/fishSim")
 ```
+
+# Installing from local source
+
+To install this package from source, download the .zip, then use `remotes`:
+
+``` r
+remotes::install_local("/filepath/to/fishSim-master.zip")
+```
+
+Make sure to update "/filepath/to/fishSim-master.zip" to the full filepath for your download location.
