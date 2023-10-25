@@ -7,16 +7,18 @@
 great.grandparents(ID, indiv)
 }
 \arguments{
-\item{ID}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{ID}{A character vector containing one or more IDs, e.g., from
+\code{mort()[,1]}}
 
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}.}
 }
 \description{
-A convenience wrapper for 'parents()', returning the great-grandparents of one or more
-individuals. If FFF is 'father's father's father', MFM is 'mother's father's mother',
-and so on, great-grandparents are returned in order [FFF, FFM, FMF, FMM, MFF, MFM,
-MMF, MMM] for each specified ID.
+A convenience wrapper for \code{\link[=parents]{parents()}}, returning the great-grandparents of
+one or more individuals. If \code{FFF} is 'father's father's father', MFM is
+'mother's father's mother', and so on, great-grandparents are returned in
+order \code{FFF}, \code{FFM}, \code{FMF}, \code{FMM}, \code{MFF}, \code{MFM}, \code{MMF}, \code{MMM} for each
+specified ID.
 }
 \seealso{
-[fishSim::parents()]
+\code{\link[=parents]{parents()}}
 }

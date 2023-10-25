@@ -2,25 +2,27 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{great3.grandparents}
 \alias{great3.grandparents}
-\title{look up the great-great-great-grandparents of one or more individuals.}
+\title{Look up the great-great-great-grandparents of one or more individuals.}
 \usage{
 great3.grandparents(ID, indiv)
 }
 \arguments{
-\item{ID}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{ID}{A character vector containing one or more IDs, e.g., from
+\code{mort()[,1]}}
 
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}.}
 }
 \description{
-A convenience wrapper for 'parents()', returning the great-great-great-grandparents
-of one or more individuals. If 'FFFFF' is 'father's father's father's father's father',
-and 'FFMFM' is 'father's father's mother's father's mother', and so on,
-great-great-great-grandparents are returned in order [FFFFF, FFFFM, FFFMF,
-FFFMM, FFMFF, FFMFM, FFMMF, FFMMM, FMFFF, FMFFM, FMFMF, FMFMM,
-FMMFF, FMMFM, FMMMF, FMMMM, MFFFF, MFFFM, MFFMF, MFFMM, MFMFF,
-MFMFM, MFMMF, MFMMM, MMFFF, MMFFM, MMFMF, MMFMM, MMMFF, MMMFM,
-MMMMF, MMMMM]
+A convenience wrapper for \code{\link[=parents]{parents()}}, returning the
+great-great-great-grandparents of one or more individuals. If 'FFFFF' is
+'father's father's father's father's father', and 'FFMFM' is 'father's
+father's mother's father's mother', and so on,
+great-great-great-grandparents are returned in order: \code{FFFFF}, \code{FFFFM},
+\code{FFFMF}, \code{FFFMM}, \code{FFMFF}, \code{FFMFM}, \code{FFMMF}, \code{FFMMM}, \code{FMFFF}, \code{FMFFM},
+\code{FMFMF}, \code{FMFMM}, \code{FMMFF}, \code{FMMFM}, \code{FMMMF}, \code{FMMMM}, \code{MFFFF}, \code{MFFFM},
+\code{MFFMF}, \code{MFFMM}, \code{MFMFF}, \code{MFMFM}, \code{MFMMF}, \code{MFMMM}, \code{MMFFF}, \code{MMFFM},
+\code{MMFMF}, \code{MMFMM}, \code{MMMFF}, \code{MMMFM}, \code{MMMMF}, \code{MMMMM}.
 }
 \seealso{
-[fishSim::parents()]
+\code{\link[=parents]{parents()}}
 }

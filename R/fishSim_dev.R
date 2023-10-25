@@ -14,32 +14,35 @@
 #' @importFrom stats rbinom rpois runif uniroot
 NULL
 
-#' make a founding population
+#' Make a founding population
 #'
-#' Returns a pop-by-8 data.frame, with each row being an individual in the
-#' founder population.
-#' [,1] is a unique (uuid) identifier for each animal.
-#' [,2] is sex, values "M" or "F".
-#' [,3] is "founder" for all animals.
-#' [,4] is "founder" for all animals.
-#' [,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
-#'      very start of year 1, just after the 'birthdays' step of year 0.
-#' [,6] is NA for all animals. Holds the death year in most cases.
-#' [,7] is the stock membership for each animal.
-#' [,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
-#'      given that birthdays occur at the very end.
-#' [,9] is NA for all animals
-#' makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
-#' not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
-#' but error-checking and readability is easiest if they do sum to 1.
+#' Returns a population-size-by-8 `data.frame`, with each row being an
+#' individual in the founder population.
+#' - `[,1]` is a unique (uuid) identifier for each animal.
+#' - `[,2]` is sex, values `"M"` or `"F"`.
+#' - `[,3]` is `"founder"` for all animals.
+#' - `[,4]` is `"founder"` for all animals.
+#' - `[,5]` is the animal's birth year. Implicitly assumes that `makeFounders`
+#' occurs at the very start of year 1, just after the `birthdays` step of year 0.
+#' - `[,6]` is `NA` for all animals. Holds the death year in most cases.
+#' - `[,7]` is the stock membership for each animal.
+#' - `[,8]` is the age of each animal (in 'breeding seasons') at the beginning
+#' of year 1, given that birthdays occur at the very end.
+#' - `[,9]` is `NA` for all animals
+#'
+#' `makeFounders()` will throw a warning if `osr`, `stocks`, or `survCurv` do
+#' not sum to 1. It is not strictly necessary that they sum to 1
+#' (proportionality within each class is sufficient), but error-checking and
+#' readability is easiest if they do sum to 1.
 #'
 #' @param pop The size of the founder population.
-#' @param osr A numeric vector describing the sex ratio, c([male], [female]).
+#' @param osr A numeric vector describing the sex ratio, `c([male], [female])`.
 #' @param stocks A numeric vector describing the probability that an individual
 #'               is in each stock.
 #' @param maxAge Numeric. The max age to which an animal may survive.
-#' @param survCurv Numeric vector. Describes the probability within the founder cohort of belonging
-#'                 to each age-class for age=-classes 1:maxAge. Cannot be blank.
+#' @param survCurv Numeric vector. Describes the probability within the founder
+#' cohort of belonging to each age-class for `age=-classes 1:maxAge`. Cannot be
+#' blank.
 #' @seealso [fishSim::make_archive()]
 #' @export
 
@@ -85,11 +88,12 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
 
 #' Markovian movement between breeding stocks
 #'
-#' returns a pop-by-8 character matrix, defined in the makeFounders documentation.
-#'
-#' @param indiv Individual matrix, e.g. from makeFounders(). Can also be a non-founder matrix.
-#' @param moveMat An s-by-s matrix describing the probability of moving from each stock to
-#'                each other stock, with 'from' by row and 'to' by column. Cannot be blank.
+#' @return a pop-by-8 character matrix, defined in the [makeFounders]
+#' documentation.
+#' @param indiv Individual matrix, e.g. from `makeFounders()`. Can also be a non-founder matrix.
+#' @param moveMat An s-by-s matrix describing the probability of moving from
+#' each stock to each other stock, with 'from' by row and 'to' by column.
+#' Cannot be blank.
 #' @export
 
 move <- function(indiv = makeFounders(), moveMat) {
@@ -110,15 +114,14 @@ move <- function(indiv = makeFounders(), moveMat) {
 
 #############################################################################################
 
-#' draw from a zero-truncated Poisson dist
+#' Draw from a zero-truncated Poisson dist
 #'
-#' Returns a vector of draws from a zero-truncated Poisson distribution, with specified
-#' lambda.
+#' Returns a vector of draws from a zero-truncated Poisson distribution, with
+#' specified lambda.
 #'
 #' @param n The number of values to draw
 #' @param T The value of lambda for an equivalent non-truncated Poisson
 #' @export
-
 rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poisson dist.
     U <- runif(n)
     t <- -log(1-U*(1-exp(-T)))
@@ -129,64 +132,65 @@ rTruncPoisson <- function(n = 1, T = 0.5) {  ## sample from a zero-truncated Poi
 
 ###############################################################################################
 
-#' find male-female pairs and breed until a quota is filled
+#' Find male-female pairs and breed until a quota is filled
 #'
 #' Returns an individual matrix with added newborns at age 0. This is the first
-#' mate method, where the number of newborns is a set as a proportion of the adult population,
-#' and matings happen between individuals that are older than the age at first-breeding
-#' (optionally with breeding success-rates set by the age of the less-mature parent, etc.,) until
-#' that 'quota' or newborns has been met, or all potential parents have reached breeding exhaustion.
-#' A second mate method exists, where the number of newborns is derived from the fecundities of all
-#' breeding females in the population - see altMate().
+#' mate method, where the number of newborns is a set as a proportion of the
+#' adult population, and matings happen between individuals that are older than
+#' the age at first-breeding (optionally with breeding success-rates set by the
+#' age of the less-mature parent, etc.,) until that 'quota' or newborns has
+#' been met, or all potential parents have reached breeding exhaustion.  A
+#' second mate method exists, where the number of newborns is derived from the
+#' fecundities of all breeding females in the population - see [altMate()].
 #'
-#' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
-#' @param fecundity Numeric variable. mean number of recruits to generate, as a proportion of
-#'                  the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
-#'                  turnover - i.e., the number of animals killed in 'mortality' will equal
-#'                  nrow(indiv)*fecundity in order to keep the population size constant.
-#' @param batchSize Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
-#'                  Used iff type = "flat". Note that, if run within a loop that
-#'                  goes [move -> mate -> mort -> birthdays], 'produced' is not the same as 'enters
-#'                  age-class 1', as some mortality may occur at age 0.
-#' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
-#'            (recruitment). Used to assign sexes to new offspring.
-#' @param year Intended to be used in a simulation loop - this will be the iteration number, and
-#'             holds the 'birthyear' value to give to new recruits.
-#' @param firstBreed Integer variable. The age at first breeding, default 1. The minimum age
-#'                   at which individuals can breed. Applies to potential mothers and potential
-#'                   fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
-#'                   capable of specifying an age at first breeding, and firstBreed takes precedence.
-#' @param type The type of fecundity-age relationship to simulate. Must be one of "flat",
-#'             "age", or "ageSex". If "flat", offspring batch sizes will be the same for
-#'             all age:sex combinations. If "age", the number of offspring for each pairing
-#'             is a function of 'fecundityCurve', with the less-fecund parent determining the
-#'             batch size. If "ageSex", the number of offspring for each pairing is a function
-#'             of 'maleCurve' and 'femaleCurve', with the less-fecund parent determining the
-#'             batch size.
-#' @param maxClutch Numeric value giving the maximum clutch / litter / batch / whatever size.
-#'                  Reduces larger clutches to this size, within each pairing.
-#' @param exhaustMothers TRUE/FALSE value indicating whether mothers should become 'exhausted'
-#'                         by one breeding attempt. If exhausted, an individual will not mate
-#'                         again in this mate() call.
-#' @param exhaustFathers TRUE/FALSE value indicating whether fathers should become 'exhausted'
-#'                         by one breeding attempt. If exhausted, an individual will not mate
-#'                         again in this mate() call.
-#' @param fecundityCurve Numeric vector describing the age-specific fecundity curve. One
-#'                       value per age, over all ages from 0:max(indiv[,8]). Used if "type"
-#'                       = "age". Note that 'firstBreed' can interfere with 'fecundityCurve'
-#'                       by setting fecundities to zero for some age classes. Recommended
-#'                       usage is to set 'firstBreed' to zero whenever 'fecundityCurve' is
-#'                       specified.
-#' @param maleCurve Numeric vector describing age-specific fecundity for males. One value per
-#'                  age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-#'                  Note that 'firstBreed' can interfere with 'maleCurve' by setting
-#'                  fecundities to zero for some age classes. Recommended usage is to set
-#'                  'firstBreed' to zero whenever 'maleCurve' is specified.
-#' @param femaleCurve Numeric vector describing age-specific fecundity for females. One value
-#'                    per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-#'                    Note that 'firstBreed' can interfere with 'femaleCurve' by setting
-#'                    fecundities to zero for some age classes. Recommended usage is to set
-#'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
+#' @param indiv A matrix of individuals, e.g., generated in [makeFounders()] or output from [move()]
+#' @param fecundity Numeric variable. mean number of recruits to generate, as a
+#' proportion of the number of animals in `indiv`. `nrow(indiv)*fecundity` is
+#' the annual turnover - i.e., the number of animals killed in 'mortality' will
+#' equal `nrow(indiv)*fecundity` in order to keep the population size constant.
+#' @param batchSize Numeric. The mean number of offspring produced per pairing.
+#' Follows a Poisson distribution.  Used iff `type = "flat"`. Note that, if run
+#' within a loop that goes `[move -> mate -> mort -> birthdays]`, 'produced' is
+#' not the same as 'enters age-class 1', as some mortality may occur at age 0.
+#' @param osr Numeric vector with length two, `c(male, female)`, giving the sex
+#' ratio at birth (recruitment). Used to assign sexes to new offspring.
+#' @param year Intended to be used in a simulation loop - this will be the
+#' iteration number, and holds the `birthyear` value to give to new recruits.
+#' @param firstBreed Integer variable. The age at first breeding, default 1.
+#' The minimum age at which individuals can breed. Applies to potential mothers
+#' and potential fathers. Both `firstBreed` and `fecundityCurve`, `maleCurve`,
+#' and `femaleCurve` are capable of specifying an age at first breeding, and
+#' `firstBreed` takes precedence.
+#' @param type The type of fecundity-age relationship to simulate. Must be one
+#' of `"flat"`, `"age"`, or `"ageSex"`. If `"flat"`, offspring batch sizes will
+#' be the same for all age:sex combinations. If `"age"`, the number of
+#' offspring for each pairing is a function of `fecundityCurve`, with the
+#' less-fecund parent determining the batch size. If `"ageSex"`, the number of
+#' offspring for each pairing is a function of `maleCurve` and `femaleCurve`,
+#' with the less-fecund parent determining the batch size.
+#' @param maxClutch Numeric value giving the maximum clutch / litter / batch /
+#' whatever size.  Reduces larger clutches to this size, within each pairing.
+#' @param exhaustMothers Logical indicating whether mothers should become
+#' 'exhausted' by one breeding attempt. If exhausted, an individual will not
+#' mate again in this `mate()` call.
+#' @param exhaustFathers Logical indicating whether fathers should become
+#' 'exhausted' by one breeding attempt. If exhausted, an individual will not
+#' mate again in this `mate()` call.
+#' @param fecundityCurve Numeric vector dscribing the age-specific fecundity
+#' curve. One value per age, over all ages from `0:max(indiv[,8]`). Used if
+#' `type = "age"`. Note that `firstBreed` can interfere with `fecundityCurve`
+#' by setting fecundities to zero for some age classes. Recommended usage is to
+#' set `firstBreed` to zero whenever `fecundityCurve` is specified.
+#' @param maleCurve Numeric vector describing age-specific fecundity for males.
+#' One value per age, over all ages from `0:max(indiv[,8])`. Used if `type =
+#' "ageSex"`.  Note that `firstBreed` can interfere with `maleCurve` by setting
+#' fecundities to zero for some age classes. Recommended usage is to set
+#' `firstBreed` to zero whenever `maleCurve` is specified.
+#' @param femaleCurve Numeric vector describing age-specific fecundity for
+#' females. One value per age, over all ages from `0:max(indiv[,8])`. Used if
+#' `"type = "ageSex"`.  Note that `firstBreed` can interfere with `femaleCurve`
+#' by setting fecundities to zero for some age classes. Recommended usage is to
+#' set `firstBreed` to zero whenever `femaleCurve` is specified.
 #' @seealso [fishSim::altMate()]
 #' @export
 
@@ -277,75 +281,83 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 }
 
 
-#' breeding based on mature females
+#' Breeding based on mature females
 #'
-#' Returns an individual matrix with added newborns at age 0. This is the second
-#' mate method, where the number of offspring is derived from the number of mature females,
-#' such that each mature female produces a number of offspring specified by a sampling distribution,
-#' and fathers are randomly drawn from all mature males within the mother's stock. Note that in
-#' this mating system, *maturity by age* is specified, rather than *fecundity by age*. A single
-#' probability distribution sets the number of offspring for each female, but the probability
-#' that an individidual female is mature may vary by age. The same maturity by age structure applies
-#' for males. It is possible, in cases where the maturity-by-age slope is shallow, that an individual
-#' may be 'mature' in one breeding season, but then 'not mature' the next season.
-#' Another mate method exists, where the number of newborns is set as a proportion of the population
-#' size, and mating occurs until the required number of offspring are generated (if possible, given
-#' breeding constraints) - see mate().
+#' Returns an individual matrix with added newborns at age 0. This is the
+#' second mate method, where the number of offspring is derived from the number
+#' of mature females, such that each mature female produces a number of
+#' offspring specified by a sampling distribution, and fathers are randomly
+#' drawn from all mature males within the mother's stock. Note that in this
+#' mating system, *maturity by age* is specified, rather than *fecundity by
+#' age*. A single probability distribution sets the number of offspring for
+#' each female, but the probability that an individidual female is mature may
+#' vary by age. The same maturity by age structure applies for males. It is
+#' possible, in cases where the maturity-by-age slope is shallow, that an
+#' individual may be 'mature' in one breeding season, but then 'not mature' the
+#' next season.  Another mate method exists, where the number of newborns is
+#' set as a proportion of the population size, and mating occurs until the
+#' required number of offspring are generated (if possible, given breeding
+#' constraints) - see [fishSim::mate()].
 #'
-#' @param indiv A matrix of individuals, e.g., generated in makeFounders() or output from move()
-#' @param batchSize Numeric. The mean number of offspring produced per mature female if fecundityDist
-#'                  = "poisson"; the value of T from a zero-truncated Poisson distribution, if
-#'                  fecundityDist = "truncPoisson" (useful in cases where the probability of no
-#'                  offspring is rolled into the 'maturity' parameter); or the probability that a
-#'                  female will have a (single) offspring, given that she is mature, if
-#'                  fecundityDist = "binomial".
-#'                  Used for all maturity structures. Note that, if run within a loop that goes
-#'                  [move -> altMate -> mort -> birthdays], 'produced' is not the same as 'enters
-#'                  age-class 1', as some individuals will die at age 0.
-#' @param fecundityDist One of "poisson", "truncPoisson", or "binomial". Sets the distribution of the
-#'                      number of offspring per mature female. Defaults to "poisson".
-#' @param osr Numeric vector with length two, c(male, female), giving the sex ratio at birth
-#'            (recruitment). Used to assign sexes to new offspring.
-#' @param year Intended to be used in a simulation loop - this will be the iteration number, and
-#'             holds the 'birthyear' value to give to new recruits.
-#' @param firstBreed Integer variable. The age at first breeding, default 1. The minimum age
-#'                   at which individuals can breed. Applies to potential mothers and potential
-#'                   fathers. 'firstBreed', 'maturityCurve', 'maleCurve, and 'femaleCurve' are
-#'                   all capable of specifying an age at first breeding, and 'firstBreed' takes
-#'                   precedence.
-#' @param type The type of maturity-age relationship to simulate. Must be one of "flat",
-#'             "age", or "ageSex". If "flat", the probability of parenthood is the same for
-#'             all age:sex combinations above firstBreed. If "age", the probability that an
-#'             individual is sexually mature is age-specific, set in 'maturityCurve'. If "ageSex",
-#'             the probability that an individual is sexually mature is age- and sex-specific,
-#'             set for males in 'maleCurve' and for females in 'femaleCurve'.
-#' @param maxClutch Numeric value giving the maximum clutch / litter / batch / whatever size.
-#'                  Reduces larger clutches to this size, for each breeding female.
-#' @param singlePaternity TRUE/FALSE value indicating whether all the offspring produced by
-#'                        female in a year should have the same father. Default TRUE. If
-#'                        FALSE, each offspring will have a randomly-drawn father from within
-#'                        the mother's stock. Note that this can lead to rapid exhaustion of
-#'                        fathers if exhaustFathers = TRUE.
-#' @param exhaustFathers TRUE/FALSE value indicating whether fathers should become 'exhausted'
-#'                       by one breeding attempt. If exhausted, an individual will only mate with
-#'                       one female, though may father more than one offspring - see
-#'                       'singlePaternity' and 'batchSize'.
-#' @param maturityCurve Numeric vector describing the age-specific probability of maturity curve. One
-#'                      value per age, over all ages from 0:max(indiv[,8]). Used if "type"
-#'                      = "age". Note that 'firstBreed' can interfere with 'maturityCurve'
-#'                      by setting maturities to zero for some age classes. Recommended
-#'                      usage is to set 'firstBreed' to zero whenever 'maturityCurve' is
-#'                      specified.
-#' @param maleCurve Numeric vector describing age-specific probability of maturity for males. One value per
-#'                  age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-#'                  Note that 'firstBreed' can interfere with 'maleCurve' by setting
-#'                  maturities to zero for some age classes. Recommended usage is to set
-#'                  'firstBreed' to zero whenever 'maleCurve' is specified.
-#' @param femaleCurve Numeric vector describing age-specific maturity for females. One value
-#'                    per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-#'                    Note that 'firstBreed' can interfere with 'femaleCurve' by setting
-#'                    maturities to zero for some age classes. Recommended usage is to set
-#'                    'firstBreed' to zero whenever 'femaleCurve' is specified.
+#' @param indiv A matrix of individuals, e.g., generated in `makeFounders()` or
+#' output from `move()`
+#' @param batchSize Numeric. The mean number of offspring produced per mature
+#' female if `fecundityDist = "poisson"`; the value of T from a zero-truncated
+#' Poisson distribution, if `fecundityDist = "truncPoisson"` (useful in cases
+#' where the probability of no offspring is rolled into the 'maturity'
+#' parameter); or the probability that a female will have a (single) offspring,
+#' given that she is mature, if `fecundityDist = "binomial"`.  Used for all
+#' maturity structures. Note that, if run within a loop that goes `[move ->
+#' altMate -> mort -> birthdays]`, 'produced' is not the same as 'enters
+#' age-class 1', as some individuals will die at age 0.
+#' @param fecundityDist One of "poisson", "truncPoisson", or "binomial". Sets
+#' the distribution of the number of offspring per mature female. Defaults to
+#' "poisson".
+#' @param osr Numeric vector with length two, `c(male, female)`, giving the sex
+#' ratio at birth (recruitment). Used to assign sexes to new offspring.
+#' @param year Intended to be used in a simulation loop - this will be the
+#' iteration number, and holds the `birthyear` value to give to new recruits.
+#' @param firstBreed Integer variable. The age at first breeding, default 1.
+#' The minimum age at which individuals can breed. Applies to potential mothers
+#' and potential fathers. `firstBreed`, `maturityCurve`, `maleCurve`, and
+#' `femaleCurve` are all capable of specifying an age at first breeding, and
+#' `firstBreed` takes precedence.
+#' @param type The type of maturity-age relationship to simulate. Must be one
+#' of `"flat"`, `"age"`, or `"ageSex"`. If `"flat"`, the probability of
+#' parenthood is the same for all age:sex combinations above firstBreed. If
+#' `"age"`, the probability that an individual is sexually mature is
+#' age-specific, set in `maturityCurve`. If `"ageSex"`, the probability that an
+#' individual is sexually mature is age- and sex-specific, set for males in
+#' `maleCurve` and for females in `femaleCurve`.
+#' @param maxClutch Numeric value giving the maximum clutch / litter / batch /
+#' whatever size.  Reduces larger clutches to this size, for each breeding
+#' female.
+#' @param singlePaternity Logical indicating whether all the offspring produced
+#' by female in a year should have the same father. Default `TRUE`. If `FALSE`,
+#' each offspring will have a randomly-drawn father from within the mother's
+#' stock. Note that this can lead to rapid exhaustion of fathers if
+#' `exhaustFathers = TRUE`.
+#' @param exhaustFathers Logical indicating whether fathers should become
+#' 'exhausted' by one breeding attempt. If exhausted, an individual will only
+#' mate with one female, though may father more than one offspring - see
+#' `singlePaternity` and `batchSize`.
+#' @param maturityCurve Numeric vector describing the age-specific probability
+#' of maturity curve. One value per age, over all ages from `0:max(indiv[,8])`.
+#' Used if `type = "age"`. Note that `firstBreed` can interfere with
+#' `maturityCurve` by setting maturities to zero for some age classes.
+#' Recommended usage is to set `firstBreed` to zero whenever `maturityCurve` is
+#' specified.
+#' @param maleCurve Numeric vector describing age-specific probability of
+#' maturity for males. One value per age, over all ages from
+#' `0:max(indiv[,8])`. Used if `type = "ageSex"`.  Note that `firstBreed` can
+#' interfere with `maleCurve` by setting maturities to zero for some age
+#' classes. Recommended usage is to set `firstBreed` to zero whenever
+#' `maleCurve` is specified.
+#' @param femaleCurve Numeric vector describing age-specific maturity for
+#' females. One value per age, over all ages from `0:max(indiv[,8])`. Used if
+#' `type = "ageSex"`.  Note that `firstBreed` can interfere with `femaleCurve`
+#' by setting maturities to zero for some age classes. Recommended usage is to
+#' set `firstBreed` to zero whenever `femaleCurve` is specified.
 #' @seealso [fishSim::mate()]
 #' @export
 
@@ -496,38 +508,40 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
 ## Section 2b: mortality and aging.
 
-#' kill some members of the population
+#' Kill some members of the population
 #'
 #' Members are chosen according to one of several defined mortality structures.
-#' Mortality rates can bring the population to a specified size, or can be a flat probability,
-#' or a probability that depends on age, stock, or age:stock.
+#' Mortality rates can bring the population to a specified size, or can be a
+#' flat probability, or a probability that depends on age, stock, or age:stock.
 #'
-#' @param indiv A matrix of inidviduals, as from makeFounders(), move(), or mate().
+#' @param indiv A matrix of inidviduals, as from [makeFounders()], [move()], or [mate()].
 #' @param year An integer, denoting the year in which we're killing animals
-#' @param type One of "simple", "flat", "age", "stock", or "ageStock".
-#'             If type = "simple" and the living pop > maxPop, individuals are killed at random until
-#'             the living pop == maxPop. Can easily be set to never cause extinctions.
-#'             If type = "flat", individuals are killed with probability set in mortRate. Generates
-#'             an exponential death curve.
-#'             If type = "age", individuals are killed with probability for their age set in ageMort.
-#'             If type = "stock", individuals are killed with probability for their stock set in
-#'             stockMort.
-#'             If type = "ageStock", individuals are killed with probability for their age:stock
-#'             combination set in ageStockMort.
-#' @param maxAge Sets an age above which animals *will* be killed before anything else happens. Allows
-#'               a short age-specific mortality curve to be set, without checking if there are any
-#'               individuals outside the range for each iteration.
-#' @param maxPop If type = "simple", the population will be reduced to this number, if not already
-#'               smaller. See 'type'.
-#' @param mortRate Numeric mortality rate. See 'type'.
-#' @param ageMort Numeric vector of mortality rates, one for each age, ordered 0:max(age). See 'type'.
-#' @param stockMort Numeric vector of mortality rates, one for each stock, ordered 1:max(stock). Note
-#'                  that stocks are numbered (as in makeFounders() ), not named. Because stocks are
-#'                  stored as a character vector, stocks are converted via as.numeric() to associate
-#'                  rates with stocks. This distinction is important in cases with >9 stocks. See
-#'                  'type'.
-#' @param ageStockMort A matrix of mortality rates, with age by row and stock by column. See 'ageMort'
-#'                     and 'stockMort' for structure of rows and columns.
+#' @param type One of `"simple"`, `"flat"`, `"age"`, `"stock"`, or `"ageStock"`.
+#'  - If `type = "simple"` and the living pop > `maxPop`, individuals are
+#'  killed at random until the living pop == `maxPop`. Can easily be set to
+#'  never cause extinctions.
+#'  - If `type = "flat"`, individuals are killed with probability set in
+#'  mortRate. Generates an exponential death curve.
+#'  - If `type = "age"`, individuals are killed with probability for their age set in `ageMort`.
+#'  - If `type = "stock"`, individuals are killed with probability for their
+#'  stock set in `stockMort`.
+#'  - If `type = "ageStock"`, individuals are killed with probability for their
+#'  age:stock combination set in `ageStockMort`.
+#' @param maxAge Sets an age above which animals *will* be killed before
+#' anything else happens. Allows a short age-specific mortality curve to be
+#' set, without checking if there are any individuals outside the range for
+#' each iteration.
+#' @param maxPop If `type = "simple"`, the population will be reduced to this
+#' number, if not already smaller. See `type`.
+#' @param mortRate Numeric mortality rate. See `type`.
+#' @param ageMort Numeric vector of mortality rates, one for each age, ordered `0:max(age)`. See `type`.
+#' @param stockMort Numeric vector of mortality rates, one for each stock,
+#' ordered `1:max(stock)`. Note that stocks are numbered (as in
+#' [makeFounders()]), not named. Because stocks are stored as a character
+#' vector, stocks are converted via `as.numeric()` to associate rates with
+#' stocks. This distinction is important in cases with >9 stocks. See `type`.
+#' @param ageStockMort A matrix of mortality rates, with age by row and stock
+#' by column. See `ageMort` and `stockMort` for structure of rows and columns.
 #' @export
 
 mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
@@ -613,16 +627,18 @@ mort <- function(indiv = makeFounders(), year = "-1", type = "simple",
 
 #############################################################################################
 
-#' identify genetic captures/samples in population
+#' Identify genetic captures/samples in population
 #'
-#' Works in a manner similar to \code{mort()}, assigning a year to captured individuals and killing
-#' them if sampling is fatal. Sex specific sampling is allowed.
+#' Works in a manner similar to [mort()], assigning a year to captured
+#' individuals and killing them if sampling is fatal. Sex specific sampling is
+#' allowed.
 #'
-#' @param indiv A matrix of individuals, as from makeFounders(), mate(), or mort().
+#' @param indiv A matrix of individuals, as from [makeFounders()], [mate()], or
+#' [mort()].
 #' @param n Number of captures (genetic samples)
 #' @param year Capture year
 #' @param fatal Is sampling fatal?
-#' @param sex Sex specific sampling (either \code{"M"}, \code{"F"} or \code{NULL})
+#' @param sex Sex specific sampling (either `"M"`, `"F"` or `NULL`)
 #' @param age Integer vector. The age class(es) at which sampling occurs
 #' @export
 
@@ -666,15 +682,16 @@ capture <- function(indiv = makeFounders(), n = 1, year = "-1", fatal = TRUE, se
 
 #############################################################################################
 
-#' induce sex-switching in a subset of the population
+#' Induce sex-switching in a subset of the population
 #'
-#' Given an individual-data matrix, this function stochastically switches the sex of individuals
-#' with a set probability. Can be one-directional (i.e., only male-to-female or only female-to-male
-#' switches), or bidirectional.
+#' Given an individual-data matrix, this function stochastically switches the
+#' sex of individuals with a set probability. Can be one-directional (i.e.,
+#' only male-to-female or only female-to-male switches), or bidirectional.
 #'
-#' @param indiv A matrix of individuals, as from makeFounders(), mate(), or mort().
-#' @param direction One of "MF", "FM", or "both", indicating male-to-female, female-to-male,
-#'                  or both directions.
+#' @param indiv A matrix of individuals, as from [makeFounders()], [mate()], or
+#' [mort()].
+#' @param direction One of `"MF"`, `"FM"`, or `"both"`, indicating
+#' male-to-female, female-to-male, or both directions.
 #' @param prob A numeric switching probability.
 #' @export
 
@@ -696,13 +713,15 @@ sexSwitch <- function(indiv = makeFounders(), direction = "both", prob = 0.0001)
 
 ################################################################################################
 
-#' add one to each individual's age
+#' Add one to each individual's age
 #'
-#' Nothing fancy: this is separated from the other functions to allow more flexible
-#' assignments of movement, mating and mortality within each year. Only updates ages
-#' for animals that are alive, so indiv[,8] will remain 'age at death' for all dead animals.
+#' Nothing fancy: this is separated from the other functions to allow more
+#' flexible assignments of movement, mating and mortality within each year.
+#' Only updates ages for animals that are alive, so `indiv[,8]` will remain 'age
+#' at death' for all dead animals.
 #'
-#' @param indiv A matrix of individuals, as from makeFounders(), move(), mate(), or mort().
+#' @param indiv A matrix of individuals, as from [makeFounders()], [move()],
+#' [mate()], or [mort()].
 #' @export
 
 birthdays <- function(indiv = makeFounders() ) {
@@ -714,14 +733,16 @@ birthdays <- function(indiv = makeFounders() ) {
 
 ## Section 2c: archiving dead animals to keep the active data matrix small.
 
-#' set up an archive matrix for storing simulation outputs
+#' Set up an archive matrix for storing simulation outputs
 #'
-#' For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
-#' In these cases, run-times may be improved by periodically moving dead individuals into an
-#' archive that is read and written less frequently than 'indiv'.
-#' @return The function returns an empty 0-by-8 matrix, to which subsets of 'indiv' can be
-#'         attached. See archive_dead() and remove_dead().
-#' @seealso [fishSim::archive_dead(), fishSim::remove_dead()]
+#' For larger simulations, the matrix `indiv` may grow very large and slow down
+#' the simulation.  In these cases, run-times may be improved by periodically
+#' moving dead individuals into an archive that is read and written less
+#' frequently than `indiv`.
+#'
+#' @return The function returns an empty 0-by-8 matrix, to which subsets of
+#' `indiv` can be attached.
+#' @seealso [fishSim::archive_dead()] [fishSim::remove_dead()]
 #' @export
 
 make_archive <- function() {
@@ -732,15 +753,18 @@ make_archive <- function() {
     return(archive)
 }
 
-#' take dead individuals and copy them to an archive
+#' Take dead individuals and copy them to an archive
 #'
-#' For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
-#' In these cases, run-times may be improved by periodically moving dead individuals into an
-#' archive that is read and written less frequently than 'indiv'.
-#' @param indiv A matrix of individuals, as from makeFounders(), move(), mate(), or mort().
-#' @param archive A matrix of individuals, probably from make_archive() or a previous call of
-#'                archive_dead().
-#' @seealso [fishSim::remove_dead(), fishSim::make_archive()]
+#' For larger simulations, the matrix `indiv` may grow very large and slow down
+#' the simulation.  In these cases, run-times may be improved by periodically
+#' moving dead individuals into an archive that is read and written less
+#' frequently than `indiv`.
+#'
+#' @param indiv A matrix of individuals, as from [makeFounders()], [move()],
+#' [mate()], or [mort()].
+#' @param archive A matrix of individuals, probably from [make_archive()] or a
+#' previous call of [archive_dead()].
+#' @seealso [fishSim::remove_dead()] [fishSim::make_archive()]
 #' @export
 #' @examples
 #' archive <- make_archive()
@@ -768,13 +792,15 @@ archive_dead <- function(indiv = mort(), archive = make_archive() ) {
     return(archive)
 }
 
-#' remove the dead from a population
+#' Remove the dead from a population
 #'
-#' For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
-#' In these cases, run-times may be improved by periodically moving dead individuals into an
-#' archive that is read and written less frequently than 'indiv'. See also archive_dead().
-#' @param indiv A matrix of individuals, as from mort().
-#' @seealso [fishSim::archive_dead(), fishSim::make_archive()]
+#' For larger simulations, the matrix `indiv` may grow very large and slow down
+#' the simulation.  In these cases, run-times may be improved by periodically
+#' moving dead individuals into an archive that is read and written less
+#' frequently than `indiv`. See also [archive_dead()].
+#'
+#' @param indiv A matrix of individuals, as from [mort()].
+#' @seealso [fishSim::archive_dead()], [fishSim::make_archive()]
 #' @export
 
 remove_dead <- function(indiv = mort() ) {
@@ -784,74 +810,83 @@ remove_dead <- function(indiv = mort() ) {
 
 ################################################################################################
 
-#' estimate population growth under some mate() and mort() conditions
+#' Estimate population growth under some `mate()` and `mort()` conditions
 #'
-#' In complex models, population trends may not be immediately clear from the settings. Yet
-#' it can be important to know population trends in advance: growing populations take progressively
-#' more computing time, and the relationship dynamics between individuals across generations are
-#' different for growing vs. shrinking populations. check_growthrate() provides an estimate of
-#' the long-term population growth rate under some altMate() and mort() settings, assuming one
-#' altMate() and one mort() per cycle. Estimation is via Leslie matrices.
-#' check_growthrates only functions for some altMate() and mort() structures. Specifically, in
-#' altMate, 'type' must be one of 'flat', 'age', or 'ageSex', and in mort, if 'type' is 'flat'
-#' or 'age', a single growth rate will be returned, but if 'stock' or 'ageStock', one growth
-#' rate will be returned per stock. If 'type' is 'simple' for mort(), the growthrate is forced to
-#' zero, so check_growthrate() does not explicitly handle this case.
-#' Some conditions can cause check_growthrate to fail or provide inaccurate estimates. If mature
-#' females go unmated through lack of available fathers (for instance, if exhaustFathers = TRUE
-#' in mate and N(mature females) > N(mature males) ), the Leslie matrix approach will provide an
-#' over-estimate of the growth rate. In mate(), batchSize is the mean number of offspring per female,
-#' but if maxClutch is also set to a value other than Inf, the *effective* mean number of offspring
-#' per female is estimated by simulation. The mean number of female offspring per female per year
-#' is assumed to be half of the effective mean number of offspring per female unless osr is specified,
-#' in which case the proportion of female offspring is taken from osr.
-#' If your model involves a variation not handled by check_growthrates(), you may find it simplest
-#' to run your simulation for a few generations with a smallish founder population and empirically
-#' estimate the growth rate.
+#' In complex models, population trends may not be immediately clear from the
+#' settings. Yet it can be important to know population trends in advance:
+#' growing populations take progressively more computing time, and the
+#' relationship dynamics between individuals across generations are different
+#' for growing vs. shrinking populations. [check_growthrate()] provides an
+#' estimate of the long-term population growth rate under some [altMate()] and
+#' [mort()] settings, assuming one [altMate()] and one [mort()] per cycle.
+#' Estimation is via Leslie matrices. [check_growthrates] only functions for
+#' some [altMate()] and [mort()] structures. Specifically, in [altMate], `type`
+#' must be one of `"flat"`, `"age"`, or `"ageSex"`, and in [mort], if `type` is
+#' `"flat"` or `"age"`, a single growth rate will be returned, but if `"stock"`
+#' or `"ageStock"`, one growth rate will be returned per stock. If `"type"` is
+#' `"simple"` for [mort()], the growthrate is forced to zero, so
+#' [check_growthrate()] does not explicitly handle this case.  Some conditions
+#' can cause [check_growthrate] to fail or provide inaccurate estimates. If
+#' mature females go unmated through lack of available fathers (for instance,
+#' if `exhaustFathers = TRUE` in [mate] and N(mature females) > N(mature males)
+#' ), the Leslie matrix approach will provide an over-estimate of the growth
+#' rate. In [mate()], `batchSize` is the mean number of offspring per female,
+#' but if `maxClutch` is also set to a value other than `Inf`, the *effective*
+#' mean number of offspring per female is estimated by simulation. The mean
+#' number of female offspring per female per year is assumed to be half of the
+#' effective mean number of offspring per female unless `osr` is specified, in
+#' which case the proportion of female offspring is taken from `osr`.  If your
+#' model involves a variation not handled by [check_growthrates()], you may
+#' find it simplest to run your simulation for a few generations with a
+#' smallish founder population and empirically estimate the growth rate.
 #'
-#' @param forceY1 optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,
-#'                should be a numeric value between 0 and 1. If NA, ignored. Must be the first
-#'                argument so that uniroot()-based solutions for null growth will work.
-#' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
-#'                 or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
-#'                 and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
-#'                 be provided. Defaults to 'flat'.
-#' @param mortType the value of 'type' used in the mort() call. Must be one of 'flat', 'age',
-#'                 'stock', or 'ageStock'. If 'flat', 'mortRate' must be provided. If 'age',
-#'                 'ageMort' must be provided. If 'stock', 'stockMort' must be provided. If
-#'                 'ageStock', 'ageStockMort' must be provided. Defaults to 'flat'.
-#' @param batchSize the value of 'batchSize' used in the altMate() call. Cannot be blank.
-#' @param firstBreed the value of 'firstBreed' used in the altMate() call. Defaults to 0.
-#' @param maxClutch the value of 'maxClutch' used in the altMate() call. Defaults to Inf. If non-Inf,
+#' @param forceY1 optionally force first-year mortality to a specific value.
+#' Defaults to `NA`. If non-`NA`, should be a numeric value between 0 and 1. If
+#' `NA`, ignored. Must be the first argument so that [uniroot()]-based
+#' solutions for null growth will work.
+#' @param mateType the value of `type` used in the [altMate()] call. Must be
+#' one of `flat`, `age`, or `ageSex`. If `flat`, `batchSize` must be provided.
+#' If `age`, `maturityCurve` and `batchSize` must be provided. If `ageSex`,
+#' `femaleCurve` and `batchSize` must be provided. Defaults to `flat`.
+#' @param mortType the value of `type` used in the [mort()] call. Must be one
+#' of `flat`, `age`, `stock`, or `ageStock`. If `flat`, `mortRate` must be
+#' provided. If `age`, `ageMort` must be provided. If `stock`, `stockMort` must
+#' be provided. If `ageStock`, `ageStockMort` must be provided. Defaults to
+#' `flat`.
+#' @param batchSize the value of `batchSize` used in the [altMate()] call. Cannot be blank.
+#' @param firstBreed the value of `firstBreed` used in the [altMate()] call. Defaults to 0.
+#' @param maxClutch the value of `maxClutch` used in the [altMate()] call. Defaults to Inf. If non-Inf,
 #'                  _effective_ batchSize is estimated as the mean of 1000000 draws from the
 #'                  distribution of batchSize, subsetted to those <= maxAge.
-#' @param osr the value of 'osr' used in the altMate() call. Female proportion is used as a
+#' @param osr the value of `osr` used in the [altMate()] call. Female proportion is used as a
 #'            multiplier on the fecundities. Defaults to c(0.5, 0.5).
-#' @param maturityCurve the value of 'maturityCurve' used in the altMate() call. check_growthrates()
+#' @param maturityCurve the value of `maturityCurve` used in the [altMate()] call. check_growthrates()
 #'                      only uses female fecundities in its estimates, so femaleCurve is
 #'                      equivalent to maturityCurve in check_growthrates(), but maturityCurve is
-#'                      used when mateType is 'age'. If both mortality and maturity are specified
+#'                      used when mateType is `age`. If both mortality and maturity are specified
 #'                      as vectors, they can be of different lengths. If the maturity vector is
-#'                      shorter, it is 'padded' to the same length as the mortality vector by
+#'                      shorter, it is `padded` to the same length as the mortality vector by
 #'                      repeating the last value in the vector.
-#' @param femaleCurve the value of 'femaleCurve' used in the altMate() call. check_growthrates()
-#'                    only uses female fecundities in its estimates, so femaleCurve is
-#'                    equivalent to maturityCurve in check_growthrates(), but femaleCurve is used
-#'                    when 'mateType' is 'ageSex'. If both mortality and maturity are specified
-#'                    as vectors, they can be of different lengths. If the maturity vector is
-#'                    shorter, it is 'padded' to the same length as the mortality vector by
-#'                    repeating the last value in the vector.
-#' @param maxAge the value of 'maxAge' used in the mort() call. Defaults to Inf.
-#' @param mortRate the value of 'mortRate' used in the mort() call
-#' @param ageMort the value of 'ageMort' used in the mort() call. If both mortality and maturity are
-#'                specified as vectors, they can be of different lengths. If the mortality vector is
-#'                shorter, it is 'padded' to the same length as the maturity vector by repeating the
-#'                last value in the vector.
-#' @param stockMort the value of 'stockMort' used in the mort() call
-#' @param ageStockMort the value of 'ageStockMort' used in the mort() call. If both mortality and
-#'                maturity are specified as vectors, they can be of different lengths. If the
-#'                mortality vector is shorter, it is 'padded' to the same length as the maturity
-#'                vector by repeating the last value in the vector.
+#' @param femaleCurve the value of `femaleCurve` used in the [altMate()] call.
+#' [check_growthrates()] only uses female fecundities in its estimates, so
+#' `femaleCurve` is equivalent to `maturityCurve` in [check_growthrates()], but
+#' `femaleCurve` is used when `mateType` is `ageSex`. If both mortality and
+#' maturity are specified as vectors, they can be of different lengths. If the
+#' maturity vector is shorter, it is "padded" to the same length as the
+#' mortality vector by repeating the last value in the vector.
+#' @param maxAge the value of `maxAge` used in the [mort()] call. Defaults to
+#' `Inf`.
+#' @param mortRate the value of `mortRate` used in the [mort()] call
+#' @param ageMort the value of `ageMort` used in the [mort()] call. If both
+#' mortality and maturity are specified as vectors, they can be of different
+#' lengths. If the mortality vector is shorter, it is "padded" to the same
+#' length as the maturity vector by repeating the last value in the vector.
+#' @param stockMort the value of `stockMort` used in the [mort()] call
+#' @param ageStockMort the value of `ageStockMort` used in the [mort()] call.
+#' If both mortality and maturity are specified as vectors, they can be of
+#' different lengths. If the mortality vector is shorter, it is "padded" to the
+#' same length as the maturity vector by repeating the last value in the
+#' vector.
 #' @seealso [fishSim::PoNG()]
 #' @export
 
@@ -1045,62 +1080,72 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 
 ##################################################################################################
 
-#' find a Point of No Growth (by tweaking first-year mortality)
+#' Find a Point of No Growth (by tweaking first-year mortality)
 #'
-#' This is essentially a wrapper for check_growthrate(), taking all the same inputs. It returns
-#' a plot of projected growth-rates across all possible first-year survival rates and the numeric
-#' first-year survival rate at which zero population growth is expected (via uniroot, or something).
-#' The reasoning behind this utility is that often in biological systems, adult survival rates and
-#' fecundities may be quite well-characterised, and population growth rates may also be well
-#' characterised, but first-year survival may be nearly impossible to assess. This utility allows
-#' a value of first-year survival to be chosen such that the population size does not change,
-#' while leaving all well-characterised adult survival parameters unchanged. It is also useful for
-#' answering questions of the form: 'how high would our first-year survival have to be, in order
-#' for this population to _not_ be in decline?', which will surely be familiar in applied management
-#' situations. Note that PoNG() uses some brute-force methods on the back end, so
-#' it's not terribly efficient. It takes around 5 - 10 seconds per stock on a fairly-modern
-#' (vintage 2018) laptop.
+#' This is essentially a wrapper for [check_growthrate()], taking all the same
+#' inputs. It returns a plot of projected growth-rates across all possible
+#' first-year survival rates and the numeric first-year survival rate at which
+#' zero population growth is expected (via [uniroot], or something).  The
+#' reasoning behind this utility is that often in biological systems, adult
+#' survival rates and fecundities may be quite well-characterised, and
+#' population growth rates may also be well characterised, but first-year
+#' survival may be nearly impossible to assess. This utility allows a value of
+#' first-year survival to be chosen such that the population size does not
+#' change, while leaving all well-characterised adult survival parameters
+#' unchanged. It is also useful for answering questions of the form: 'how high
+#' would our first-year survival have to be, in order for this population to
+#' _not_ be in decline?', which will surely be familiar in applied management
+#' situations. Note that [PoNG()] uses some brute-force methods on the back
+#' end, so it's not terribly efficient. It takes around 5 - 10 seconds per
+#' stock on a fairly-modern (vintage 2018) laptop.
 #'
-#' @param mateType the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
-#'                 or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
-#'                 and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
-#'                 be provided. Defaults to 'flat'.
-#' @param mortType the value of 'type' used in the mort() call. Must be one of 'flat', 'age',
-#'                 'stock', or 'ageStock'. If 'flat', 'mortRate' must be provided. If 'age',
-#'                 'ageMort' must be provided. If 'stock', 'stockMort' must be provided. If
-#'                 'ageStock', 'ageStockMort' must be provided. Defaults to 'flat'.
-#' @param batchSize the value of 'batchSize' used in the altMate() call. Cannot be blank.
-#' @param firstBreed the value of 'firstBreed' used in the altMate() call. Defaults to 0.
-#' @param maxClutch the value of 'maxClutch' used in the altMate() call. Defaults to Inf. If non-Inf,
-#'                  _effective_ batchSize is estimated as the mean of 1000000 draws from the
-#'                  distribution of batchSize, subsetted to those <= maxAge.
-#' @param osr the value of 'osr' used in the altMate() call. Female proportion is used as a
-#'            multiplier on the fecundities. Defaults to c(0.5, 0.5).
-#' @param maturityCurve the value of 'maturityCurve' used in the altMate() call. check_growthrates()
-#'                      only uses female fecundities in its estimates, so femaleCurve is
-#'                      equivalent to maturityCurve in check_growthrates(), but maturityCurve is
-#'                      used when mateType is 'age'. If both mortality and maturity are specified
-#'                      as vectors, they can be of different lengths. If the maturity vector is
-#'                      shorter, it is 'padded' to the same length as the mortality vector by
-#'                      repeating the last value in the vector.
-#' @param femaleCurve the value of 'femaleCurve' used in the altMate() call. check_growthrates()
-#'                    only uses female fecundities in its estimates, so femaleCurve is
-#'                    equivalent to maturityCurve in check_growthrates(), but femaleCurve is used
-#'                    when 'mateType' is 'ageSex'. If both mortality and maturity are specified
-#'                    as vectors, they can be of different lengths. If the maturity vector is
-#'                    shorter, it is 'padded' to the same length as the mortality vector by
-#'                    repeating the last value in the vector.
-#' @param maxAge the value of 'maxAge' used in the mort() call. Defaults to Inf.
-#' @param mortRate the value of 'mortRate' used in the mort() call
-#' @param ageMort the value of 'ageMort' used in the mort() call. If both mortality and maturity are
-#'                specified as vectors, they can be of different lengths. If the mortality vector is
-#'                shorter, it is 'padded' to the same length as the maturity vector by repeating the
-#'                last value in the vector.
-#' @param stockMort the value of 'stockMort' used in the mort() call
-#' @param ageStockMort the value of 'ageStockMort' used in the mort() call. If both mortality and
-#'                maturity are specified as vectors, they can be of different lengths. If the
-#'                mortality vector is shorter, it is 'padded' to the same length as the maturity
-#'                vector by repeating the last value in the vector.
+#' @param mateType the value of `type` used in the altMate() call. Must be one
+#' of `flat`, `age`, or `ageSex`. If `flat`, `batchSize` must be provided. If
+#' `age`, `maturityCurve` and `batchSize` must be provided. If `ageSex`,
+#' `femaleCurve` and `batchSize` must be provided. Defaults to `flat`.
+#' @param mortType the value of `type` used in the [mort()] call. Must be one of
+#' `flat`, `age`, `stock`, or `ageStock`. If `flat`, `mortRate` must be
+#' provided. If `age`, `ageMort` must be provided. If `stock`, `stockMort` must
+#' be provided. If `ageStock`, `ageStockMort` must be provided. Defaults to
+#' `flat`.
+#' @param batchSize the value of `batchSize` used in the [altMate()] call.
+#' Cannot be blank.
+#' @param firstBreed the value of `firstBreed` used in the [altMate()] call.
+#' Defaults to 0.
+#' @param maxClutch the value of `maxClutch` used in the [altMate()] call.
+#' Defaults to `Inf`. If non-`Inf`, _effective_ `batchSize` is estimated as the
+#' mean of 1000000 draws from the distribution of `batchSize`, subsetted to
+#' those <= `maxAge`.
+#' @param osr the value of `osr` used in the [altMate()] call. Female
+#' proportion is used as a multiplier on the fecundities. Defaults to `c(0.5,
+#' 0.5)`.
+#' @param maturityCurve the value of `maturityCurve` used in the [altMate()]
+#' call. [check_growthrates()] only uses female fecundities in its estimates,
+#' so `femaleCurve` is equivalent to `maturityCurve` in [check_growthrates()],
+#' but `maturityCurve` is used when mateType is `age`. If both mortality and
+#' maturity are specified as vectors, they can be of different lengths. If the
+#' maturity vector is shorter, it is "padded" to the same length as the
+#' mortality vector by repeating the last value in the vector.
+#' @param femaleCurve the value of `femaleCurve` used in the [altMate()] call.
+#' [check_growthrates()] only uses female fecundities in its estimates, so
+#' `femaleCurve` is equivalent to `maturityCurve` in [check_growthrates()], but
+#' `femaleCurve` is used when `mateType` is `ageSex`. If both mortality and
+#' maturity are specified as vectors, they can be of different lengths. If the
+#' maturity vector is shorter, it is "padded" to the same length as the
+#' mortality vector by repeating the last value in the vector.
+#' @param maxAge the value of `maxAge` used in the `mort()` call. Defaults to
+#' `Inf`.
+#' @param mortRate the value of `mortRate` used in the `mort()` call
+#' @param ageMort the value of `ageMort` used in the `mort()` call. If both
+#' mortality and maturity are specified as vectors, they can be of different
+#' lengths. If the mortality vector is shorter, it is "padded" to the same
+#' length as the maturity vector by repeating the last value in the vector.
+#' @param stockMort the value of `stockMort` used in the `mort()` call
+#' @param ageStockMort the value of `ageStockMort` used in the `mort()` call. If
+#' both mortality and maturity are specified as vectors, they can be of
+#' different lengths. If the mortality vector is shorter, it is "padded" to the
+#' same length as the maturity vector by repeating the last value in the
+#' vector.
 #' @seealso [fishSim::check_growthrate()]
 #' @export
 #' @examples
@@ -1200,19 +1245,18 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
 }
 
 
-#' look up the parents of one or more individuals
+#' Look up the parents of one or more individuals
 #'
-#' The parents() function searches an 'indiv' matrix for individuals with a given ID,
-#' and returns the IDs of its parents. If one or more of the parents were founders, it
-#' returns 'founder' instead of a ID for founder parents, and if the individual's ID
-#' is 'founder', it returns 'founder' as the ID for both parents. Parents are returned
-#' in order [father, mother].
-#' If more than one ID is given, parents are returned in order of ID: [ID1 father,
-#' ID1 mother, ID2 father, ID2 mother ... ]
-#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param indiv A matrix of individuals, as from mort().
-#' @seealso [fishSim::grandparents(), fishSim::great.grandparents(),
-#' fishSim::great4.grandparents()]
+#' The `parents()` function searches an `indiv` matrix for individuals with a
+#' given ID, and returns the IDs of its parents. If one or more of the parents
+#' were founders, it returns `"founder"` instead of a ID for founder parents,
+#' and if the individual's ID is `"founder"`, it returns `"founder"` as the ID
+#' for both parents. Parents are returned in order `[father, mother]`.  If more
+#' than one ID is given, parents are returned in order of ID: `[ID1 father, ID1
+#' mother, ID2 father, ID2 mother ... ]`
+#' @param ID A character vector containing one or more IDs, e.g., from `mort()[,1]`
+#' @param indiv A matrix of individuals, as from `mort()`.
+#' @seealso [fishSim::grandparents()] [fishSim::great.grandparents()] [fishSim::great4.grandparents()]
 #' @export
 #' @examples
 #' indiv <- makeFounders()
@@ -1240,13 +1284,15 @@ parents <- function(ID, indiv) {
     return(outs)
 }
 
-#' look up the grandparents of one or more individuals
+#' Look up the grandparents of one or more individuals
 #'
-#' A convenience wrapper for 'parents()', returning the grandparents of one or more
-#' individuals. If FF is 'father's father', MF is 'mother's father', and so on,
-#' grandparents are returned in order [FF, FM, MF, MM] for each specified ID.
-#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param indiv A matrix of individuals, as from mort().
+#' A convenience wrapper for [parents()], returning the grandparents of one or
+#' more individuals. If FF is 'father's father', MF is 'mother's father', and
+#' so on, grandparents are returned in order [FF, FM, MF, MM] for each
+#' specified ID.
+#' @param ID A character vector containing one or more IDs, e.g., from
+#' `mort()[,1]`
+#' @param indiv A matrix of individuals, as from [mort()].
 #' @seealso [fishSim::parents()]
 #' @export
 
@@ -1256,12 +1302,14 @@ grandparents <- function(ID, indiv) {
 
 #' look up the great-grandparents of one or more individuals
 #'
-#' A convenience wrapper for 'parents()', returning the great-grandparents of one or more
-#' individuals. If FFF is 'father's father's father', MFM is 'mother's father's mother',
-#' and so on, great-grandparents are returned in order [FFF, FFM, FMF, FMM, MFF, MFM,
-#' MMF, MMM] for each specified ID.
-#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param indiv A matrix of individuals, as from mort().
+#' A convenience wrapper for [parents()], returning the great-grandparents of
+#' one or more individuals. If `FFF` is 'father's father's father', MFM is
+#' 'mother's father's mother', and so on, great-grandparents are returned in
+#' order `FFF`, `FFM`, `FMF`, `FMM`, `MFF`, `MFM`, `MMF`, `MMM` for each
+#' specified ID.
+#' @param ID A character vector containing one or more IDs, e.g., from
+#' `mort()[,1]`
+#' @param indiv A matrix of individuals, as from [mort()].
 #' @seealso [fishSim::parents()]
 #' @export
 
@@ -1269,15 +1317,17 @@ great.grandparents <- function(ID, indiv) {
     parents(parents(parents(ID, indiv), indiv), indiv)
 }
 
-#' look up the great-great-grandparents of one or more individuals
+#' Look up the great-great-grandparents of one or more individuals
 #'
-#' A convenience wrapper for 'parents()', returning the great-great-grandparents of one
-#' or more individuals. If 'FFFF' is 'father's father's father's father', and
-#' 'MMFM' is 'mother's mother's father's mother', and so on, great-great-grandparents
-#' are returned in order [FFFF,FFFM,FFMF,FFMM,FMFF,FMFM,FMMF,FMMM,MFFF,MFFM,MFMF,MFMM,
-#' MMFF,MMFM,MMMF,MMMM]
-#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param indiv A matrix of individuals, as from mort().
+#' A convenience wrapper for [parents()], returning the
+#' great-great-grandparents of one or more individuals. If `'FFFF'` is
+#' 'father's father's father's father', and 'MMFM' is 'mother's mother's
+#' father's mother', and so on, great-great-grandparents are returned in order
+#' `FFFF`, `FFFM`, `FFMF`, `FFMM`, `FMFF`, `FMFM`, `FMMF`, `FMMM`, `MFFF`,
+#' `MFFM`, `MFMF`, `MFMM`, `MMFF`, `MMFM`, `MMMF`, `MMMM`
+#' @param ID A character vector containing one or more IDs, e.g., from
+#' `mort()[,1]`
+#' @param indiv A matrix of individuals, as from [mort()].
 #' @seealso [fishSim::parents()]
 #' @export
 
@@ -1285,18 +1335,20 @@ great2.grandparents <- function(ID, indiv) {
     parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv)
 }
 
-#' look up the great-great-great-grandparents of one or more individuals.
+#' Look up the great-great-great-grandparents of one or more individuals.
 #'
-#' A convenience wrapper for 'parents()', returning the great-great-great-grandparents
-#' of one or more individuals. If 'FFFFF' is 'father's father's father's father's father',
-#' and 'FFMFM' is 'father's father's mother's father's mother', and so on,
-#' great-great-great-grandparents are returned in order [FFFFF, FFFFM, FFFMF,
-#' FFFMM, FFMFF, FFMFM, FFMMF, FFMMM, FMFFF, FMFFM, FMFMF, FMFMM,
-#' FMMFF, FMMFM, FMMMF, FMMMM, MFFFF, MFFFM, MFFMF, MFFMM, MFMFF,
-#' MFMFM, MFMMF, MFMMM, MMFFF, MMFFM, MMFMF, MMFMM, MMMFF, MMMFM,
-#' MMMMF, MMMMM]
-#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param indiv A matrix of individuals, as from mort().
+#' A convenience wrapper for [parents()], returning the
+#' great-great-great-grandparents of one or more individuals. If 'FFFFF' is
+#' 'father's father's father's father's father', and 'FFMFM' is 'father's
+#' father's mother's father's mother', and so on,
+#' great-great-great-grandparents are returned in order: `FFFFF`, `FFFFM`,
+#' `FFFMF`, `FFFMM`, `FFMFF`, `FFMFM`, `FFMMF`, `FFMMM`, `FMFFF`, `FMFFM`,
+#' `FMFMF`, `FMFMM`, `FMMFF`, `FMMFM`, `FMMMF`, `FMMMM`, `MFFFF`, `MFFFM`,
+#' `MFFMF`, `MFFMM`, `MFMFF`, `MFMFM`, `MFMMF`, `MFMMM`, `MMFFF`, `MMFFM`,
+#' `MMFMF`, `MMFMM`, `MMMFF`, `MMMFM`, `MMMMF`, `MMMMM`.
+#' @param ID A character vector containing one or more IDs, e.g., from
+#' `mort()[,1]`
+#' @param indiv A matrix of individuals, as from [mort()].
 #' @seealso [fishSim::parents()]
 #' @export
 
@@ -1304,22 +1356,25 @@ great3.grandparents <- function(ID, indiv) {
     parents(parents(parents(parents(parents(ID, indiv), indiv), indiv), indiv), indiv)
 }
 
-#' look up the great-great-great-great-grandparents of one or more individuals
+#' Look up the great-great-great-great-grandparents of one or more individuals
 #'
 #' A convenience wrapper for 'parents()', returning the
-#' great-great-great-great-grandparents of one or more individuals. If 'FFFFFF' is
-#' 'father's father's father's father's father's father', and 'FFFMMM' is
+#' great-great-great-great-grandparents of one or more individuals. If 'FFFFFF'
+#' is 'father's father's father's father's father's father', and 'FFFMMM' is
 #' 'father's father's father's mother's mother's mother',
-#' great-great-great-great-grandparents are returned in order [FFFFFF, FFFFFM, FFFFMF,
-#' FFFFMM, FFFMFF, FFFMFM, FFFMMF, FFFMMM, FFMFFF, FFMFFM, FFMFMF, FFMFMM, FFMMFF,
-#' FFMMFM, FFMMMF, FFMMMM, FMFFFF, FMFFFM, FMFFMF, FMFFMM, FMFMFF, FMFMFM, FMFMMF,
-#' FMFMMM, FMMFFF, FMMFFM, FMMFMF, FMMFMM, FMMMFF, FMMMFM, FMMMMF, FMMMMM, MFFFFF,
-#' MFFFFM, MFFFMF, MFFFMM, MFFMFF, MFFMFM, MFFMMF, MFFMMM, MFMFFF, MFMFFM, MFMFMF,
-#' MFMFMM, MFMMFF, MFMMFM, MFMMMF, MFMMMM, MMFFFF, MMFFFM, MMFFMF, MMFFMM, MMFMFF,
-#' MMFMFM, MMFMMF, MMFMMM, MMMFFF, MMMFFM, MMMFMF, MMMFMM, MMMMFF, MMMMFM, MMMMMF,
-#' MMMMMM]
-#' @param ID A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param indiv A matrix of individuals, as from mort().
+#' great-great-great-great-grandparents are returned in order `FFFFFF`,
+#' `FFFFFM`, `FFFFMF`, `FFFFMM`, `FFFMFF`, `FFFMFM`, `FFFMMF`, `FFFMMM`,
+#' `FFMFFF`, `FFMFFM`, `FFMFMF`, `FFMFMM`, `FFMMFF`, `FFMMFM`, `FFMMMF`,
+#' `FFMMMM`, `FMFFFF`, `FMFFFM`, `FMFFMF`, `FMFFMM`, `FMFMFF`, `FMFMFM`,
+#' `FMFMMF`, `FMFMMM`, `FMMFFF`, `FMMFFM`, `FMMFMF`, `FMMFMM`, `FMMMFF`,
+#' `FMMMFM`, `FMMMMF`, `FMMMMM`, `MFFFFF`, `MFFFFM`, `MFFFMF`, `MFFFMM`,
+#' `MFFMFF`, `MFFMFM`, `MFFMMF`, `MFFMMM`, `MFMFFF`, `MFMFFM`, `MFMFMF`,
+#' `MFMFMM`, `MFMMFF`, `MFMMFM`, `MFMMMF`, `MFMMMM`, `MMFFFF`, `MMFFFM`,
+#' `MMFFMF`, `MMFFMM`, `MMFMFF`, `MMFMFM`, `MMFMMF`, `MMFMMM`, `MMMFFF`,
+#' `MMMFFM`, `MMMFMF`, `MMMFMM`, `MMMMFF`, `MMMMFM`, `MMMMMF`, `MMMMMM`
+#' @param ID A character vector containing one or more IDs, e.g., from
+#' `mort()[,1]`
+#' @param indiv A matrix of individuals, as from [mort()].
 #' @seealso [fishSim::parents()]
 #' @export
 
@@ -1328,33 +1383,39 @@ great4.grandparents <- function(ID, indiv) {
 }
 
 
-#' find shared ancestors between pairs of individuals
+#' Find shared ancestors between pairs of individuals
 #'
-#' findRelatives takes a set of 'sampled' individuals and a population simulation output
-#' (i.e., an 'indiv' object, of the kind output by mort() ). It returns a data.frame
-#' for each pair of sampled individuals, with columns:
-#' 1) Var1: the first individual's ID
-#' 2) Var2: the second individual's ID
-#' 3) related: TRUE for each pair that with one or more shared ancestors within seven
-#'    ancestral generations (i.e., great-great-great-great grandparents), otherwise FALSE
-#' 4) totalRelatives: numeric indicator of the total number of shared ancestors found
-#' 5) OneTwo, OneThree, ThreeFour, etc.: Numeric values, indicating the number of shared
-#'    ancestors by relationship class. For instance, a shared relative in the OneTwo class
-#'    indicates that one member of the pair is the other member's parent, a shared relative
-#'    in the OneThree class indicates that one member is the other's grandparent, and a shared
-#'    in the ThreeFour class indicates that one individual's grandparent is the other's great-
-#'    grandparent. If a pair shares an ancestor in the TwoThree class, they necessarily also
-#'    share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
-#'    and so on. Note that relationship classes are identical by reversal - ThreeFour is the
-#'    same as FourThree, and so only relationship classes with increasing order are presented
-#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
-#' @param indiv A matrix of individuals, as from mort(), but which will need to contain
-#'              long strings of parent-offspring relationships, so will most likely come
-#'              from a multi-generation simulation.
-#' @param sampled A character vector containing one or more IDs, e.g., from mort()[,1]
-#' @param delimitIndiv TRUE/FALSE. Lookups can be sped up markedly by first delimiting
-#'                     indiv to only those animals that exist as parents, or that are
-#'                     marked as sampled. Default TRUE.
+#' `findRelatives` takes a set of 'sampled' individuals and a population
+#' simulation output (i.e., an `indiv` object, of the kind output by [mort()]).
+#' It returns a `data.frame` for each pair of sampled individuals, with
+#' columns:
+#' 1. `Var1`: the first individual's ID
+#' 2. `Var2`: the second individual's ID
+#' 3. `related`: `TRUE` for each pair that with one or more shared ancestors
+#' within seven ancestral generations (i.e., great-great-great-great
+#' grandparents), otherwise `FALSE`
+#' 4. `totalRelatives`: numeric indicator of the total number of shared
+#' ancestors found
+#' 5. `OneTwo`, `OneThree`, `ThreeFour`, etc.: Numeric values, indicating the
+#' number of shared ancestors by relationship class. For instance, a shared
+#' relative in the `OneTwo` class indicates that one member of the pair is the
+#' other member's parent, a shared relative in the `OneThree` class indicates
+#' that one member is the other's grandparent, and a shared in the `ThreeFour`
+#' class indicates that one individual's grandparent is the other's great-
+#' grandparent. If a pair shares an ancestor in the `TwoThree` class, they
+#' necessarily also share two ancestors in the `ThreeFour` class and four
+#' ancestors in the `FourFive` class, and so on. Note that relationship classes
+#' are identical by reversal - `ThreeFour` is the same as `FourThree`, and so
+#' only relationship classes with increasing order are presented (i.e.,
+#' `ThreeFour` and `OneFive` are in the output, but not `ThreeTwo`).
+#' @param indiv A matrix of individuals, as from [mort()], but which will need
+#' to contain long strings of parent-offspring relationships, so will most
+#' likely come from a multi-generation simulation.
+#' @param sampled A character vector containing one or more IDs, e.g., from
+#' `mort()[,1]`
+#' @param delimitIndiv `TRUE`/`FALSE`. Lookups can be sped up markedly by first
+#' delimiting indiv to only those animals that exist as parents, or that are
+#' marked as sampled. Default `TRUE`.
 #' @seealso [fishSim::lookAtPair()]
 #' @export
 
@@ -1524,52 +1585,62 @@ findRelatives <- function(indiv, sampled, delimitIndiv = TRUE) {
     return(pairs)
 }
 
-#' partially-parallelized findRelatives()
+#' Partially-parallelized `findRelatives()`
 #'
-#' findRelativesPar is a partially-parallelized version of findRelatives. Its use is
-#' exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
-#' 'findRelativesAlt' uses the sample indicator in indiv[,9] to decide which individuals
-#' to compare, whereas 'findRelativesPar' compares between all individuals in 'sampled'.
+#' `findRelativesPar` is a partially-parallelized version of `findRelatives`.
+#' Its use is exactly the same, but it requires libraries `foreach`,
+#' `parallel`, and `doParallel`.
 #'
-#' Lookup operations to find each member's ancestors are parallelized, but comparisons
-#' between ancestor-sets are not. On a test-set of 100 sampled individuals, this partial-
-#' parallelization reduced runtime from 55 seconds to 22 seconds.
-#' findRelatives takes a set of 'sampled' individuals and a population simulation output
-#' (i.e., an 'indiv' object, of the kind output by mort() ). It returns a data.frame
+#' `findRelativesAlt` uses the sample indicator in indiv[,9] to decide which
+#' individuals to compare, whereas 'findRelativesPar' compares between all
+#' individuals in 'sampled'.
+#'
+#' Lookup operations to find each member's ancestors are parallelized, but
+#' comparisons between ancestor-sets are not. On a test-set of 100 sampled
+#' individuals, this partial- parallelization reduced runtime from 55 seconds
+#' to 22 seconds.
+#'
+#' `findRelatives` takes a set of 'sampled' individuals and a population simulation output
+#' (i.e., an `indiv` object, of the kind output by [mort()]). It returns a `data.frame`
 #' for each pair of sampled individuals, with columns:
-#' 1) Var1: the first individual's ID
-#' 2) Var2: the second individual's ID
-#' 3) related: TRUE for each pair that with one or more shared ancestors within seven
-#'    ancestral generations (i.e., great-great-great-great grandparents), otherwise FALSE
-#' 4) totalRelatives: numeric indicator of the total number of shared ancestors found
-#' 5) OneTwo, OneThree, ThreeFour, etc.: Numeric values, indicating the number of shared
-#'    ancestors by relationship class. For instance, a shared relative in the OneTwo class
-#'    indicates that one member of the pair is the other member's parent, a shared relative
-#'    in the OneThree class indicates that one member is the other's grandparent, and a shared
-#'    in the ThreeFour class indicates that one individual's grandparent is the other's great-
-#'    grandparent. If a pair shares an ancestor in the TwoThree class, they necessarily also
-#'    share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
-#'    and so on. Note that relationship classes are identical by reversal - ThreeFour is the
-#'    same as FourThree, and so only relationship classes with increasing order are presented
-#'    (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
-#' Note that, if there is an object called 'ancestors' in the global environment, the
-#' foreach() loops may refer to that copy of 'ancestors', rather than the one generated inside
-#' findRelativesPar(). This is a known bug. Rename and delete 'ancestors'.
-#' If it occurs, this bug will cause the following error:
-#' Error in cbind(ancestors, parents.o, grandparents.o, ggrandparents.o:
-#' number of rows of matrices must match (see arg 3).
-#' @param indiv A matrix of individuals, as from mort(), but which will need to contain
-#'              long strings of parent-offspring relationships, so will most likely come
-#'              from a multi-generation simulation.
-#' @param sampled TRUE or FALSE. If TRUE, compares only individuals marked as sampled in
-#'                indiv[,9]. If FALSE, compares all individuals in 'indiv'.
-#' @param verbose TRUE or FALSE. If TRUE, prints a table of sampling
-#'                years for sampled individuals.
-#' @param nCores the number of cores to use for parallel processes. Defaults to one less than
-#'               the number of cores on the machine.
-#' @param delimitIndiv TRUE/FALSE. Lookups can be sped up markedly by first delimiting
-#'                     indiv to only those animals that exist as parents, or that are
-#'                     marked as sampled. Default TRUE.
+#' 1. `Var1`: the first individual's ID
+#' 2. `Var2`: the second individual's ID
+#' 3. `related`: `TRUE` for each pair that with one or more shared ancestors
+#' within seven ancestral generations (i.e., great-great-great-great
+#' grandparents), otherwise `FALSE`
+#' 4. `totalRelatives`: numeric indicator of the total number of shared
+#' ancestors found
+#' 5. `OneTwo`, `OneThree`, `ThreeFour`, etc.: Numeric values, indicating the
+#' number of shared ancestors by relationship class. For instance, a shared
+#' relative in the `OneTwo` class indicates that one member of the pair is the
+#' other member's parent, a shared relative in the `OneThree` class indicates
+#' that one member is the other's grandparent, and a shared in the `ThreeFour`
+#' class indicates that one individual's grandparent is the other's great-
+#' grandparent. If a pair shares an ancestor in the `TwoThree` class, they
+#' necessarily also share two ancestors in the `ThreeFour` class and four
+#' ancestors in the `FourFive` class, and so on. Note that relationship classes
+#' are identical by reversal - `ThreeFour` is the same as `FourThree`, and so
+#' only relationship classes with increasing order are presented (i.e.,
+#' `ThreeFour` and `OneFive` are in the output, but not `ThreeTwo`).  Note
+#' that, if there is an object called `ancestors` in the global environment,
+#' the `foreach()` loops may refer to that copy of `ancestors`, rather than the
+#' one generated inside `findRelativesPar()`. This is a known bug. Rename and
+#' delete `ancestors`.  If it occurs, this bug will cause the following error:
+#' Error in `cbind(ancestors, parents.o, grandparents.o, ggrandparents.o:
+#' number of rows of matrices must match (see arg 3).`
+#' @param indiv A matrix of individuals, as from [mort()], but which will need
+#' to contain long strings of parent-offspring relationships, so will most
+#' likely come from a multi-generation simulation.
+#' @param sampled `TRUE` or `FALSE`. If `TRUE`, compares only individuals
+#' marked as sampled in `indiv[,9]`. If `FALSE`, compares all individuals in
+#' `indiv`.
+#' @param verbose `TRUE` or `FALSE`. If `TRUE`, prints a table of sampling
+#' years for sampled individuals.
+#' @param nCores the number of cores to use for parallel processes. Defaults to
+#' one less than the number of cores on the machine.
+#' @param delimitIndiv `TRUE`/`FALSE`. Lookups can be sped up markedly by first
+#' delimiting `indiv` to only those animals that exist as parents, or that are
+#' marked as sampled. Default `TRUE`.
 #' @seealso [fishSim::findRelatives()]
 #' @seealso [fishSim::capture()]
 #' @export
@@ -1779,12 +1850,14 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
 }
 
 
-#' show a readable relationship summary for a pair of relatives
+#' Show a readable relationship summary for a pair of relatives
 #'
-#' lookAtPair takes a single row from the output of findRelatives(), and returns a 7-by-7
-#' matrix (as data.frame) showing the number of shared ancestors for each relationship class.
-#' The lookAtPair output is symmetric about the diagonal, and is particularly useful for
-#' displaying departures from expected relationship structures. For instance, the output
+#' `lookAtPair` takes a single row from the output of `findRelatives()`, and
+#' returns a 7-by-7 matrix (as `data.frame`) showing the number of shared
+#' ancestors for each relationship class.  The `lookAtPair` output is symmetric
+#' about the diagonal, and is particularly useful for displaying departures
+#' from expected relationship structures. For instance, the output
+#' ```r
 #' > lookAtPair(pair)
 #'   X1 X2 X3 X4 X5 X6 X7
 #' 1  .  .  1  .  .  .  .
@@ -1794,14 +1867,18 @@ findRelativesPar <- function(indiv, sampled = TRUE, verbose = TRUE, nCores = det
 #' 5  .  .  4  .  .  1 16
 #' 6  .  .  .  8  1  .  3
 #' 7  .  .  .  . 16  3  .
-#' shows a pair where one individual is the other's grandparent (shown by the 1 in [1,X3], and
-#' doubling series proceeding diagonally down from that point),
-#' further related via shared great-great-grandparent / great-great-great-grandparent
-#' (the 1 in [5,X6], and doubling series proceeding diagonally from that point), and a shared
-#' great-great-great-grandparent / great-great-great-great-grandparent (the 3 in [6,X7], where
-#' we would otherwise expect a 2 from the previous shared ancestor).
+#' ```
+#' shows a pair where one individual is the other's grandparent (shown by the
+#' `1` in `[1,X3]`, and doubling series proceeding diagonally down from that
+#' point), further related via shared great-great-grandparent /
+#' great-great-great-grandparent (the `1` in `[5,X6]`, and doubling series
+#' proceeding diagonally from that point), and a shared
+#' great-great-great-grandparent / great-great-great-great-grandparent (the `3`
+#' in `[6,X7]`, where we would otherwise expect a 2 from the previous shared
+#' ancestor).
 #'
-#' @param pair a data.frame object, with structure identical to a row from findRelatives()
+#' @param pair a data.frame object, with structure identical to a row from
+#' [findRelatives()].
 #' @seealso [fishSim::findRelatives()]
 #' @export
 
@@ -1870,49 +1947,55 @@ lookAtPair <- function(pair) {
 }
 
 
-#' show numbers of pairs in named relationship classes
+#' Show numbers of pairs in named relationship classes
 #'
-#' namedRelatives takes output from findRelatives() or findRelativesPar(), and returns
-#' counts of named relationship classes within the set of pair comparisons. Relationship
-#' classes are defined based on the closest relative shared between two individuals. So
-#' for instance, if two animals share a single parent, they will be classed as an HSP, even
-#' if there is ancestral inbreeding - for instances, in cases where the shared parent is also
-#' a half-cousin of the other parent of both individuals.
+#' `namedRelatives` takes output from [findRelatives()] or
+#' [findRelativesPar()], and returns counts of named relationship classes
+#' within the set of pair comparisons. Relationship classes are defined based
+#' on the closest relative shared between two individuals. So for instance, if
+#' two animals share a single parent, they will be classed as an HSP, even if
+#' there is ancestral inbreeding - for instances, in cases where the shared
+#' parent is also a half-cousin of the other parent of both individuals.
 #'
 #' The named relationship classes are:
-#' POPs: Parent-offspring pairs. One is the other's parent.
-#' GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
-#' dGGPs: Double Grandparent-grandoffspring pairs. One is the other's grandparent, twice.
-#'        That is, the grandparent has had offspring by two different mates, and those
-#'        offspring have mated to generate the grandoffspring.
-#' G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
-#' dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the other's
-#'          great-grandparent, twice. That is, the great-grandparent has had offspring by two
-#'          different mates, those offspring have produced outbred offspring, and *they* have
-#'          mated to generate the great-grandoffspring.
-#' G6Ps: Great-great-grandparent-great-great-grandoffspring pairs. One is the other's
-#'       great-great-grandparent.
-#' dG6Ps: Double Great-great-grandparent-great-great-grandoffspring pairs. One is the other's
-#'          great-great-grandparent, twice. That is, the great-great-grandparent has had
-#'          offspring by two different mates, those offspring have produced outbred offspring,
-#'          and those offspring have produced outbred offspring, and *they* have
-#'          mated to generate the great-great-grandoffspring.
-#' HSPs: Half-sibling pairs. The individuals share one parent.
-#' FSPs: Full-sibling pairs. The individuals share two parents.
-#' HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
-#' FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other individual's
-#'       parents.
-#' HCPs: Half-cousin pairs. The individuals share one grandparent.
-#' FCPs: Full-cousin pairs. The individuals share two grandparents.
-#' GHCPs: Generalised half-cousin pairs. One individual's great-grandparent is the other
-#'        individual's parent.
-#' GFCPs: Generalised full-cousin pairs. Two of one individual's great-grandparents are the
-#'        other individual's parents.
-#' ORCs: Other Relationship Classes. Within the seven-generation search space, at least one
-#'       shared ancestor was detected, but the relationship does not fall into one of the
-#'       listed relationship classes.
+#' - POPs: Parent-offspring pairs. One is the other's parent.
+#' - GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
+#' - dGGPs: Double Grandparent-grandoffspring pairs. One is the other's
+#' grandparent, twice.  That is, the grandparent has had offspring by two
+#' different mates, and those offspring have mated to generate the
+#' grandoffspring.
+#' - G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's
+#' great-grandparent.
+#' - dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the
+#' other's great-grandparent, twice. That is, the great-grandparent has had
+#' offspring by two different mates, those offspring have produced outbred
+#' offspring, and *they* have mated to generate the great-grandoffspring.
+#' - G6Ps: Great-great-grandparent-great-great-grandoffspring pairs. One is the
+#' other's great-great-grandparent.
+#' - dG6Ps: Double Great-great-grandparent-great-great-grandoffspring pairs.
+#' One is the other's great-great-grandparent, twice. That is, the
+#' great-great-grandparent has had offspring by two different mates, those
+#' offspring have produced outbred offspring, and those offspring have produced
+#' outbred offspring, and *they* have mated to generate the
+#' great-great-grandoffspring.
+#' - HSPs: Half-sibling pairs. The individuals share one parent.
+#' - FSPs: Full-sibling pairs. The individuals share two parents.
+#' - HTPs: Half-thiatic pairs. One individual's grandparent is the other
+#' individual's parent.
+#' - FTPs: Full-thiatic pairs. Two of one individual's grandparents are the
+#' other individual's parents.
+#' - HCPs: Half-cousin pairs. The individuals share one grandparent.
+#' - FCPs: Full-cousin pairs. The individuals share two grandparents.
+#' - GHCPs: Generalised half-cousin pairs. One individual's great-grandparent
+#' is the other individual's parent.
+#' - GFCPs: Generalised full-cousin pairs. Two of one individual's
+#' great-grandparents are the other individual's parents.
+#' - ORCs: Other Relationship Classes. Within the seven-generation search
+#' space, at least one shared ancestor was detected, but the relationship does
+#' not fall into one of the listed relationship classes.
 #'
-#' @param pairs a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()
+#' @param pairs a data.frame of pairwise comparisons of ancestor sets, as from
+#' [findRelatives()]
 #' @seealso [fishSim::findRelatives()]
 #' @export
 
@@ -1942,27 +2025,27 @@ namedRelatives <- function(pairs) {
 
 #' Quick lookup of CKMR-relevant relationships
 #'
-#' quickin performs quick lookup of the kinships directly relevant to
+#' `quickin` performs quick lookup of the kinships directly relevant to
 #' close-kin mark-recapture. It returns a list of eight character
 #' arrays, with each array holding one kinship in one pair of animals
 #' per row.
 #'
 #' The named relationship classes (in list order) are:
-#' POPs: Parent-offspring pairs. One is the other's parent.
-#' HSPs: Half-sibling pairs. The individuals share one parent.
-#' FSPs: Full-sibling pairs. The individuals share two parents.
-#' GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
-#' HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
-#' FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other individual's
-#'       parents.
-#' HCPs: Half-cousin pairs. The individuals share one grandparent.
-#' FCPs: Full-cousin pairs. The individuals share two grandparents.
+#' - POPs: Parent-offspring pairs. One is the other's parent.
+#' - HSPs: Half-sibling pairs. The individuals share one parent.
+#' - FSPs: Full-sibling pairs. The individuals share two parents.
+#' - GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
+#' - HTPs: Half-thiatic pairs. One individual's grandparent is the other
+#' individual's parent.
+#' - FTPs: Full-thiatic pairs. Two of one individual's grandparents are the
+#' other individual's parents.
+#' - HCPs: Half-cousin pairs. The individuals share one grandparent.
+#' - FCPs: Full-cousin pairs. The individuals share two grandparents.
 #'
-#' @param inds an 'indiv' matrix, as from 'mort()', with some
-#'     individuals marked as 'captured'
-#' @param max_gen the maximum depth to look up relatives, in
-#'     generations. max_gen = 2 is sufficient for relatives used in
-#'     CKMR
+#' @param inds an `indiv` matrix, as from [mort()], with some individuals
+#' marked as 'captured'
+#' @param max_gen the maximum depth to look up relatives, in generations.
+#' `max_gen = 2` is sufficient for relatives used in CKMR
 #' @seealso [fishSim::findRelatives()]
 #' @seealso [fishSim::capture()]
 #' @export
@@ -2086,19 +2169,18 @@ return( retlist)
 }
 
 
-#' look up shared ancestors for quickin-style kinship reporting
+#' Look up shared ancestors for `quickin`-style kinship reporting
 #'
-#' Targets one specific shared ancestor-type, matrix-wise between
-#' pairs of animals.
+#' Targets one specific shared ancestor-type, matrix-wise between pairs of
+#' animals.
 #'
 #' @param anc1s a matrix of ancestors for animal 1
 #' @param anc2s a matrix of ancestors for animal 2
-#' @param same TRUE/FALSE. TRUE if you're looking for shared ancestors
-#'     at the same position from each member of the pair (e.g., if
-#'     you're looking for ancestors that are the mother of both pair
-#'     members.
-#' @param weed if non-NULL, will attempt to remove pairs given as the
-#'     parameter value.
+#' @param same `TRUE`/`FALSE`. `TRUE` if you're looking for shared ancestors at
+#' the same position from each member of the pair (e.g., if you're looking for
+#' ancestors that are the mother of both pair members.
+#' @param weed if non-NULL, will attempt to remove pairs given as the parameter
+#' value.
 
 "xpairs" <-
 function( anc1s, anc2s, same, weed=NULL) {
@@ -2192,14 +2274,14 @@ function( m1, m2) {
   }
 
 
-#' convert an early 'makeFounders'-type matrix to data.frame
+#' convert an early `makeFounders`-type matrix to `data.frame`
 #'
 #' Internal operations are all performed on matrix objects lacking
-#' human-friendly features like column names. 'dfify' takes a matrix
-#' as output from makeFounders() and outputs a more human-readable
+#' human-friendly features like column names. `dfify` takes a matrix
+#' as output from [makeFounders()] and outputs a more human-readable
 #' data.frame
 #'
-#' @param inds A matrix of individuals, as from mort()
+#' @param inds A matrix of individuals, as from [mort()]
 
 "dfify" <-
 function( inds) {
@@ -2277,9 +2359,9 @@ stopifnot( is.matrix( inds) && ncol( inds)==length( charcols) + length( numcols)
 return( inds)
 }
 
-#' make sim names, as a list
+#' Make sim names, as a list
 #'
-#' makes a list of sim names for easy extraction in dfify, etc.
+#' makes a list of sim names for easy extraction in `dfify`, etc.
 
 "make_sim_names" <-
 function() {

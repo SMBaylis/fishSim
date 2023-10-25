@@ -7,33 +7,35 @@
 quickin(inds, max_gen = 2)
 }
 \arguments{
-\item{inds}{an 'indiv' matrix, as from 'mort()', with some
-individuals marked as 'captured'}
+\item{inds}{an \code{indiv} matrix, as from \code{\link[=mort]{mort()}}, with some individuals
+marked as 'captured'}
 
-\item{max_gen}{the maximum depth to look up relatives, in
-generations. max_gen = 2 is sufficient for relatives used in
-CKMR}
+\item{max_gen}{the maximum depth to look up relatives, in generations.
+\code{max_gen = 2} is sufficient for relatives used in CKMR}
 }
 \description{
-quickin performs quick lookup of the kinships directly relevant to
+\code{quickin} performs quick lookup of the kinships directly relevant to
 close-kin mark-recapture. It returns a list of eight character
 arrays, with each array holding one kinship in one pair of animals
 per row.
 }
 \details{
 The named relationship classes (in list order) are:
-POPs: Parent-offspring pairs. One is the other's parent.
-HSPs: Half-sibling pairs. The individuals share one parent.
-FSPs: Full-sibling pairs. The individuals share two parents.
-GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
-HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
-FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other individual's
-      parents.
-HCPs: Half-cousin pairs. The individuals share one grandparent.
-FCPs: Full-cousin pairs. The individuals share two grandparents.
+\itemize{
+\item POPs: Parent-offspring pairs. One is the other's parent.
+\item HSPs: Half-sibling pairs. The individuals share one parent.
+\item FSPs: Full-sibling pairs. The individuals share two parents.
+\item GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
+\item HTPs: Half-thiatic pairs. One individual's grandparent is the other
+individual's parent.
+\item FTPs: Full-thiatic pairs. Two of one individual's grandparents are the
+other individual's parents.
+\item HCPs: Half-cousin pairs. The individuals share one grandparent.
+\item FCPs: Full-cousin pairs. The individuals share two grandparents.
+}
 }
 \seealso{
-[fishSim::findRelatives()]
+\code{\link[=findRelatives]{findRelatives()}}
 
-[fishSim::capture()]
+\code{\link[=capture]{capture()}}
 }

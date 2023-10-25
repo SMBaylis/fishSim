@@ -2,23 +2,22 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{parents}
 \alias{parents}
-\title{look up the parents of one or more individuals}
+\title{Look up the parents of one or more individuals}
 \usage{
 parents(ID, indiv)
 }
 \arguments{
-\item{ID}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{ID}{A character vector containing one or more IDs, e.g., from \code{mort()[,1]}}
 
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{mort()}.}
 }
 \description{
-The parents() function searches an 'indiv' matrix for individuals with a given ID,
-and returns the IDs of its parents. If one or more of the parents were founders, it
-returns 'founder' instead of a ID for founder parents, and if the individual's ID
-is 'founder', it returns 'founder' as the ID for both parents. Parents are returned
-in order [father, mother].
-If more than one ID is given, parents are returned in order of ID: [ID1 father,
-ID1 mother, ID2 father, ID2 mother ... ]
+The \code{parents()} function searches an \code{indiv} matrix for individuals with a
+given ID, and returns the IDs of its parents. If one or more of the parents
+were founders, it returns \code{"founder"} instead of a ID for founder parents,
+and if the individual's ID is \code{"founder"}, it returns \code{"founder"} as the ID
+for both parents. Parents are returned in order \verb{[father, mother]}.  If more
+than one ID is given, parents are returned in order of ID: \verb{[ID1 father, ID1 mother, ID2 father, ID2 mother ... ]}
 }
 \examples{
 indiv <- makeFounders()
@@ -33,6 +32,5 @@ parents(parents(ID, indiv), indiv) ## that individual's grandparents, as
 ## [pat. grandfather, pat. grandmother, mat. grandfather, mat. grandmother]
 }
 \seealso{
-[fishSim::grandparents(), fishSim::great.grandparents(),
-fishSim::great4.grandparents()]
+\code{\link[=grandparents]{grandparents()}} \code{\link[=great.grandparents]{great.grandparents()}} \code{\link[=great4.grandparents]{great4.grandparents()}}
 }

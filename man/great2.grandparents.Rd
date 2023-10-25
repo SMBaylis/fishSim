@@ -2,22 +2,24 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{great2.grandparents}
 \alias{great2.grandparents}
-\title{look up the great-great-grandparents of one or more individuals}
+\title{Look up the great-great-grandparents of one or more individuals}
 \usage{
 great2.grandparents(ID, indiv)
 }
 \arguments{
-\item{ID}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{ID}{A character vector containing one or more IDs, e.g., from
+\code{mort()[,1]}}
 
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}.}
 }
 \description{
-A convenience wrapper for 'parents()', returning the great-great-grandparents of one
-or more individuals. If 'FFFF' is 'father's father's father's father', and
-'MMFM' is 'mother's mother's father's mother', and so on, great-great-grandparents
-are returned in order [FFFF,FFFM,FFMF,FFMM,FMFF,FMFM,FMMF,FMMM,MFFF,MFFM,MFMF,MFMM,
-MMFF,MMFM,MMMF,MMMM]
+A convenience wrapper for \code{\link[=parents]{parents()}}, returning the
+great-great-grandparents of one or more individuals. If \code{'FFFF'} is
+'father's father's father's father', and 'MMFM' is 'mother's mother's
+father's mother', and so on, great-great-grandparents are returned in order
+\code{FFFF}, \code{FFFM}, \code{FFMF}, \code{FFMM}, \code{FMFF}, \code{FMFM}, \code{FMMF}, \code{FMMM}, \code{MFFF},
+\code{MFFM}, \code{MFMF}, \code{MFMM}, \code{MMFF}, \code{MMFM}, \code{MMMF}, \code{MMMM}
 }
 \seealso{
-[fishSim::parents()]
+\code{\link[=parents]{parents()}}
 }

@@ -2,15 +2,17 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{birthdays}
 \alias{birthdays}
-\title{add one to each individual's age}
+\title{Add one to each individual's age}
 \usage{
 birthdays(indiv = makeFounders())
 }
 \arguments{
-\item{indiv}{A matrix of individuals, as from makeFounders(), move(), mate(), or mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=makeFounders]{makeFounders()}}, \code{\link[=move]{move()}},
+\code{\link[=mate]{mate()}}, or \code{\link[=mort]{mort()}}.}
 }
 \description{
-Nothing fancy: this is separated from the other functions to allow more flexible
-assignments of movement, mating and mortality within each year. Only updates ages
-for animals that are alive, so indiv[,8] will remain 'age at death' for all dead animals.
+Nothing fancy: this is separated from the other functions to allow more
+flexible assignments of movement, mating and mortality within each year.
+Only updates ages for animals that are alive, so \code{indiv[,8]} will remain 'age
+at death' for all dead animals.
 }

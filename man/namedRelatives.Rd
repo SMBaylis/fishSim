@@ -2,55 +2,63 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{namedRelatives}
 \alias{namedRelatives}
-\title{show numbers of pairs in named relationship classes}
+\title{Show numbers of pairs in named relationship classes}
 \usage{
 namedRelatives(pairs)
 }
 \arguments{
-\item{pairs}{a data.frame of pairwise comparisons of ancestor sets, as from findRelatives()}
+\item{pairs}{a data.frame of pairwise comparisons of ancestor sets, as from
+\code{\link[=findRelatives]{findRelatives()}}}
 }
 \description{
-namedRelatives takes output from findRelatives() or findRelativesPar(), and returns
-counts of named relationship classes within the set of pair comparisons. Relationship
-classes are defined based on the closest relative shared between two individuals. So
-for instance, if two animals share a single parent, they will be classed as an HSP, even
-if there is ancestral inbreeding - for instances, in cases where the shared parent is also
-a half-cousin of the other parent of both individuals.
+\code{namedRelatives} takes output from \code{\link[=findRelatives]{findRelatives()}} or
+\code{\link[=findRelativesPar]{findRelativesPar()}}, and returns counts of named relationship classes
+within the set of pair comparisons. Relationship classes are defined based
+on the closest relative shared between two individuals. So for instance, if
+two animals share a single parent, they will be classed as an HSP, even if
+there is ancestral inbreeding - for instances, in cases where the shared
+parent is also a half-cousin of the other parent of both individuals.
 }
 \details{
 The named relationship classes are:
-POPs: Parent-offspring pairs. One is the other's parent.
-GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
-dGGPs: Double Grandparent-grandoffspring pairs. One is the other's grandparent, twice.
-       That is, the grandparent has had offspring by two different mates, and those
-       offspring have mated to generate the grandoffspring.
-G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's great-grandparent.
-dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the other's
-         great-grandparent, twice. That is, the great-grandparent has had offspring by two
-         different mates, those offspring have produced outbred offspring, and *they* have
-         mated to generate the great-grandoffspring.
-G6Ps: Great-great-grandparent-great-great-grandoffspring pairs. One is the other's
-      great-great-grandparent.
-dG6Ps: Double Great-great-grandparent-great-great-grandoffspring pairs. One is the other's
-         great-great-grandparent, twice. That is, the great-great-grandparent has had
-         offspring by two different mates, those offspring have produced outbred offspring,
-         and those offspring have produced outbred offspring, and *they* have
-         mated to generate the great-great-grandoffspring.
-HSPs: Half-sibling pairs. The individuals share one parent.
-FSPs: Full-sibling pairs. The individuals share two parents.
-HTPs: Half-thiatic pairs. One individual's grandparent is the other individual's parent.
-FTPs: Full-thiatic pairs. Two of one individual's grandparents are the other individual's
-      parents.
-HCPs: Half-cousin pairs. The individuals share one grandparent.
-FCPs: Full-cousin pairs. The individuals share two grandparents.
-GHCPs: Generalised half-cousin pairs. One individual's great-grandparent is the other
-       individual's parent.
-GFCPs: Generalised full-cousin pairs. Two of one individual's great-grandparents are the
-       other individual's parents.
-ORCs: Other Relationship Classes. Within the seven-generation search space, at least one
-      shared ancestor was detected, but the relationship does not fall into one of the
-      listed relationship classes.
+\itemize{
+\item POPs: Parent-offspring pairs. One is the other's parent.
+\item GGPs: Grandparent-grandoffspring pairs. One is the other's grandparent.
+\item dGGPs: Double Grandparent-grandoffspring pairs. One is the other's
+grandparent, twice.  That is, the grandparent has had offspring by two
+different mates, and those offspring have mated to generate the
+grandoffspring.
+\item G4Ps: Great-grandparent-great-grandoffspring pairs. One is the other's
+great-grandparent.
+\item dG4Ps: Double Great-grandparent-great-grandoffspring pairs. One is the
+other's great-grandparent, twice. That is, the great-grandparent has had
+offspring by two different mates, those offspring have produced outbred
+offspring, and \emph{they} have mated to generate the great-grandoffspring.
+\item G6Ps: Great-great-grandparent-great-great-grandoffspring pairs. One is the
+other's great-great-grandparent.
+\item dG6Ps: Double Great-great-grandparent-great-great-grandoffspring pairs.
+One is the other's great-great-grandparent, twice. That is, the
+great-great-grandparent has had offspring by two different mates, those
+offspring have produced outbred offspring, and those offspring have produced
+outbred offspring, and \emph{they} have mated to generate the
+great-great-grandoffspring.
+\item HSPs: Half-sibling pairs. The individuals share one parent.
+\item FSPs: Full-sibling pairs. The individuals share two parents.
+\item HTPs: Half-thiatic pairs. One individual's grandparent is the other
+individual's parent.
+\item FTPs: Full-thiatic pairs. Two of one individual's grandparents are the
+other individual's parents.
+\item HCPs: Half-cousin pairs. The individuals share one grandparent.
+\item FCPs: Full-cousin pairs. The individuals share two grandparents.
+\item GHCPs: Generalised half-cousin pairs. One individual's great-grandparent
+is the other individual's parent.
+\item GFCPs: Generalised full-cousin pairs. Two of one individual's
+great-grandparents are the other individual's parents.
+\item ORCs: Other Relationship Classes. Within the seven-generation search
+space, at least one shared ancestor was detected, but the relationship does
+not fall into one of the listed relationship classes.
+}
 }
 \seealso{
-[fishSim::findRelatives()]
+\code{\link[=findRelatives]{findRelatives()}}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{rTruncPoisson}
 \alias{rTruncPoisson}
-\title{draw from a zero-truncated Poisson dist}
+\title{Draw from a zero-truncated Poisson dist}
 \usage{
 rTruncPoisson(n = 1, T = 0.5)
 }
@@ -12,6 +12,6 @@ rTruncPoisson(n = 1, T = 0.5)
 \item{T}{The value of lambda for an equivalent non-truncated Poisson}
 }
 \description{
-Returns a vector of draws from a zero-truncated Poisson distribution, with specified
-lambda.
+Returns a vector of draws from a zero-truncated Poisson distribution, with
+specified lambda.
 }

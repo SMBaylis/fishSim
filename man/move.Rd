@@ -7,11 +7,16 @@
 move(indiv = makeFounders(), moveMat)
 }
 \arguments{
-\item{indiv}{Individual matrix, e.g. from makeFounders(). Can also be a non-founder matrix.}
+\item{indiv}{Individual matrix, e.g. from \code{makeFounders()}. Can also be a non-founder matrix.}
 
-\item{moveMat}{An s-by-s matrix describing the probability of moving from each stock to
-each other stock, with 'from' by row and 'to' by column. Cannot be blank.}
+\item{moveMat}{An s-by-s matrix describing the probability of moving from
+each stock to each other stock, with 'from' by row and 'to' by column.
+Cannot be blank.}
+}
+\value{
+a pop-by-8 character matrix, defined in the \link{makeFounders}
+documentation.
 }
 \description{
-returns a pop-by-8 character matrix, defined in the makeFounders documentation.
+Markovian movement between breeding stocks
 }

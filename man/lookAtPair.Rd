@@ -2,19 +2,22 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{lookAtPair}
 \alias{lookAtPair}
-\title{show a readable relationship summary for a pair of relatives}
+\title{Show a readable relationship summary for a pair of relatives}
 \usage{
 lookAtPair(pair)
 }
 \arguments{
-\item{pair}{a data.frame object, with structure identical to a row from findRelatives()}
+\item{pair}{a data.frame object, with structure identical to a row from
+\code{\link[=findRelatives]{findRelatives()}}.}
 }
 \description{
-lookAtPair takes a single row from the output of findRelatives(), and returns a 7-by-7
-matrix (as data.frame) showing the number of shared ancestors for each relationship class.
-The lookAtPair output is symmetric about the diagonal, and is particularly useful for
-displaying departures from expected relationship structures. For instance, the output
-> lookAtPair(pair)
+\code{lookAtPair} takes a single row from the output of \code{findRelatives()}, and
+returns a 7-by-7 matrix (as \code{data.frame}) showing the number of shared
+ancestors for each relationship class.  The \code{lookAtPair} output is symmetric
+about the diagonal, and is particularly useful for displaying departures
+from expected relationship structures. For instance, the output
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{> lookAtPair(pair)
   X1 X2 X3 X4 X5 X6 X7
 1  .  .  1  .  .  .  .
 2  .  .  .  2  .  .  .
@@ -23,13 +26,17 @@ displaying departures from expected relationship structures. For instance, the o
 5  .  .  4  .  .  1 16
 6  .  .  .  8  1  .  3
 7  .  .  .  . 16  3  .
-shows a pair where one individual is the other's grandparent (shown by the 1 in [1,X3], and
-doubling series proceeding diagonally down from that point),
-further related via shared great-great-grandparent / great-great-great-grandparent
-(the 1 in [5,X6], and doubling series proceeding diagonally from that point), and a shared
-great-great-great-grandparent / great-great-great-great-grandparent (the 3 in [6,X7], where
-we would otherwise expect a 2 from the previous shared ancestor).
+}\if{html}{\out{</div>}}
+
+shows a pair where one individual is the other's grandparent (shown by the
+\code{1} in \verb{[1,X3]}, and doubling series proceeding diagonally down from that
+point), further related via shared great-great-grandparent /
+great-great-great-grandparent (the \code{1} in \verb{[5,X6]}, and doubling series
+proceeding diagonally from that point), and a shared
+great-great-great-grandparent / great-great-great-great-grandparent (the \code{3}
+in \verb{[6,X7]}, where we would otherwise expect a 2 from the previous shared
+ancestor).
 }
 \seealso{
-[fishSim::findRelatives()]
+\code{\link[=findRelatives]{findRelatives()}}
 }
