@@ -83,7 +83,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
 #}  ## probability of moving into a stock is proportional to the default size of that stock
    ## from makeFounders.
 
-#' markovian movement between breeding stocks
+#' Markovian movement between breeding stocks
 #'
 #' returns a pop-by-8 character matrix, defined in the makeFounders documentation.
 #'
@@ -330,13 +330,13 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #'                       by one breeding attempt. If exhausted, an individual will only mate with
 #'                       one female, though may father more than one offspring - see
 #'                       'singlePaternity' and 'batchSize'.
-#' @param maturityCurve Numeric vector describing the age-specific maturity curve. One
+#' @param maturityCurve Numeric vector describing the age-specific probability of maturity curve. One
 #'                      value per age, over all ages from 0:max(indiv[,8]). Used if "type"
 #'                      = "age". Note that 'firstBreed' can interfere with 'maturityCurve'
 #'                      by setting maturities to zero for some age classes. Recommended
 #'                      usage is to set 'firstBreed' to zero whenever 'maturityCurve' is
 #'                      specified.
-#' @param maleCurve Numeric vector describing age-specific maturity for males. One value per
+#' @param maleCurve Numeric vector describing age-specific probability of maturity for males. One value per
 #'                  age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
 #'                  Note that 'firstBreed' can interfere with 'maleCurve' by setting
 #'                  maturities to zero for some age classes. Recommended usage is to set

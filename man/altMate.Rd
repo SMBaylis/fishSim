@@ -69,14 +69,14 @@ by one breeding attempt. If exhausted, an individual will only mate with
 one female, though may father more than one offspring - see
 'singlePaternity' and 'batchSize'.}
 
-\item{maturityCurve}{Numeric vector describing the age-specific maturity curve. One
+\item{maturityCurve}{Numeric vector describing the age-specific probability of maturity curve. One
 value per age, over all ages from 0:max(indiv[,8]). Used if "type"
 = "age". Note that 'firstBreed' can interfere with 'maturityCurve'
 by setting maturities to zero for some age classes. Recommended
 usage is to set 'firstBreed' to zero whenever 'maturityCurve' is
 specified.}
 
-\item{maleCurve}{Numeric vector describing age-specific maturity for males. One value per
+\item{maleCurve}{Numeric vector describing age-specific probability of maturity for males. One value per
 age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
 Note that 'firstBreed' can interfere with 'maleCurve' by setting
 maturities to zero for some age classes. Recommended usage is to set
