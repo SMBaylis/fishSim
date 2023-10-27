@@ -2,20 +2,22 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{archive_dead}
 \alias{archive_dead}
-\title{take dead individuals and copy them to an archive}
+\title{Take dead individuals and copy them to an archive}
 \usage{
 archive_dead(indiv = mort(), archive = make_archive())
 }
 \arguments{
-\item{indiv}{A matrix of individuals, as from makeFounders(), move(), mate(), or mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=makeFounders]{makeFounders()}}, \code{\link[=move]{move()}},
+\code{\link[=mate]{mate()}}, or \code{\link[=mort]{mort()}}.}
 
-\item{archive}{A matrix of individuals, probably from make_archive() or a previous call of
-archive_dead().}
+\item{archive}{A matrix of individuals, probably from \code{\link[=make_archive]{make_archive()}} or a
+previous call of \code{\link[=archive_dead]{archive_dead()}}.}
 }
 \description{
-For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
-In these cases, run-times may be improved by periodically moving dead individuals into an
-archive that is read and written less frequently than 'indiv'.
+For larger simulations, the matrix \code{indiv} may grow very large and slow down
+the simulation.  In these cases, run-times may be improved by periodically
+moving dead individuals into an archive that is read and written less
+frequently than \code{indiv}.
 }
 \examples{
 archive <- make_archive()
@@ -39,5 +41,5 @@ for(k in 1:30) {
 }
 }
 \seealso{
-[fishSim::remove_dead(), fishSim::make_archive()]
+\code{\link[=remove_dead]{remove_dead()}} \code{\link[=make_archive]{make_archive()}}
 }

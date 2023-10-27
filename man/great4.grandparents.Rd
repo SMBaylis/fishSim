@@ -2,29 +2,32 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{great4.grandparents}
 \alias{great4.grandparents}
-\title{look up the great-great-great-great-grandparents of one or more individuals}
+\title{Look up the great-great-great-great-grandparents of one or more individuals}
 \usage{
 great4.grandparents(ID, indiv)
 }
 \arguments{
-\item{ID}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{ID}{A character vector containing one or more IDs, e.g., from
+\code{mort()[,1]}}
 
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}.}
 }
 \description{
 A convenience wrapper for 'parents()', returning the
-great-great-great-great-grandparents of one or more individuals. If 'FFFFFF' is
-'father's father's father's father's father's father', and 'FFFMMM' is
+great-great-great-great-grandparents of one or more individuals. If 'FFFFFF'
+is 'father's father's father's father's father's father', and 'FFFMMM' is
 'father's father's father's mother's mother's mother',
-great-great-great-great-grandparents are returned in order [FFFFFF, FFFFFM, FFFFMF,
-FFFFMM, FFFMFF, FFFMFM, FFFMMF, FFFMMM, FFMFFF, FFMFFM, FFMFMF, FFMFMM, FFMMFF,
-FFMMFM, FFMMMF, FFMMMM, FMFFFF, FMFFFM, FMFFMF, FMFFMM, FMFMFF, FMFMFM, FMFMMF,
-FMFMMM, FMMFFF, FMMFFM, FMMFMF, FMMFMM, FMMMFF, FMMMFM, FMMMMF, FMMMMM, MFFFFF,
-MFFFFM, MFFFMF, MFFFMM, MFFMFF, MFFMFM, MFFMMF, MFFMMM, MFMFFF, MFMFFM, MFMFMF,
-MFMFMM, MFMMFF, MFMMFM, MFMMMF, MFMMMM, MMFFFF, MMFFFM, MMFFMF, MMFFMM, MMFMFF,
-MMFMFM, MMFMMF, MMFMMM, MMMFFF, MMMFFM, MMMFMF, MMMFMM, MMMMFF, MMMMFM, MMMMMF,
-MMMMMM]
+great-great-great-great-grandparents are returned in order \code{FFFFFF},
+\code{FFFFFM}, \code{FFFFMF}, \code{FFFFMM}, \code{FFFMFF}, \code{FFFMFM}, \code{FFFMMF}, \code{FFFMMM},
+\code{FFMFFF}, \code{FFMFFM}, \code{FFMFMF}, \code{FFMFMM}, \code{FFMMFF}, \code{FFMMFM}, \code{FFMMMF},
+\code{FFMMMM}, \code{FMFFFF}, \code{FMFFFM}, \code{FMFFMF}, \code{FMFFMM}, \code{FMFMFF}, \code{FMFMFM},
+\code{FMFMMF}, \code{FMFMMM}, \code{FMMFFF}, \code{FMMFFM}, \code{FMMFMF}, \code{FMMFMM}, \code{FMMMFF},
+\code{FMMMFM}, \code{FMMMMF}, \code{FMMMMM}, \code{MFFFFF}, \code{MFFFFM}, \code{MFFFMF}, \code{MFFFMM},
+\code{MFFMFF}, \code{MFFMFM}, \code{MFFMMF}, \code{MFFMMM}, \code{MFMFFF}, \code{MFMFFM}, \code{MFMFMF},
+\code{MFMFMM}, \code{MFMMFF}, \code{MFMMFM}, \code{MFMMMF}, \code{MFMMMM}, \code{MMFFFF}, \code{MMFFFM},
+\code{MMFFMF}, \code{MMFFMM}, \code{MMFMFF}, \code{MMFMFM}, \code{MMFMMF}, \code{MMFMMM}, \code{MMMFFF},
+\code{MMMFFM}, \code{MMMFMF}, \code{MMMFMM}, \code{MMMMFF}, \code{MMMMFM}, \code{MMMMMF}, \code{MMMMMM}
 }
 \seealso{
-[fishSim::parents()]
+\code{\link[=parents]{parents()}}
 }

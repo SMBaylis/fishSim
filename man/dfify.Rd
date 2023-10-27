@@ -2,16 +2,16 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{dfify}
 \alias{dfify}
-\title{convert an early 'makeFounders'-type matrix to data.frame}
+\title{convert an early \code{makeFounders}-type matrix to \code{data.frame}}
 \usage{
 dfify(inds)
 }
 \arguments{
-\item{inds}{A matrix of individuals, as from mort()}
+\item{inds}{A matrix of individuals, as from \code{\link[=mort]{mort()}}}
 }
 \description{
 Internal operations are all performed on matrix objects lacking
-human-friendly features like column names. 'dfify' takes a matrix
-as output from makeFounders() and outputs a more human-readable
+human-friendly features like column names. \code{dfify} takes a matrix
+as output from \code{\link[=makeFounders]{makeFounders()}} and outputs a more human-readable
 data.frame
 }

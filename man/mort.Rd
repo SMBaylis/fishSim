@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{mort}
 \alias{mort}
-\title{kill some members of the population}
+\title{Kill some members of the population}
 \usage{
 mort(
   indiv = makeFounders(),
@@ -17,43 +17,47 @@ mort(
 )
 }
 \arguments{
-\item{indiv}{A matrix of inidviduals, as from makeFounders(), move(), or mate().}
+\item{indiv}{A matrix of inidviduals, as from \code{\link[=makeFounders]{makeFounders()}}, \code{\link[=move]{move()}}, or \code{\link[=mate]{mate()}}.}
 
 \item{year}{An integer, denoting the year in which we're killing animals}
 
-\item{type}{One of "simple", "flat", "age", "stock", or "ageStock".
-If type = "simple" and the living pop > maxPop, individuals are killed at random until
-the living pop == maxPop. Can easily be set to never cause extinctions.
-If type = "flat", individuals are killed with probability set in mortRate. Generates
-an exponential death curve.
-If type = "age", individuals are killed with probability for their age set in ageMort.
-If type = "stock", individuals are killed with probability for their stock set in
-stockMort.
-If type = "ageStock", individuals are killed with probability for their age:stock
-combination set in ageStockMort.}
+\item{type}{One of \code{"simple"}, \code{"flat"}, \code{"age"}, \code{"stock"}, or \code{"ageStock"}.
+\itemize{
+\item If \code{type = "simple"} and the living pop > \code{maxPop}, individuals are
+killed at random until the living pop == \code{maxPop}. Can easily be set to
+never cause extinctions.
+\item If \code{type = "flat"}, individuals are killed with probability set in
+mortRate. Generates an exponential death curve.
+\item If \code{type = "age"}, individuals are killed with probability for their age set in \code{ageMort}.
+\item If \code{type = "stock"}, individuals are killed with probability for their
+stock set in \code{stockMort}.
+\item If \code{type = "ageStock"}, individuals are killed with probability for their
+age:stock combination set in \code{ageStockMort}.
+}}
 
-\item{maxAge}{Sets an age above which animals *will* be killed before anything else happens. Allows
-a short age-specific mortality curve to be set, without checking if there are any
-individuals outside the range for each iteration.}
+\item{maxAge}{Sets an age above which animals \emph{will} be killed before
+anything else happens. Allows a short age-specific mortality curve to be
+set, without checking if there are any individuals outside the range for
+each iteration.}
 
-\item{maxPop}{If type = "simple", the population will be reduced to this number, if not already
-smaller. See 'type'.}
+\item{maxPop}{If \code{type = "simple"}, the population will be reduced to this
+number, if not already smaller. See \code{type}.}
 
-\item{mortRate}{Numeric mortality rate. See 'type'.}
+\item{mortRate}{Numeric mortality rate. See \code{type}.}
 
-\item{ageMort}{Numeric vector of mortality rates, one for each age, ordered 0:max(age). See 'type'.}
+\item{ageMort}{Numeric vector of mortality rates, one for each age, ordered \code{0:max(age)}. See \code{type}.}
 
-\item{stockMort}{Numeric vector of mortality rates, one for each stock, ordered 1:max(stock). Note
-that stocks are numbered (as in makeFounders() ), not named. Because stocks are
-stored as a character vector, stocks are converted via as.numeric() to associate
-rates with stocks. This distinction is important in cases with >9 stocks. See
-'type'.}
+\item{stockMort}{Numeric vector of mortality rates, one for each stock,
+ordered \code{1:max(stock)}. Note that stocks are numbered (as in
+\code{\link[=makeFounders]{makeFounders()}}), not named. Because stocks are stored as a character
+vector, stocks are converted via \code{as.numeric()} to associate rates with
+stocks. This distinction is important in cases with >9 stocks. See \code{type}.}
 
-\item{ageStockMort}{A matrix of mortality rates, with age by row and stock by column. See 'ageMort'
-and 'stockMort' for structure of rows and columns.}
+\item{ageStockMort}{A matrix of mortality rates, with age by row and stock
+by column. See \code{ageMort} and \code{stockMort} for structure of rows and columns.}
 }
 \description{
 Members are chosen according to one of several defined mortality structures.
-Mortality rates can bring the population to a specified size, or can be a flat probability,
-or a probability that depends on age, stock, or age:stock.
+Mortality rates can bring the population to a specified size, or can be a
+flat probability, or a probability that depends on age, stock, or age:stock.
 }

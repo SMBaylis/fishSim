@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{findRelativesPar}
 \alias{findRelativesPar}
-\title{partially-parallelized findRelatives()}
+\title{Partially-parallelized \code{findRelatives()}}
 \usage{
 findRelativesPar(
   indiv,
@@ -13,60 +13,71 @@ findRelativesPar(
 )
 }
 \arguments{
-\item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
-long strings of parent-offspring relationships, so will most likely come
-from a multi-generation simulation.}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}, but which will need
+to contain long strings of parent-offspring relationships, so will most
+likely come from a multi-generation simulation.}
 
-\item{sampled}{TRUE or FALSE. If TRUE, compares only individuals marked as sampled in
-indiv[,9]. If FALSE, compares all individuals in 'indiv'.}
+\item{sampled}{\code{TRUE} or \code{FALSE}. If \code{TRUE}, compares only individuals
+marked as sampled in \code{indiv[,9]}. If \code{FALSE}, compares all individuals in
+\code{indiv}.}
 
-\item{verbose}{TRUE or FALSE. If TRUE, prints a table of sampling
+\item{verbose}{\code{TRUE} or \code{FALSE}. If \code{TRUE}, prints a table of sampling
 years for sampled individuals.}
 
-\item{nCores}{the number of cores to use for parallel processes. Defaults to one less than
-the number of cores on the machine.}
+\item{nCores}{the number of cores to use for parallel processes. Defaults to
+one less than the number of cores on the machine.}
 
-\item{delimitIndiv}{TRUE/FALSE. Lookups can be sped up markedly by first delimiting
-indiv to only those animals that exist as parents, or that are
-marked as sampled. Default TRUE.}
+\item{delimitIndiv}{\code{TRUE}/\code{FALSE}. Lookups can be sped up markedly by first
+delimiting \code{indiv} to only those animals that exist as parents, or that are
+marked as sampled. Default \code{TRUE}.}
 }
 \description{
-findRelativesPar is a partially-parallelized version of findRelatives. Its use is
-exactly the same, but it requires libraries 'foreach', 'parallel', and 'doParallel'.
-'findRelativesAlt' uses the sample indicator in indiv[,9] to decide which individuals
-to compare, whereas 'findRelativesPar' compares between all individuals in 'sampled'.
+\code{findRelativesPar} is a partially-parallelized version of \code{findRelatives}.
+Its use is exactly the same, but it requires libraries \code{foreach},
+\code{parallel}, and \code{doParallel}.
 }
 \details{
-Lookup operations to find each member's ancestors are parallelized, but comparisons
-between ancestor-sets are not. On a test-set of 100 sampled individuals, this partial-
-parallelization reduced runtime from 55 seconds to 22 seconds.
-findRelatives takes a set of 'sampled' individuals and a population simulation output
-(i.e., an 'indiv' object, of the kind output by mort() ). It returns a data.frame
+\code{findRelativesAlt} uses the sample indicator in indiv\link{,9} to decide which
+individuals to compare, whereas 'findRelativesPar' compares between all
+individuals in 'sampled'.
+
+Lookup operations to find each member's ancestors are parallelized, but
+comparisons between ancestor-sets are not. On a test-set of 100 sampled
+individuals, this partial- parallelization reduced runtime from 55 seconds
+to 22 seconds.
+
+\code{findRelatives} takes a set of 'sampled' individuals and a population simulation output
+(i.e., an \code{indiv} object, of the kind output by \code{\link[=mort]{mort()}}). It returns a \code{data.frame}
 for each pair of sampled individuals, with columns:
-1) Var1: the first individual's ID
-2) Var2: the second individual's ID
-3) related: TRUE for each pair that with one or more shared ancestors within seven
-   ancestral generations (i.e., great-great-great-great grandparents), otherwise FALSE
-4) totalRelatives: numeric indicator of the total number of shared ancestors found
-5) OneTwo, OneThree, ThreeFour, etc.: Numeric values, indicating the number of shared
-   ancestors by relationship class. For instance, a shared relative in the OneTwo class
-   indicates that one member of the pair is the other member's parent, a shared relative
-   in the OneThree class indicates that one member is the other's grandparent, and a shared
-   in the ThreeFour class indicates that one individual's grandparent is the other's great-
-   grandparent. If a pair shares an ancestor in the TwoThree class, they necessarily also
-   share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
-   and so on. Note that relationship classes are identical by reversal - ThreeFour is the
-   same as FourThree, and so only relationship classes with increasing order are presented
-   (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
-Note that, if there is an object called 'ancestors' in the global environment, the
-foreach() loops may refer to that copy of 'ancestors', rather than the one generated inside
-findRelativesPar(). This is a known bug. Rename and delete 'ancestors'.
-If it occurs, this bug will cause the following error:
-Error in cbind(ancestors, parents.o, grandparents.o, ggrandparents.o:
-number of rows of matrices must match (see arg 3).
+\enumerate{
+\item \code{Var1}: the first individual's ID
+\item \code{Var2}: the second individual's ID
+\item \code{related}: \code{TRUE} for each pair that with one or more shared ancestors
+within seven ancestral generations (i.e., great-great-great-great
+grandparents), otherwise \code{FALSE}
+\item \code{totalRelatives}: numeric indicator of the total number of shared
+ancestors found
+\item \code{OneTwo}, \code{OneThree}, \code{ThreeFour}, etc.: Numeric values, indicating the
+number of shared ancestors by relationship class. For instance, a shared
+relative in the \code{OneTwo} class indicates that one member of the pair is the
+other member's parent, a shared relative in the \code{OneThree} class indicates
+that one member is the other's grandparent, and a shared in the \code{ThreeFour}
+class indicates that one individual's grandparent is the other's great-
+grandparent. If a pair shares an ancestor in the \code{TwoThree} class, they
+necessarily also share two ancestors in the \code{ThreeFour} class and four
+ancestors in the \code{FourFive} class, and so on. Note that relationship classes
+are identical by reversal - \code{ThreeFour} is the same as \code{FourThree}, and so
+only relationship classes with increasing order are presented (i.e.,
+\code{ThreeFour} and \code{OneFive} are in the output, but not \code{ThreeTwo}).  Note
+that, if there is an object called \code{ancestors} in the global environment,
+the \code{foreach()} loops may refer to that copy of \code{ancestors}, rather than the
+one generated inside \code{findRelativesPar()}. This is a known bug. Rename and
+delete \code{ancestors}.  If it occurs, this bug will cause the following error:
+Error in \verb{cbind(ancestors, parents.o, grandparents.o, ggrandparents.o: number of rows of matrices must match (see arg 3).}
+}
 }
 \seealso{
-[fishSim::findRelatives()]
+\code{\link[=findRelatives]{findRelatives()}}
 
-[fishSim::capture()]
+\code{\link[=capture]{capture()}}
 }

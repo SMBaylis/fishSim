@@ -2,20 +2,21 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{sexSwitch}
 \alias{sexSwitch}
-\title{induce sex-switching in a subset of the population}
+\title{Induce sex-switching in a subset of the population}
 \usage{
 sexSwitch(indiv = makeFounders(), direction = "both", prob = 1e-04)
 }
 \arguments{
-\item{indiv}{A matrix of individuals, as from makeFounders(), mate(), or mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=makeFounders]{makeFounders()}}, \code{\link[=mate]{mate()}}, or
+\code{\link[=mort]{mort()}}.}
 
-\item{direction}{One of "MF", "FM", or "both", indicating male-to-female, female-to-male,
-or both directions.}
+\item{direction}{One of \code{"MF"}, \code{"FM"}, or \code{"both"}, indicating
+male-to-female, female-to-male, or both directions.}
 
 \item{prob}{A numeric switching probability.}
 }
 \description{
-Given an individual-data matrix, this function stochastically switches the sex of individuals
-with a set probability. Can be one-directional (i.e., only male-to-female or only female-to-male
-switches), or bidirectional.
+Given an individual-data matrix, this function stochastically switches the
+sex of individuals with a set probability. Can be one-directional (i.e.,
+only male-to-female or only female-to-male switches), or bidirectional.
 }

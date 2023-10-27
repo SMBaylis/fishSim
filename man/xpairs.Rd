@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{xpairs}
 \alias{xpairs}
-\title{look up shared ancestors for quickin-style kinship reporting}
+\title{Look up shared ancestors for \code{quickin}-style kinship reporting}
 \usage{
 xpairs(anc1s, anc2s, same, weed = NULL)
 }
@@ -11,15 +11,14 @@ xpairs(anc1s, anc2s, same, weed = NULL)
 
 \item{anc2s}{a matrix of ancestors for animal 2}
 
-\item{same}{TRUE/FALSE. TRUE if you're looking for shared ancestors
-at the same position from each member of the pair (e.g., if
-you're looking for ancestors that are the mother of both pair
-members.}
+\item{same}{\code{TRUE}/\code{FALSE}. \code{TRUE} if you're looking for shared ancestors at
+the same position from each member of the pair (e.g., if you're looking for
+ancestors that are the mother of both pair members.}
 
-\item{weed}{if non-NULL, will attempt to remove pairs given as the
-parameter value.}
+\item{weed}{if non-NULL, will attempt to remove pairs given as the parameter
+value.}
 }
 \description{
-Targets one specific shared ancestor-type, matrix-wise between
-pairs of animals.
+Targets one specific shared ancestor-type, matrix-wise between pairs of
+animals.
 }

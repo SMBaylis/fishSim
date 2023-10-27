@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{check_growthrate}
 \alias{check_growthrate}
-\title{estimate population growth under some mate() and mort() conditions}
+\title{Estimate population growth under some \code{mate()} and \code{mort()} conditions}
 \usage{
 check_growthrate(
   forceY1 = NA,
@@ -22,87 +22,96 @@ check_growthrate(
 )
 }
 \arguments{
-\item{forceY1}{optionally force first-year mortality to a specific value. Defaults to NA. If non-NA,
-should be a numeric value between 0 and 1. If NA, ignored. Must be the first
-argument so that uniroot()-based solutions for null growth will work.}
+\item{forceY1}{optionally force first-year mortality to a specific value.
+Defaults to \code{NA}. If non-\code{NA}, should be a numeric value between 0 and 1. If
+\code{NA}, ignored. Must be the first argument so that \code{\link[=uniroot]{uniroot()}}-based
+solutions for null growth will work.}
 
-\item{mateType}{the value of 'type' used in the altMate() call. Must be one of 'flat', 'age',
-or 'ageSex'. If 'flat', 'batchSize' must be provided. If 'age', 'maturityCurve'
-and 'batchSize' must be provided. If 'ageSex', 'femaleCurve' and 'batchSize' must
-be provided. Defaults to 'flat'.}
+\item{mateType}{the value of \code{type} used in the \code{\link[=altMate]{altMate()}} call. Must be
+one of \code{flat}, \code{age}, or \code{ageSex}. If \code{flat}, \code{batchSize} must be provided.
+If \code{age}, \code{maturityCurve} and \code{batchSize} must be provided. If \code{ageSex},
+\code{femaleCurve} and \code{batchSize} must be provided. Defaults to \code{flat}.}
 
-\item{mortType}{the value of 'type' used in the mort() call. Must be one of 'flat', 'age',
-'stock', or 'ageStock'. If 'flat', 'mortRate' must be provided. If 'age',
-'ageMort' must be provided. If 'stock', 'stockMort' must be provided. If
-'ageStock', 'ageStockMort' must be provided. Defaults to 'flat'.}
+\item{mortType}{the value of \code{type} used in the \code{\link[=mort]{mort()}} call. Must be one
+of \code{flat}, \code{age}, \code{stock}, or \code{ageStock}. If \code{flat}, \code{mortRate} must be
+provided. If \code{age}, \code{ageMort} must be provided. If \code{stock}, \code{stockMort} must
+be provided. If \code{ageStock}, \code{ageStockMort} must be provided. Defaults to
+\code{flat}.}
 
-\item{batchSize}{the value of 'batchSize' used in the altMate() call. Cannot be blank.}
+\item{batchSize}{the value of \code{batchSize} used in the \code{\link[=altMate]{altMate()}} call. Cannot be blank.}
 
-\item{firstBreed}{the value of 'firstBreed' used in the altMate() call. Defaults to 0.}
+\item{firstBreed}{the value of \code{firstBreed} used in the \code{\link[=altMate]{altMate()}} call. Defaults to 0.}
 
-\item{maxClutch}{the value of 'maxClutch' used in the altMate() call. Defaults to Inf. If non-Inf,
-_effective_ batchSize is estimated as the mean of 1000000 draws from the
+\item{maxClutch}{the value of \code{maxClutch} used in the \code{\link[=altMate]{altMate()}} call. Defaults to Inf. If non-Inf,
+\emph{effective} batchSize is estimated as the mean of 1000000 draws from the
 distribution of batchSize, subsetted to those <= maxAge.}
 
-\item{osr}{the value of 'osr' used in the altMate() call. Female proportion is used as a
+\item{osr}{the value of \code{osr} used in the \code{\link[=altMate]{altMate()}} call. Female proportion is used as a
 multiplier on the fecundities. Defaults to c(0.5, 0.5).}
 
-\item{maturityCurve}{the value of 'maturityCurve' used in the altMate() call. check_growthrates()
+\item{maturityCurve}{the value of \code{maturityCurve} used in the \code{\link[=altMate]{altMate()}} call. check_growthrates()
 only uses female fecundities in its estimates, so femaleCurve is
 equivalent to maturityCurve in check_growthrates(), but maturityCurve is
-used when mateType is 'age'. If both mortality and maturity are specified
+used when mateType is \code{age}. If both mortality and maturity are specified
 as vectors, they can be of different lengths. If the maturity vector is
-shorter, it is 'padded' to the same length as the mortality vector by
+shorter, it is \code{padded} to the same length as the mortality vector by
 repeating the last value in the vector.}
 
-\item{femaleCurve}{the value of 'femaleCurve' used in the altMate() call. check_growthrates()
-only uses female fecundities in its estimates, so femaleCurve is
-equivalent to maturityCurve in check_growthrates(), but femaleCurve is used
-when 'mateType' is 'ageSex'. If both mortality and maturity are specified
-as vectors, they can be of different lengths. If the maturity vector is
-shorter, it is 'padded' to the same length as the mortality vector by
-repeating the last value in the vector.}
-
-\item{maxAge}{the value of 'maxAge' used in the mort() call. Defaults to Inf.}
-
-\item{mortRate}{the value of 'mortRate' used in the mort() call}
-
-\item{ageMort}{the value of 'ageMort' used in the mort() call. If both mortality and maturity are
-specified as vectors, they can be of different lengths. If the mortality vector is
-shorter, it is 'padded' to the same length as the maturity vector by repeating the
-last value in the vector.}
-
-\item{stockMort}{the value of 'stockMort' used in the mort() call}
-
-\item{ageStockMort}{the value of 'ageStockMort' used in the mort() call. If both mortality and
+\item{femaleCurve}{the value of \code{femaleCurve} used in the \code{\link[=altMate]{altMate()}} call.
+\code{\link[=check_growthrates]{check_growthrates()}} only uses female fecundities in its estimates, so
+\code{femaleCurve} is equivalent to \code{maturityCurve} in \code{\link[=check_growthrates]{check_growthrates()}}, but
+\code{femaleCurve} is used when \code{mateType} is \code{ageSex}. If both mortality and
 maturity are specified as vectors, they can be of different lengths. If the
-mortality vector is shorter, it is 'padded' to the same length as the maturity
-vector by repeating the last value in the vector.}
+maturity vector is shorter, it is "padded" to the same length as the
+mortality vector by repeating the last value in the vector.}
+
+\item{maxAge}{the value of \code{maxAge} used in the \code{\link[=mort]{mort()}} call. Defaults to
+\code{Inf}.}
+
+\item{mortRate}{the value of \code{mortRate} used in the \code{\link[=mort]{mort()}} call}
+
+\item{ageMort}{the value of \code{ageMort} used in the \code{\link[=mort]{mort()}} call. If both
+mortality and maturity are specified as vectors, they can be of different
+lengths. If the mortality vector is shorter, it is "padded" to the same
+length as the maturity vector by repeating the last value in the vector.}
+
+\item{stockMort}{the value of \code{stockMort} used in the \code{\link[=mort]{mort()}} call}
+
+\item{ageStockMort}{the value of \code{ageStockMort} used in the \code{\link[=mort]{mort()}} call.
+If both mortality and maturity are specified as vectors, they can be of
+different lengths. If the mortality vector is shorter, it is "padded" to the
+same length as the maturity vector by repeating the last value in the
+vector.}
 }
 \description{
-In complex models, population trends may not be immediately clear from the settings. Yet
-it can be important to know population trends in advance: growing populations take progressively
-more computing time, and the relationship dynamics between individuals across generations are
-different for growing vs. shrinking populations. check_growthrate() provides an estimate of
-the long-term population growth rate under some altMate() and mort() settings, assuming one
-altMate() and one mort() per cycle. Estimation is via Leslie matrices.
-check_growthrates only functions for some altMate() and mort() structures. Specifically, in
-altMate, 'type' must be one of 'flat', 'age', or 'ageSex', and in mort, if 'type' is 'flat'
-or 'age', a single growth rate will be returned, but if 'stock' or 'ageStock', one growth
-rate will be returned per stock. If 'type' is 'simple' for mort(), the growthrate is forced to
-zero, so check_growthrate() does not explicitly handle this case.
-Some conditions can cause check_growthrate to fail or provide inaccurate estimates. If mature
-females go unmated through lack of available fathers (for instance, if exhaustFathers = TRUE
-in mate and N(mature females) > N(mature males) ), the Leslie matrix approach will provide an
-over-estimate of the growth rate. In mate(), batchSize is the mean number of offspring per female,
-but if maxClutch is also set to a value other than Inf, the *effective* mean number of offspring
-per female is estimated by simulation. The mean number of female offspring per female per year
-is assumed to be half of the effective mean number of offspring per female unless osr is specified,
-in which case the proportion of female offspring is taken from osr.
-If your model involves a variation not handled by check_growthrates(), you may find it simplest
-to run your simulation for a few generations with a smallish founder population and empirically
-estimate the growth rate.
+In complex models, population trends may not be immediately clear from the
+settings. Yet it can be important to know population trends in advance:
+growing populations take progressively more computing time, and the
+relationship dynamics between individuals across generations are different
+for growing vs. shrinking populations. \code{\link[=check_growthrate]{check_growthrate()}} provides an
+estimate of the long-term population growth rate under some \code{\link[=altMate]{altMate()}} and
+\code{\link[=mort]{mort()}} settings, assuming one \code{\link[=altMate]{altMate()}} and one \code{\link[=mort]{mort()}} per cycle.
+Estimation is via Leslie matrices. \link{check_growthrates} only functions for
+some \code{\link[=altMate]{altMate()}} and \code{\link[=mort]{mort()}} structures. Specifically, in \link{altMate}, \code{type}
+must be one of \code{"flat"}, \code{"age"}, or \code{"ageSex"}, and in \link{mort}, if \code{type} is
+\code{"flat"} or \code{"age"}, a single growth rate will be returned, but if \code{"stock"}
+or \code{"ageStock"}, one growth rate will be returned per stock. If \code{"type"} is
+\code{"simple"} for \code{\link[=mort]{mort()}}, the growthrate is forced to zero, so
+\code{\link[=check_growthrate]{check_growthrate()}} does not explicitly handle this case.  Some conditions
+can cause \link{check_growthrate} to fail or provide inaccurate estimates. If
+mature females go unmated through lack of available fathers (for instance,
+if \code{exhaustFathers = TRUE} in \link{mate} and N(mature females) > N(mature males)
+), the Leslie matrix approach will provide an over-estimate of the growth
+rate. In \code{\link[=mate]{mate()}}, \code{batchSize} is the mean number of offspring per female,
+but if \code{maxClutch} is also set to a value other than \code{Inf}, the \emph{effective}
+mean number of offspring per female is estimated by simulation. The mean
+number of female offspring per female per year is assumed to be half of the
+effective mean number of offspring per female unless \code{osr} is specified, in
+which case the proportion of female offspring is taken from \code{osr}.  If your
+model involves a variation not handled by \code{\link[=check_growthrates]{check_growthrates()}}, you may
+find it simplest to run your simulation for a few generations with a
+smallish founder population and empirically estimate the growth rate.
 }
 \seealso{
-[fishSim::PoNG()]
+\code{\link[=PoNG]{PoNG()}}
 }

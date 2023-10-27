@@ -2,10 +2,10 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{make_sim_names}
 \alias{make_sim_names}
-\title{make sim names, as a list}
+\title{Make sim names, as a list}
 \usage{
 make_sim_names()
 }
 \description{
-makes a list of sim names for easy extraction in dfify, etc.
+makes a list of sim names for easy extraction in \code{dfify}, etc.
 }
