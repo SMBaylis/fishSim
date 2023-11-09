@@ -37,19 +37,20 @@ NULL
 #' @param osr A numeric vector describing the sex ratio, c([male], [female]).
 #' @param stocks A numeric vector describing the probability that an individual
 #'               is in each stock.
-#' @param maxAge Numeric. The max age to which an animal may survive.
+#' @param minAge Integer. The minimum age to make founders. Generally zero or 1; defaults to 1.
+#' @param maxAge Integer. The max age to which an animal may survive.
 #' @param survCurv Numeric vector. Describes the probability within the founder cohort of belonging
-#'                 to each age-class for age=-classes 1:maxAge. Cannot be blank.
+#'                 to each age-class for age=-classes minAge:maxAge. Cannot be blank.
 #' @seealso [fishSim::make_archive()]
 #' @export
 
-makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
+makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4), minAge = 1,
                          maxAge = 20, survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))) {
 
     if(sum(osr) != 1) warning("osr does not sum to 1")
     if(sum(stocks) != 1) warning("stocks do not sum to 1")
     if(sum(survCurv) != 1) warning("survCurv does not sum to 1")
-    if(length(survCurv) != maxAge) warning("survCurv and maxAge imply different maximum ages")
+    if(length(survCurv) != length(minAge:maxAge)) warning("survCurv and minAge:maxAge imply different numbers of age-classes")
 
 ### indiv <- matrix(data = NA ,nrow = pop, ncol = 9)
     indiv <- data.frame(Me = character(pop), Sex = character(pop), Dad = character(pop),
@@ -64,7 +65,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4),
     indiv[,6] <- as.integer(c(rep(NA, pop))) ## founders are not yet dead
     indiv[,7] <- as.integer(sample(1:length(stocks), pop, TRUE, prob = stocks))
                                         # assign founder stock membership
-    indiv[,8] <- sample.int(maxAge, pop, TRUE, prob = survCurv)
+    indiv[,8] <- sample(minAge:maxAge, pop, TRUE, prob = survCurv)
     indiv[,5] <- 1L - indiv[,8] ## back-infer birth year from age
     indiv[,9] <- as.integer(c(rep(NA, pop))) ## founders are not yet sampled
 

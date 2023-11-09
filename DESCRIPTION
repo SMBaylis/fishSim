@@ -15,7 +15,8 @@ Imports:
   foreach,
   ids,
   mvbutils,
-  parallel
+  parallel,
+  fastmatch
 Suggests: 
   knitr,
   rmarkdown
