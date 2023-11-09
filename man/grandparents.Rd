@@ -2,20 +2,22 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{grandparents}
 \alias{grandparents}
-\title{look up the grandparents of one or more individuals}
+\title{Look up the grandparents of one or more individuals}
 \usage{
 grandparents(ID, indiv)
 }
 \arguments{
-\item{ID}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{ID}{A character vector containing one or more IDs, e.g., from
+\code{mort()[,1]}}
 
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}.}
 }
 \description{
-A convenience wrapper for 'parents()', returning the grandparents of one or more
-individuals. If FF is 'father's father', MF is 'mother's father', and so on,
-grandparents are returned in order [FF, FM, MF, MM] for each specified ID.
+A convenience wrapper for \code{\link[=parents]{parents()}}, returning the grandparents of one or
+more individuals. If FF is 'father's father', MF is 'mother's father', and
+so on, grandparents are returned in order \link{FF, FM, MF, MM} for each
+specified ID.
 }
 \seealso{
-[fishSim::parents()]
+\code{\link[=parents]{parents()}}
 }

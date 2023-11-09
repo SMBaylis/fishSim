@@ -2,18 +2,19 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{remove_dead}
 \alias{remove_dead}
-\title{remove the dead from a population}
+\title{Remove the dead from a population}
 \usage{
 remove_dead(indiv = mort())
 }
 \arguments{
-\item{indiv}{A matrix of individuals, as from mort().}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}.}
 }
 \description{
-For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
-In these cases, run-times may be improved by periodically moving dead individuals into an
-archive that is read and written less frequently than 'indiv'. See also archive_dead().
+For larger simulations, the matrix \code{indiv} may grow very large and slow down
+the simulation.  In these cases, run-times may be improved by periodically
+moving dead individuals into an archive that is read and written less
+frequently than \code{indiv}. See also \code{\link[=archive_dead]{archive_dead()}}.
 }
 \seealso{
-[fishSim::archive_dead(), fishSim::make_archive()]
+\code{\link[=archive_dead]{archive_dead()}}, \code{\link[=make_archive]{make_archive()}}
 }

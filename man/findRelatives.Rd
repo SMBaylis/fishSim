@@ -2,41 +2,49 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{findRelatives}
 \alias{findRelatives}
-\title{find shared ancestors between pairs of individuals}
+\title{Find shared ancestors between pairs of individuals}
 \usage{
 findRelatives(indiv, sampled, delimitIndiv = TRUE)
 }
 \arguments{
-\item{indiv}{A matrix of individuals, as from mort(), but which will need to contain
-long strings of parent-offspring relationships, so will most likely come
-from a multi-generation simulation.}
+\item{indiv}{A matrix of individuals, as from \code{\link[=mort]{mort()}}, but which will need
+to contain long strings of parent-offspring relationships, so will most
+likely come from a multi-generation simulation.}
 
-\item{sampled}{A character vector containing one or more IDs, e.g., from mort()[,1]}
+\item{sampled}{A character vector containing one or more IDs, e.g., from
+\code{mort()[,1]}}
 
-\item{delimitIndiv}{TRUE/FALSE. Lookups can be sped up markedly by first delimiting
-indiv to only those animals that exist as parents, or that are
-marked as sampled. Default TRUE.}
+\item{delimitIndiv}{\code{TRUE}/\code{FALSE}. Lookups can be sped up markedly by first
+delimiting indiv to only those animals that exist as parents, or that are
+marked as sampled. Default \code{TRUE}.}
 }
 \description{
-findRelatives takes a set of 'sampled' individuals and a population simulation output
-(i.e., an 'indiv' object, of the kind output by mort() ). It returns a data.frame
-for each pair of sampled individuals, with columns:
-1) Var1: the first individual's ID
-2) Var2: the second individual's ID
-3) related: TRUE for each pair that with one or more shared ancestors within seven
-   ancestral generations (i.e., great-great-great-great grandparents), otherwise FALSE
-4) totalRelatives: numeric indicator of the total number of shared ancestors found
-5) OneTwo, OneThree, ThreeFour, etc.: Numeric values, indicating the number of shared
-   ancestors by relationship class. For instance, a shared relative in the OneTwo class
-   indicates that one member of the pair is the other member's parent, a shared relative
-   in the OneThree class indicates that one member is the other's grandparent, and a shared
-   in the ThreeFour class indicates that one individual's grandparent is the other's great-
-   grandparent. If a pair shares an ancestor in the TwoThree class, they necessarily also
-   share two ancestors in the ThreeFour class and four ancestors in the FourFive class,
-   and so on. Note that relationship classes are identical by reversal - ThreeFour is the
-   same as FourThree, and so only relationship classes with increasing order are presented
-   (i.e., ThreeFour and OneFive are in the output, but not ThreeTwo).
+\code{findRelatives} takes a set of 'sampled' individuals and a population
+simulation output (i.e., an \code{indiv} object, of the kind output by \code{\link[=mort]{mort()}}).
+It returns a \code{data.frame} for each pair of sampled individuals, with
+columns:
+\enumerate{
+\item \code{Var1}: the first individual's ID
+\item \code{Var2}: the second individual's ID
+\item \code{related}: \code{TRUE} for each pair that with one or more shared ancestors
+within seven ancestral generations (i.e., great-great-great-great
+grandparents), otherwise \code{FALSE}
+\item \code{totalRelatives}: numeric indicator of the total number of shared
+ancestors found
+\item \code{OneTwo}, \code{OneThree}, \code{ThreeFour}, etc.: Numeric values, indicating the
+number of shared ancestors by relationship class. For instance, a shared
+relative in the \code{OneTwo} class indicates that one member of the pair is the
+other member's parent, a shared relative in the \code{OneThree} class indicates
+that one member is the other's grandparent, and a shared in the \code{ThreeFour}
+class indicates that one individual's grandparent is the other's great-
+grandparent. If a pair shares an ancestor in the \code{TwoThree} class, they
+necessarily also share two ancestors in the \code{ThreeFour} class and four
+ancestors in the \code{FourFive} class, and so on. Note that relationship classes
+are identical by reversal - \code{ThreeFour} is the same as \code{FourThree}, and so
+only relationship classes with increasing order are presented (i.e.,
+\code{ThreeFour} and \code{OneFive} are in the output, but not \code{ThreeTwo}).
+}
 }
 \seealso{
-[fishSim::lookAtPair()]
+\code{\link[=lookAtPair]{lookAtPair()}}
 }

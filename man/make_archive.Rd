@@ -2,19 +2,20 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{make_archive}
 \alias{make_archive}
-\title{set up an archive matrix for storing simulation outputs}
+\title{Set up an archive matrix for storing simulation outputs}
 \usage{
 make_archive()
 }
 \value{
-The function returns an empty 0-by-8 matrix, to which subsets of 'indiv' can be
-        attached. See archive_dead() and remove_dead().
+The function returns an empty 0-by-8 matrix, to which subsets of
+\code{indiv} can be attached.
 }
 \description{
-For larger simulations, the matrix 'indiv' may grow very large and slow down the simulation.
-In these cases, run-times may be improved by periodically moving dead individuals into an
-archive that is read and written less frequently than 'indiv'.
+For larger simulations, the matrix \code{indiv} may grow very large and slow down
+the simulation.  In these cases, run-times may be improved by periodically
+moving dead individuals into an archive that is read and written less
+frequently than \code{indiv}.
 }
 \seealso{
-[fishSim::archive_dead(), fishSim::remove_dead()]
+\code{\link[=archive_dead]{archive_dead()}} \code{\link[=remove_dead]{remove_dead()}}
 }

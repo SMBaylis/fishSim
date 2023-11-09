@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{makeFounders}
 \alias{makeFounders}
-\title{make a founding population}
+\title{Make a founding population}
 \usage{
 makeFounders(
   pop = 1000,
@@ -15,34 +15,40 @@ makeFounders(
 \arguments{
 \item{pop}{The size of the founder population.}
 
-\item{osr}{A numeric vector describing the sex ratio, c([male], [female]).}
+\item{osr}{A numeric vector describing the sex ratio, \verb{c([male], [female])}.}
 
 \item{stocks}{A numeric vector describing the probability that an individual
 is in each stock.}
 
 \item{maxAge}{Numeric. The max age to which an animal may survive.}
 
-\item{survCurv}{Numeric vector. Describes the probability within the founder cohort of belonging
-to each age-class for age=-classes 1:maxAge. Cannot be blank.}
+\item{survCurv}{Numeric vector. Describes the probability within the founder
+cohort of belonging to each age-class for \verb{age=-classes 1:maxAge}. Cannot be
+blank.}
 }
 \description{
-Returns a pop-by-8 data.frame, with each row being an individual in the
-founder population.
-[,1] is a unique (uuid) identifier for each animal.
-[,2] is sex, values "M" or "F".
-[,3] is "founder" for all animals.
-[,4] is "founder" for all animals.
-[,5] is the animal's birth year. Implicitly assumes that 'makeFounders' occurs at the
-     very start of year 1, just after the 'birthdays' step of year 0.
-[,6] is NA for all animals. Holds the death year in most cases.
-[,7] is the stock membership for each animal.
-[,8] is the age of each animal (in 'breeding seasons') at the beginning of year 1,
-     given that birthdays occur at the very end.
-[,9] is NA for all animals
-makeFounders() will throw a warning if osr, stocks, or survCurv do not sum to 1. It is
-not strictly necessary that they sum to 1 (proportionality within each class is sufficient),
-but error-checking and readability is easiest if they do sum to 1.
+Returns a population-size-by-8 \code{data.frame}, with each row being an
+individual in the founder population.
+\itemize{
+\item \verb{[,1]} is a unique (uuid) identifier for each animal.
+\item \verb{[,2]} is sex, values \code{"M"} or \code{"F"}.
+\item \verb{[,3]} is \code{"founder"} for all animals.
+\item \verb{[,4]} is \code{"founder"} for all animals.
+\item \verb{[,5]} is the animal's birth year. Implicitly assumes that \code{makeFounders}
+occurs at the very start of year 1, just after the \code{birthdays} step of year 0.
+\item \verb{[,6]} is \code{NA} for all animals. Holds the death year in most cases.
+\item \verb{[,7]} is the stock membership for each animal.
+\item \verb{[,8]} is the age of each animal (in 'breeding seasons') at the beginning
+of year 1, given that birthdays occur at the very end.
+\item \verb{[,9]} is \code{NA} for all animals
+}
+}
+\details{
+\code{makeFounders()} will throw a warning if \code{osr}, \code{stocks}, or \code{survCurv} do
+not sum to 1. It is not strictly necessary that they sum to 1
+(proportionality within each class is sufficient), but error-checking and
+readability is easiest if they do sum to 1.
 }
 \seealso{
-[fishSim::make_archive()]
+\code{\link[=make_archive]{make_archive()}}
 }

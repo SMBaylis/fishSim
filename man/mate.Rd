@@ -2,7 +2,7 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{mate}
 \alias{mate}
-\title{find male-female pairs and breed until a quota is filled}
+\title{Find male-female pairs and breed until a quota is filled}
 \usage{
 mate(
   indiv = makeFounders(),
@@ -21,76 +21,76 @@ mate(
 )
 }
 \arguments{
-\item{indiv}{A matrix of individuals, e.g., generated in makeFounders() or output from move()}
+\item{indiv}{A matrix of individuals, e.g., generated in \code{\link[=makeFounders]{makeFounders()}} or output from \code{\link[=move]{move()}}}
 
-\item{fecundity}{Numeric variable. mean number of recruits to generate, as a proportion of
-the number of animals in 'indiv'. nrow(indiv)*fecundity is the annual
-turnover - i.e., the number of animals killed in 'mortality' will equal
-nrow(indiv)*fecundity in order to keep the population size constant.}
+\item{fecundity}{Numeric variable. mean number of recruits to generate, as a
+proportion of the number of animals in \code{indiv}. \code{nrow(indiv)*fecundity} is
+the annual turnover - i.e., the number of animals killed in 'mortality' will
+equal \code{nrow(indiv)*fecundity} in order to keep the population size constant.}
 
-\item{batchSize}{Numeric. The mean number of offspring produced per pairing. Follows ~Poisson.
-Used iff type = "flat". Note that, if run within a loop that
-goes [move -> mate -> mort -> birthdays], 'produced' is not the same as 'enters
-age-class 1', as some mortality may occur at age 0.}
+\item{batchSize}{Numeric. The mean number of offspring produced per pairing.
+Follows a Poisson distribution.  Used iff \code{type = "flat"}. Note that, if run
+within a loop that goes \verb{[move -> mate -> mort -> birthdays]}, 'produced' is
+not the same as 'enters age-class 1', as some mortality may occur at age 0.}
 
-\item{osr}{Numeric vector with length two, c(male, female), giving the sex ratio at birth
-(recruitment). Used to assign sexes to new offspring.}
+\item{osr}{Numeric vector with length two, \code{c(male, female)}, giving the sex
+ratio at birth (recruitment). Used to assign sexes to new offspring.}
 
-\item{year}{Intended to be used in a simulation loop - this will be the iteration number, and
-holds the 'birthyear' value to give to new recruits.}
+\item{year}{Intended to be used in a simulation loop - this will be the
+iteration number, and holds the \code{birthyear} value to give to new recruits.}
 
-\item{firstBreed}{Integer variable. The age at first breeding, default 1. The minimum age
-at which individuals can breed. Applies to potential mothers and potential
-fathers. Both firstBreed and 'fecundityCurve', 'maleCurve, and 'femaleCurve' are
-capable of specifying an age at first breeding, and firstBreed takes precedence.}
+\item{firstBreed}{Integer variable. The age at first breeding, default 1.
+The minimum age at which individuals can breed. Applies to potential mothers
+and potential fathers. Both \code{firstBreed} and \code{fecundityCurve}, \code{maleCurve},
+and \code{femaleCurve} are capable of specifying an age at first breeding, and
+\code{firstBreed} takes precedence.}
 
-\item{type}{The type of fecundity-age relationship to simulate. Must be one of "flat",
-"age", or "ageSex". If "flat", offspring batch sizes will be the same for
-all age:sex combinations. If "age", the number of offspring for each pairing
-is a function of 'fecundityCurve', with the less-fecund parent determining the
-batch size. If "ageSex", the number of offspring for each pairing is a function
-of 'maleCurve' and 'femaleCurve', with the less-fecund parent determining the
-batch size.}
+\item{type}{The type of fecundity-age relationship to simulate. Must be one
+of \code{"flat"}, \code{"age"}, or \code{"ageSex"}. If \code{"flat"}, offspring batch sizes will
+be the same for all age:sex combinations. If \code{"age"}, the number of
+offspring for each pairing is a function of \code{fecundityCurve}, with the
+less-fecund parent determining the batch size. If \code{"ageSex"}, the number of
+offspring for each pairing is a function of \code{maleCurve} and \code{femaleCurve},
+with the less-fecund parent determining the batch size.}
 
-\item{maxClutch}{Numeric value giving the maximum clutch / litter / batch / whatever size.
-Reduces larger clutches to this size, within each pairing.}
+\item{maxClutch}{Numeric value giving the maximum clutch / litter / batch /
+whatever size.  Reduces larger clutches to this size, within each pairing.}
 
-\item{exhaustMothers}{TRUE/FALSE value indicating whether mothers should become 'exhausted'
-by one breeding attempt. If exhausted, an individual will not mate
-again in this mate() call.}
+\item{exhaustMothers}{Logical indicating whether mothers should become
+'exhausted' by one breeding attempt. If exhausted, an individual will not
+mate again in this \code{mate()} call.}
 
-\item{exhaustFathers}{TRUE/FALSE value indicating whether fathers should become 'exhausted'
-by one breeding attempt. If exhausted, an individual will not mate
-again in this mate() call.}
+\item{exhaustFathers}{Logical indicating whether fathers should become
+'exhausted' by one breeding attempt. If exhausted, an individual will not
+mate again in this \code{mate()} call.}
 
-\item{fecundityCurve}{Numeric vector describing the age-specific fecundity curve. One
-value per age, over all ages from 0:max(indiv[,8]). Used if "type"
-= "age". Note that 'firstBreed' can interfere with 'fecundityCurve'
-by setting fecundities to zero for some age classes. Recommended
-usage is to set 'firstBreed' to zero whenever 'fecundityCurve' is
-specified.}
+\item{fecundityCurve}{Numeric vector dscribing the age-specific fecundity
+curve. One value per age, over all ages from \verb{0:max(indiv[,8]}). Used if
+\code{type = "age"}. Note that \code{firstBreed} can interfere with \code{fecundityCurve}
+by setting fecundities to zero for some age classes. Recommended usage is to
+set \code{firstBreed} to zero whenever \code{fecundityCurve} is specified.}
 
-\item{maleCurve}{Numeric vector describing age-specific fecundity for males. One value per
-age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-Note that 'firstBreed' can interfere with 'maleCurve' by setting
+\item{maleCurve}{Numeric vector describing age-specific fecundity for males.
+One value per age, over all ages from \code{0:max(indiv[,8])}. Used if \code{type = "ageSex"}.  Note that \code{firstBreed} can interfere with \code{maleCurve} by setting
 fecundities to zero for some age classes. Recommended usage is to set
-'firstBreed' to zero whenever 'maleCurve' is specified.}
+\code{firstBreed} to zero whenever \code{maleCurve} is specified.}
 
-\item{femaleCurve}{Numeric vector describing age-specific fecundity for females. One value
-per age, over all ages from 0:max(indiv[,8]). Used if "type" = "ageSex".
-Note that 'firstBreed' can interfere with 'femaleCurve' by setting
-fecundities to zero for some age classes. Recommended usage is to set
-'firstBreed' to zero whenever 'femaleCurve' is specified.}
+\item{femaleCurve}{Numeric vector describing age-specific fecundity for
+females. One value per age, over all ages from \code{0:max(indiv[,8])}. Used if
+\verb{"type = "ageSex"}.  Note that \code{firstBreed} can interfere with \code{femaleCurve}
+by setting fecundities to zero for some age classes. Recommended usage is to
+set \code{firstBreed} to zero whenever \code{femaleCurve} is specified.}
 }
 \description{
 Returns an individual matrix with added newborns at age 0. This is the first
-mate method, where the number of newborns is a set as a proportion of the adult population,
-and matings happen between individuals that are older than the age at first-breeding
-(optionally with breeding success-rates set by the age of the less-mature parent, etc.,) until
-that 'quota' or newborns has been met, or all potential parents have reached breeding exhaustion.
-A second mate method exists, where the number of newborns is derived from the fecundities of all
-breeding females in the population - see altMate().
+mate method, where the number of newborns is a set as a proportion of the
+adult population, and matings happen between individuals that are older than
+the age at first-breeding (optionally with breeding success-rates set by the
+age of the less-mature parent, etc.,) until that 'quota' or newborns has
+been met, or all potential parents have reached breeding exhaustion.  A
+second mate method exists, where the number of newborns is derived from the
+fecundities of all breeding females in the population - see \code{\link[=altMate]{altMate()}}.
 }
 \seealso{
-[fishSim::altMate()]
+\code{\link[=altMate]{altMate()}}
 }
