@@ -276,8 +276,18 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
         } ## remove exhausted father from potential fathers.
         ticker <- ticker+n.sprogs
     }
+
+    ## if there are more columns in indiv than in sprog.m, add blank
+    ## columns with the same names to sprog.m before pasting:
+    if( ncol(indiv) > ncol(sprog.m)) {
+        sprog.m[ ,10:ncol(indiv)] <- NA
+        colnames(sprog.m)[10:ncol(indiv)] <- colnames(indiv)[10:ncol(indiv)]
+    }
+
     indiv <- rbind(indiv, sprog.m)
     return(indiv)
+
+
 }
 
 
@@ -299,65 +309,79 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 #' required number of offspring are generated (if possible, given breeding
 #' constraints) - see [fishSim::mate()].
 #'
-#' @param indiv A matrix of individuals, e.g., generated in `makeFounders()` or
-#' output from `move()`
-#' @param batchSize Numeric. The mean number of offspring produced per mature
-#' female if `fecundityDist = "poisson"`; the value of T from a zero-truncated
-#' Poisson distribution, if `fecundityDist = "truncPoisson"` (useful in cases
-#' where the probability of no offspring is rolled into the 'maturity'
-#' parameter); or the probability that a female will have a (single) offspring,
-#' given that she is mature, if `fecundityDist = "binomial"`.  Used for all
-#' maturity structures. Note that, if run within a loop that goes `[move ->
-#' altMate -> mort -> birthdays]`, 'produced' is not the same as 'enters
-#' age-class 1', as some individuals will die at age 0.
-#' @param fecundityDist One of "poisson", "truncPoisson", or "binomial". Sets
-#' the distribution of the number of offspring per mature female. Defaults to
-#' "poisson".
-#' @param osr Numeric vector with length two, `c(male, female)`, giving the sex
-#' ratio at birth (recruitment). Used to assign sexes to new offspring.
-#' @param year Intended to be used in a simulation loop - this will be the
-#' iteration number, and holds the `birthyear` value to give to new recruits.
-#' @param firstBreed Integer variable. The age at first breeding, default 1.
-#' The minimum age at which individuals can breed. Applies to potential mothers
-#' and potential fathers. `firstBreed`, `maturityCurve`, `maleCurve`, and
-#' `femaleCurve` are all capable of specifying an age at first breeding, and
-#' `firstBreed` takes precedence.
-#' @param type The type of maturity-age relationship to simulate. Must be one
-#' of `"flat"`, `"age"`, or `"ageSex"`. If `"flat"`, the probability of
-#' parenthood is the same for all age:sex combinations above firstBreed. If
-#' `"age"`, the probability that an individual is sexually mature is
-#' age-specific, set in `maturityCurve`. If `"ageSex"`, the probability that an
-#' individual is sexually mature is age- and sex-specific, set for males in
-#' `maleCurve` and for females in `femaleCurve`.
-#' @param maxClutch Numeric value giving the maximum clutch / litter / batch /
-#' whatever size.  Reduces larger clutches to this size, for each breeding
-#' female.
-#' @param singlePaternity Logical indicating whether all the offspring produced
-#' by female in a year should have the same father. Default `TRUE`. If `FALSE`,
-#' each offspring will have a randomly-drawn father from within the mother's
-#' stock. Note that this can lead to rapid exhaustion of fathers if
-#' `exhaustFathers = TRUE`.
-#' @param exhaustFathers Logical indicating whether fathers should become
-#' 'exhausted' by one breeding attempt. If exhausted, an individual will only
-#' mate with one female, though may father more than one offspring - see
-#' `singlePaternity` and `batchSize`.
-#' @param maturityCurve Numeric vector describing the age-specific probability
-#' of maturity curve. One value per age, over all ages from `0:max(indiv[,8])`.
-#' Used if `type = "age"`. Note that `firstBreed` can interfere with
-#' `maturityCurve` by setting maturities to zero for some age classes.
-#' Recommended usage is to set `firstBreed` to zero whenever `maturityCurve` is
-#' specified.
-#' @param maleCurve Numeric vector describing age-specific probability of
-#' maturity for males. One value per age, over all ages from
-#' `0:max(indiv[,8])`. Used if `type = "ageSex"`.  Note that `firstBreed` can
-#' interfere with `maleCurve` by setting maturities to zero for some age
-#' classes. Recommended usage is to set `firstBreed` to zero whenever
-#' `maleCurve` is specified.
-#' @param femaleCurve Numeric vector describing age-specific maturity for
-#' females. One value per age, over all ages from `0:max(indiv[,8])`. Used if
-#' `type = "ageSex"`.  Note that `firstBreed` can interfere with `femaleCurve`
-#' by setting maturities to zero for some age classes. Recommended usage is to
-#' set `firstBreed` to zero whenever `femaleCurve` is specified.
+#' @param indiv A matrix of individuals, e.g., generated in
+#'     `makeFounders()` or output from `move()`
+#' @param batchSize Numeric, possibly vector. The mean number of
+#'     offspring produced per mature female if `fecundityDist =
+#'     "poisson"`; the value of T from a zero-truncated Poisson
+#'     distribution, if `fecundityDist = "truncPoisson"` (useful in
+#'     cases where the probability of no offspring is rolled into the
+#'     'maturity' parameter); the probability that a female will have
+#'     a (single) offspring, given that she is mature, if
+#'     `fecundityDist = "binomial"`. If `fecundityDist =
+#'     "multinomial"`, must be a vector of relative probability of
+#'     each number of offspring, from 0 to the maximum possible number
+#'     of offspring. Used for all maturity structures. Note that, if
+#'     run within a loop that goes `[move -> altMate -> mort ->
+#'     birthdays]`, 'produced' is not the same as 'enters age-class
+#'     1', as some individuals will die at age 0.
+#' @param fecundityDist One of "poisson", "truncPoisson", "binomial",
+#'     or "multinomial". Sets the distribution of the number of
+#'     offspring per mature female. Defaults to "poisson".
+#' @param osr Numeric vector with length two, `c(male, female)`,
+#'     giving the sex ratio at birth (recruitment). Used to assign
+#'     sexes to new offspring.
+#' @param year Intended to be used in a simulation loop - this will be
+#'     the iteration number, and holds the `birthyear` value to give
+#'     to new recruits.
+#' @param firstBreed Integer variable. The age at first breeding,
+#'     default 1.  The minimum age at which individuals can
+#'     breed. Applies to potential mothers and potential
+#'     fathers. `firstBreed`, `maturityCurve`, `maleCurve`, and
+#'     `femaleCurve` are all capable of specifying an age at first
+#'     breeding, and `firstBreed` takes precedence.
+#' @param type The type of maturity-age relationship to simulate. Must
+#'     be one of `"flat"`, `"age"`, or `"ageSex"`. If `"flat"`, the
+#'     probability of parenthood is the same for all age:sex
+#'     combinations above firstBreed. If `"age"`, the probability that
+#'     an individual is sexually mature is age-specific, set in
+#'     `maturityCurve`. If `"ageSex"`, the probability that an
+#'     individual is sexually mature is age- and sex-specific, set for
+#'     males in `maleCurve` and for females in `femaleCurve`.
+#' @param maxClutch Numeric value giving the maximum clutch / litter /
+#'     batch / whatever size.  Reduces larger clutches to this size,
+#'     for each breeding female.
+#' @param singlePaternity Logical indicating whether all the offspring
+#'     produced by female in a year should have the same
+#'     father. Default `TRUE`. If `FALSE`, each offspring will have a
+#'     randomly-drawn father from within the mother's stock. Note that
+#'     this can lead to rapid exhaustion of fathers if `exhaustFathers
+#'     = TRUE`.
+#' @param exhaustFathers Logical indicating whether fathers should
+#'     become 'exhausted' by one breeding attempt. If exhausted, an
+#'     individual will only mate with one female, though may father
+#'     more than one offspring - see `singlePaternity` and
+#'     `batchSize`.
+#' @param maturityCurve Numeric vector describing the age-specific
+#'     probability of maturity curve. One value per age, over all ages
+#'     from `0:max(indiv[,8])`.  Used if `type = "age"`. Note that
+#'     `firstBreed` can interfere with `maturityCurve` by setting
+#'     maturities to zero for some age classes.  Recommended usage is
+#'     to set `firstBreed` to zero whenever `maturityCurve` is
+#'     specified.
+#' @param maleCurve Numeric vector describing age-specific probability
+#'     of maturity for males. One value per age, over all ages from
+#'     `0:max(indiv[,8])`. Used if `type = "ageSex"`.  Note that
+#'     `firstBreed` can interfere with `maleCurve` by setting
+#'     maturities to zero for some age classes. Recommended usage is
+#'     to set `firstBreed` to zero whenever `maleCurve` is specified.
+#' @param femaleCurve Numeric vector describing age-specific maturity
+#'     for females. One value per age, over all ages from
+#'     `0:max(indiv[,8])`. Used if `type = "ageSex"`.  Note that
+#'     `firstBreed` can interfere with `femaleCurve` by setting
+#'     maturities to zero for some age classes. Recommended usage is
+#'     to set `firstBreed` to zero whenever `femaleCurve` is
+#'     specified.
 #' @seealso [fishSim::mate()]
 #' @export
 
@@ -377,11 +401,22 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
     fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
     if(nrow(fathers) == 0) warning("There are no mature males in the population")
 
-    if (type == "flat") {
+    getClutch <- function( fecundityDist, n, batchSize) {
+        if(fecundityDist == "poisson") {clutch <- rpois(n = n, lambda = batchSize)}
+        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = n, T=batchSize)}
+        if(fecundityDist == "binomial") {clutch <- rbinom(n, 1, prob = batchSize)}
+        if(fecundityDist == "multinomial") { clutch <- sample( 0:(length(batchSize)-1), size = n,
+                                                              replace = TRUE, prob = batchSize)
+        }
+        return( clutch)
+    }
 
-        if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
-        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
-        if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+    if (type == "flat") {
+        ## if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
+        ## if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
+        ## if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+
+        clutch <- getClutch(fecundityDist = fecundityDist, n = nrow(mothers), batchSize = batchSize)
 
         mothers <- subset(mothers, clutch > 0)  ## identify the mothers that truly breed,
         clutch <- clutch[clutch>0]              ## how many offspring each produces,
@@ -396,9 +431,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                                          ## maturity test.
 
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
-        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
-        if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        ## if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
+        ## if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
+        ## if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        clutch <- getClutch(fecundityDist = fecundityDist, n = nrow(mothers), batchSize = batchSize)
 
         mothers <- subset(mothers, clutch > 0) ## trims 'mothers' to those that truly breed
         clutch <- clutch[clutch>0]
@@ -411,9 +447,10 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
         fathers <- fathers[runif(nrow(fathers)) < maleCurve[fathers[,8]+1] , ,drop = FALSE]
         ## trims 'fathers' to just those that pass a random maturity test.
 ##        clutch <- rpois(n = nrow(mothers), lambda = batchSize)
-        if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
-        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
-        if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        ## if(fecundityDist == "poisson") {clutch <- rpois(n = nrow(mothers), lambda = batchSize)}
+        ## if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = nrow(mothers), T = batchSize)}
+        ## if(fecundityDist == "binomial") {clutch <- rbinom(nrow(mothers), 1, prob = batchSize)}
+        clutch <- getClutch(fecundityDist = fecundityDist, n = nrow(mothers), batchSize = batchSize)
 
         mothers <- subset(mothers, clutch > 0)
         clutch <- clutch[clutch>0]
@@ -486,6 +523,13 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
         sprog.m <- rbind(sprog.m, sprog.stock)
     }
+    ## if there are more columns in indiv than in sprog.m, add blank
+    ## columns with the same names to sprog.m before pasting:
+    if( ncol(indiv) > ncol(sprog.m)) {
+        sprog.m[ ,10:ncol(indiv)] <- NA
+        colnames(sprog.m)[10:ncol(indiv)] <- colnames(indiv)[10:ncol(indiv)]
+    }
+
     names(sprog.m) <- names(indiv)
     indiv <- rbind(indiv, sprog.m)
 

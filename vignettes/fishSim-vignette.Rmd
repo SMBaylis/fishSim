@@ -506,6 +506,66 @@ for (y in 1:60) {
 }
 ```
 
+## Arbitrary variables to affect the simulation
+
+Capture status isn't the only variable that can influence survival or
+movement. It is possible to add arbitrary additional variables to an
+`indiv` object in order to keep track of anything you might need to
+know about an individual, and it is possible to make simulation steps
+depend on those variables. You might want a 'hasBred' column, for
+instance, keeping track of which animals have produced offspring. Or,
+alongside a custom 'myMate' function (see 'custom functions', below),
+you might want to keep track of each animal's pair-bonded mate, so
+that animals can form pair bonds that persist across years. Here's an
+example of a species with two morphs, where the spiny morph has a
+slightly different movement-pattern to the smooth morph:
+
+```{r arbitraryExtras}
+indiv <- makeFounders( stocks = c(0.3, 0.3, 0.4))
+indiv[,10] <- sample(c("spiny", "smooth"), nrow(indiv), replace = TRUE)
+## an extra column to hold stuff. Extras
+## _must_ be in column numbers 10 or greater
+colnames(indiv)[10] <- "Morph"
+
+## a movement matrix for spiny individuals
+admix.spiny <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
+for(i in 1:nrow(admix.spiny)) {
+    admix.spiny[i,] <- stocks*stocks[i]
+}
+## admix.spiny shows movement proportional to starting population sizes.
+admix.spiny
+
+## a movement matrix for smooth individuals - let's make them more sedentary,
+## with 90% chance of staying where they are and 5% chance of moving to each
+## other stock
+admix.smooth <- matrix(c(0.05), nrow = length(stocks), ncol = length(stocks), byrow = FALSE)
+diag(admix.smooth) <- 0.9
+admix.smooth <- admix.smooth / sum(admix.smooth) ## standardise so the matrix sums to 1
+admix.smooth
+
+for (y in 1:20) {
+    indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y)
+    ## 'mate' happens first, affecting the whole population
+    indiv <- mort(indiv, year = y, type = "flat", mortRate = 0.2)
+    ## then 'mort', also affecting the whole population
+    
+    indiv_smooth <- indiv[indiv$Morph == "smooth",] ## all the smooth animals
+    indiv_spiny <- indiv[indiv$Morph == "spiny",]  ## all the spiny animals
+
+    indiv_smooth <- move(indiv_smooth, moveMat = admix.smooth)
+        ## one movement pattern for smooth animals
+    indiv_spiny <- move(indiv_spiny, moveMat = admix.spiny)
+        ## another movement pattern for spiny animals
+    indiv <- rbind(indiv_smooth, indiv_spiny)
+        ## stick them back together and proceed as normal
+    rm(indiv_smooth, indiv_spiny) ## clean up
+
+    indiv <- birthdays(indiv)
+}
+
+```
+
+
 ## A note on custom functions in fishSim
 
 The objects used in `fishSim` are deliberately kept simple, to
@@ -560,44 +620,38 @@ functions in `fishSim`. Such a function could look like this:
 
 myMate <- function(indiv, batchSize, breedProb, maturityAge, year, meanMates) {
 
-  library(ids)
+    library(ids)
 
-  matureFemales <- indiv[indiv$Sex == "F" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY) ,]
-  matureMales <- indiv[indiv$Sex == "M" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY),]
-  iBreed_F <- matureFemales[sample(1:nrow(matureFemales), size = nrow(matureFemales)*breedProb),]
-  iBreed_M <- matureMales
+    ## select mature females and males at current time-step
+    matureFemales <- indiv[indiv$Sex == "F" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY) ,]
+    matureMales <- indiv[indiv$Sex == "M" & indiv$AgeLast >= maturityAge & is.na(indiv$DeathY),]
+    ## select subset of mature females that will breed (given breedProb)
+    iBreed_F <- matureFemales[sample(1:nrow(matureFemales), size = nrow(matureFemales)*breedProb),]
+    iBreed_M <- matureMales
 
-  if(nrow(iBreed_F) == 0 | nrow(iBreed_M) == 0) { return(indiv) }
+    ## if no mature females or males available, don't add new individuals to the population
+    if(nrow(iBreed_F) == 0 | nrow(iBreed_M) == 0) { return(indiv) }
 
-  recruits <- indiv[0,]
+    clutchSize <- rpois(nrow(iBreed_F), batchSize) # how many offsprings per breeding females? 
+    nMates <- rTruncPoisson(nrow(iBreed_F), T = meanMates) # how many mates per breeding females?
+    mates <- lapply(nMates, function(i) sample(iBreed_M$Me, i, replace = FALSE)) # draw mates for each female based on nMates
+    # and then assign fathers to each new recruit based on mates identified previously
+    # (note each item in the list corresponds to a unique female)
+    dads <- lapply(1:length(mates), function(i) sample(mates[[i]], clutchSize[[i]], replace = TRUE))
 
-  for(i in 1:nrow(iBreed_F) ) {
-      clutchSize <- rpois(1, batchSize) ## with minor changes, could use any
-        ## discrete distribution for which R provides a random-number generator here
-      if(clutchSize >= 1) {
-        ## identify mates for this female
-        nMates <- rTruncPoisson(1, T = meanMates) ## at least one mate; otherwise
-	## Poisson with mean set by meanMates
-        mates <- iBreed_M[sample(1:nrow(iBreed_M),nMates, replace = TRUE), ]
-        ## start building the clutch members
-        myClutch <- indiv[1:clutchSize,] ## just a hack for
-                                         ## formatting; content is overwritten
-        myClutch$Me <- uuid(clutchSize, drop_hyphens = TRUE)
-        myClutch$Sex <- sample(c("M", "F"), clutchSize, prob = c(0.5, 0.5), replace = TRUE)
-        myClutch$Dad <- mates[sample(1:nrow(mates), clutchSize, replace = TRUE),]$Me
-        myClutch$Mum <- iBreed_F[i,]$Me
-        myClutch$BirthY <- c(rep(year, clutchSize))
-        myClutch$DeathY <- c(rep(NA, clutchSize))
-        myClutch$Stock <- c(rep(1, clutchSize))
-        myClutch$AgeLast <- c(rep(0, clutchSize))
-        myClutch$SampY <- c(rep(NA, clutchSize))
+    # now set-up table of recruits assembling all variables
+    recruits <- data.frame(Me=uuid(sum(clutchSize), drop_hyphens = TRUE), # unique ID
+                           Sex=sample(c("M","F"), sum(clutchSize), prob = c(0.5,0.5), replace = TRUE),
+                           Mum=rep(iBreed_F$Me, clutchSize), # add mum vector that match litter sizes assigned earlier
+                           Dad=unlist(dads), # unlist dads (length should match new recruits number)
+                           BirthY=year, # rest of meta-data is simple for recruits. birth year
+                           DeathY=NA, # not dead yet
+                           Stock=1, # single stock for now
+                           AgeLast=0, # recruits start at age 0
+                           SampY=NA) # not sampled yet
 
-        recruits <- rbind(recruits, myClutch)
-    }
-  }
-
-  outs <- rbind(indiv, recruits)
-  return(outs)
+    outs <- rbind(indiv, recruits)
+    return(outs)
 }
 ```
 
