@@ -521,7 +521,8 @@ example of a species with two morphs, where the spiny morph has a
 slightly different movement-pattern to the smooth morph:
 
 ```{r arbitraryExtras}
-indiv <- makeFounders( stocks = c(0.3, 0.3, 0.4))
+stocks <- c(0.3, 0.3, 0.4)
+indiv <- makeFounders( stocks = stocks)
 indiv[,10] <- sample(c("spiny", "smooth"), nrow(indiv), replace = TRUE)
 ## an extra column to hold stuff. Extras
 ## _must_ be in column numbers 10 or greater
@@ -546,6 +547,11 @@ admix.smooth
 for (y in 1:20) {
     indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y)
     ## 'mate' happens first, affecting the whole population
+
+    ## newborns need a 'smooth' or 'spiny' status, because altMate won't give one
+    indiv$Morph[ is.na( indiv$Morph)] <- sample(c("spiny", "smooth"),
+                                                nrow(indiv[ is.na( indiv$Morph),]), replace = TRUE)
+    
     indiv <- mort(indiv, year = y, type = "flat", mortRate = 0.2)
     ## then 'mort', also affecting the whole population
     

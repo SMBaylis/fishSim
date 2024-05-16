@@ -21,76 +21,87 @@ altMate(
 )
 }
 \arguments{
-\item{indiv}{A matrix of individuals, e.g., generated in \code{makeFounders()} or
-output from \code{move()}}
+\item{indiv}{A matrix of individuals, e.g., generated in
+\code{makeFounders()} or output from \code{move()}}
 
-\item{batchSize}{Numeric. The mean number of offspring produced per mature
-female if \code{fecundityDist = "poisson"}; the value of T from a zero-truncated
-Poisson distribution, if \code{fecundityDist = "truncPoisson"} (useful in cases
-where the probability of no offspring is rolled into the 'maturity'
-parameter); or the probability that a female will have a (single) offspring,
-given that she is mature, if \code{fecundityDist = "binomial"}.  Used for all
-maturity structures. Note that, if run within a loop that goes \verb{[move -> altMate -> mort -> birthdays]}, 'produced' is not the same as 'enters
-age-class 1', as some individuals will die at age 0.}
+\item{batchSize}{Numeric, possibly vector. The mean number of
+offspring produced per mature female if \code{fecundityDist = "poisson"}; the value of T from a zero-truncated Poisson
+distribution, if \code{fecundityDist = "truncPoisson"} (useful in
+cases where the probability of no offspring is rolled into the
+'maturity' parameter); the probability that a female will have
+a (single) offspring, given that she is mature, if
+\code{fecundityDist = "binomial"}. If \code{fecundityDist = "multinomial"}, must be a vector of relative probability of
+each number of offspring, from 0 to the maximum possible number
+of offspring. Used for all maturity structures. Note that, if
+run within a loop that goes \verb{[move -> altMate -> mort -> birthdays]}, 'produced' is not the same as 'enters age-class
+1', as some individuals will die at age 0.}
 
-\item{fecundityDist}{One of "poisson", "truncPoisson", or "binomial". Sets
-the distribution of the number of offspring per mature female. Defaults to
-"poisson".}
+\item{fecundityDist}{One of "poisson", "truncPoisson", "binomial",
+or "multinomial". Sets the distribution of the number of
+offspring per mature female. Defaults to "poisson".}
 
-\item{osr}{Numeric vector with length two, \code{c(male, female)}, giving the sex
-ratio at birth (recruitment). Used to assign sexes to new offspring.}
+\item{osr}{Numeric vector with length two, \code{c(male, female)},
+giving the sex ratio at birth (recruitment). Used to assign
+sexes to new offspring.}
 
-\item{year}{Intended to be used in a simulation loop - this will be the
-iteration number, and holds the \code{birthyear} value to give to new recruits.}
+\item{year}{Intended to be used in a simulation loop - this will be
+the iteration number, and holds the \code{birthyear} value to give
+to new recruits.}
 
-\item{firstBreed}{Integer variable. The age at first breeding, default 1.
-The minimum age at which individuals can breed. Applies to potential mothers
-and potential fathers. \code{firstBreed}, \code{maturityCurve}, \code{maleCurve}, and
-\code{femaleCurve} are all capable of specifying an age at first breeding, and
-\code{firstBreed} takes precedence.}
+\item{firstBreed}{Integer variable. The age at first breeding,
+default 1.  The minimum age at which individuals can
+breed. Applies to potential mothers and potential
+fathers. \code{firstBreed}, \code{maturityCurve}, \code{maleCurve}, and
+\code{femaleCurve} are all capable of specifying an age at first
+breeding, and \code{firstBreed} takes precedence.}
 
-\item{type}{The type of maturity-age relationship to simulate. Must be one
-of \code{"flat"}, \code{"age"}, or \code{"ageSex"}. If \code{"flat"}, the probability of
-parenthood is the same for all age:sex combinations above firstBreed. If
-\code{"age"}, the probability that an individual is sexually mature is
-age-specific, set in \code{maturityCurve}. If \code{"ageSex"}, the probability that an
-individual is sexually mature is age- and sex-specific, set for males in
-\code{maleCurve} and for females in \code{femaleCurve}.}
+\item{type}{The type of maturity-age relationship to simulate. Must
+be one of \code{"flat"}, \code{"age"}, or \code{"ageSex"}. If \code{"flat"}, the
+probability of parenthood is the same for all age:sex
+combinations above firstBreed. If \code{"age"}, the probability that
+an individual is sexually mature is age-specific, set in
+\code{maturityCurve}. If \code{"ageSex"}, the probability that an
+individual is sexually mature is age- and sex-specific, set for
+males in \code{maleCurve} and for females in \code{femaleCurve}.}
 
-\item{maxClutch}{Numeric value giving the maximum clutch / litter / batch /
-whatever size.  Reduces larger clutches to this size, for each breeding
-female.}
+\item{maxClutch}{Numeric value giving the maximum clutch / litter /
+batch / whatever size.  Reduces larger clutches to this size,
+for each breeding female.}
 
-\item{singlePaternity}{Logical indicating whether all the offspring produced
-by female in a year should have the same father. Default \code{TRUE}. If \code{FALSE},
-each offspring will have a randomly-drawn father from within the mother's
-stock. Note that this can lead to rapid exhaustion of fathers if
-\code{exhaustFathers = TRUE}.}
+\item{singlePaternity}{Logical indicating whether all the offspring
+produced by female in a year should have the same
+father. Default \code{TRUE}. If \code{FALSE}, each offspring will have a
+randomly-drawn father from within the mother's stock. Note that
+this can lead to rapid exhaustion of fathers if \code{exhaustFathers = TRUE}.}
 
-\item{exhaustFathers}{Logical indicating whether fathers should become
-'exhausted' by one breeding attempt. If exhausted, an individual will only
-mate with one female, though may father more than one offspring - see
-\code{singlePaternity} and \code{batchSize}.}
+\item{exhaustFathers}{Logical indicating whether fathers should
+become 'exhausted' by one breeding attempt. If exhausted, an
+individual will only mate with one female, though may father
+more than one offspring - see \code{singlePaternity} and
+\code{batchSize}.}
 
-\item{maturityCurve}{Numeric vector describing the age-specific probability
-of maturity curve. One value per age, over all ages from \code{0:max(indiv[,8])}.
-Used if \code{type = "age"}. Note that \code{firstBreed} can interfere with
-\code{maturityCurve} by setting maturities to zero for some age classes.
-Recommended usage is to set \code{firstBreed} to zero whenever \code{maturityCurve} is
+\item{maturityCurve}{Numeric vector describing the age-specific
+probability of maturity curve. One value per age, over all ages
+from \code{0:max(indiv[,8])}.  Used if \code{type = "age"}. Note that
+\code{firstBreed} can interfere with \code{maturityCurve} by setting
+maturities to zero for some age classes.  Recommended usage is
+to set \code{firstBreed} to zero whenever \code{maturityCurve} is
 specified.}
 
-\item{maleCurve}{Numeric vector describing age-specific probability of
-maturity for males. One value per age, over all ages from
-\code{0:max(indiv[,8])}. Used if \code{type = "ageSex"}.  Note that \code{firstBreed} can
-interfere with \code{maleCurve} by setting maturities to zero for some age
-classes. Recommended usage is to set \code{firstBreed} to zero whenever
-\code{maleCurve} is specified.}
+\item{maleCurve}{Numeric vector describing age-specific probability
+of maturity for males. One value per age, over all ages from
+\code{0:max(indiv[,8])}. Used if \code{type = "ageSex"}.  Note that
+\code{firstBreed} can interfere with \code{maleCurve} by setting
+maturities to zero for some age classes. Recommended usage is
+to set \code{firstBreed} to zero whenever \code{maleCurve} is specified.}
 
-\item{femaleCurve}{Numeric vector describing age-specific maturity for
-females. One value per age, over all ages from \code{0:max(indiv[,8])}. Used if
-\code{type = "ageSex"}.  Note that \code{firstBreed} can interfere with \code{femaleCurve}
-by setting maturities to zero for some age classes. Recommended usage is to
-set \code{firstBreed} to zero whenever \code{femaleCurve} is specified.}
+\item{femaleCurve}{Numeric vector describing age-specific maturity
+for females. One value per age, over all ages from
+\code{0:max(indiv[,8])}. Used if \code{type = "ageSex"}.  Note that
+\code{firstBreed} can interfere with \code{femaleCurve} by setting
+maturities to zero for some age classes. Recommended usage is
+to set \code{firstBreed} to zero whenever \code{femaleCurve} is
+specified.}
 }
 \description{
 Returns an individual matrix with added newborns at age 0. This is the

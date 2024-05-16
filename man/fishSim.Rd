@@ -2,8 +2,13 @@
 % Please edit documentation in R/fishSim_dev.R
 \docType{package}
 \name{fishSim}
+\alias{fishSim-package}
 \alias{fishSim}
 \title{fishSim}
 \description{
 R tool for simulation of population dynamics; originally written for fish
+}
+\author{
+\strong{Maintainer}: Shane Baylis \email{shane.m.baylis@gmail.com}
+
 }

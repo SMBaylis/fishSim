@@ -8,6 +8,7 @@ makeFounders(
   pop = 1000,
   osr = c(0.5, 0.5),
   stocks = c(0.3, 0.3, 0.4),
+  minAge = 1,
   maxAge = 20,
   survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))
 )
