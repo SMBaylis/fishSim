@@ -25,7 +25,8 @@ is in each stock.}
 
 \item{survCurv}{Numeric vector. Describes the probability within the founder
 cohort of belonging to each age-class for \verb{age=-classes 1:maxAge}. Cannot be
-blank.}
+blank. Will be treated as probability weights, rather than probabilities, if
+the vector does not sum to 1.}
 }
 \description{
 Returns a population-size-by-8 \code{data.frame}, with each row being an

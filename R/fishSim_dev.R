@@ -2,7 +2,6 @@
 #'
 #' R tool for simulation of population dynamics; originally written for fish
 #'
-#' @docType package
 #' @name fishSim
 #' @import foreach
 #' @import parallel
@@ -12,7 +11,7 @@
 #' @import mvbutils
 #' @importFrom graphics abline lines plot
 #' @importFrom stats rbinom rpois runif uniroot
-NULL
+"_PACKAGE"
 
 #' Make a founding population
 #'
@@ -42,7 +41,8 @@ NULL
 #' @param maxAge Numeric. The max age to which an animal may survive.
 #' @param survCurv Numeric vector. Describes the probability within the founder
 #' cohort of belonging to each age-class for `age=-classes 1:maxAge`. Cannot be
-#' blank.
+#' blank. Will be treated as probability weights, rather than probabilities, if
+#' the vector does not sum to 1.
 #' @seealso [fishSim::make_archive()]
 #' @export
 
@@ -51,7 +51,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4), 
 
     if(sum(osr) != 1) warning("osr does not sum to 1")
     if(sum(stocks) != 1) warning("stocks do not sum to 1")
-    if(sum(survCurv) != 1) warning("survCurv does not sum to 1")
+    if(sum(survCurv) != 1) message("survCurv does not sum to 1 - treating values as probability weights (see base::sample), not probabilities")
     if(length(survCurv) != length(minAge:maxAge)) warning("survCurv and minAge:maxAge imply different numbers of age-classes")
 
 ### indiv <- matrix(data = NA ,nrow = pop, ncol = 9)
@@ -86,7 +86,214 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4), 
 #}  ## probability of moving into a stock is proportional to the default size of that stock
    ## from makeFounders.
 
+#' Age- and/or sex-specific Markovian movement between breeding stocks
+#'
+#' Performs movement of animals between stocks by specified
+#' probabilities of movement to-and-from each stock pair, optionally
+#' differing across age and sex. Replaces old move() - captures the
+#' same functionality and adds more, and is (much) quicker.
+#'
+#' @return a pop-by-8 character matrix, defined in the [makeFounders]
+#'     documentation.
+#' @param indiv Individual matrix, e.g. from `makeFounders()`. Can
+#'     also be a non-founder matrix.
+#' @param moveMat A matrix describing the probability of moving from
+#'     each stock to each other stock, with 'from' by row, 'to' by
+#'     column, and optionally, 'age' by aisle
+#' @param moveMat_M only used if movement is sex-specific. See
+#'     moveMat, but this one specifies movement for males
+#' @param moveMat_F see moveMat_M, but this one specifies movement for
+#'     females
+#' @export
+#' @examples
+#' ## scenario 1: movement is not age- or sex-specific:
+#' stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
+#' admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
+#' for (i in 1:nrow(admix.m)) {
+#'     admix.m[i,] <- stocks*stocks[i]
+#' }  ## probability of moving into a stock is proportional to the default size of that stock
+#'    ## from makeFounders.
+#' indiv <- makeFounders()
+#' indiv <- move( indiv, moveMat = admix.m)
+#'
+#' ## Scenario 2: movement is sex-specific but not age-specific.
+#' ## Make 90% of the males move to stock 3, and 90% of the females move
+#' ## to stock 1
+#' moveMat_M <- matrix(c(rep( 0.05, 6), rep( 0.9, 3)), nrow = 3, ncol = 3)
+#' moveMat_F <- matrix(c(rep( 0.9, 3), rep( 0.05, 6)), nrow = 3, ncol = 3)
+#' indiv <- makeFounders()
+#' table(indiv$Stock[ indiv$Sex == "M"]) ## where are the males before moving?
+#' table(indiv$Stock[ indiv$Sex == "F"]) ## where are the females before moving?
+#' indiv <- move( indiv, moveMat_M = moveMat_M, moveMat_F = moveMat_F)
+#' table(indiv$Stock[ indiv$Sex == "M"]) ## where are the males after moving?
+#' table(indiv$Stock[ indiv$Sex == "F"]) ## where are the females after moving?
+#'
+#' ## Scenario 3: movement is age-specific but not sex-specific. There are 6 ages (0 -> 5)
+#' ## Make animals more sedentary as they age: age 0 everyone changes stock; age 5 no-one does
+#' moveMat <- array( data = c(0, rep(0.5,3), 0,rep(0.5,3), 0, ## age 0
+#'                            0.1, rep(0.45,3), 0.1,rep(0.45,3), 0.1, ## age 1
+#'                            0.2, rep(0.4,3), 0.2,rep(0.4,3), 0.2,   ## age 2
+#'                            0.4, rep(0.3,3), 0.4, rep(0.3,3), 0.4,  ## age 3
+#'                            0.9, rep(0.05, 3), 0.9, rep(0.05, 3), 0.9, ## age 4
+#'                            1, rep(0,3), 1, rep(0,3), 1), ## age 5
+#'                    dim = c(3,3,6)) ## 3 'froms', 3 'tos', and 6 ages
+#' ## this array setup is that Toby was gonna show me how to automate with formulas, I think?
+#' indiv <- makeFounders( minAge = 0, maxAge = 5, survCurv = c(1, 0.6^(1:5)))
+#' indiv2 <- move( indiv, moveMat = moveMat)
+#' oldstock <- indiv$Stock
+#' newstock <- indiv2$Stock
+#' ## what's the oldstock -> newstock pattern for 0 year-olds?
+#' table( paste( oldstock, newstock)[ indiv$Age == 0])
+#' any( oldstock[ indiv$Age==0] == newstock[ indiv$Age==0])
+#'  note: for 0 year-olds, no records where oldstock == newstock
+#'
+#' ## what's the oldstock -> newstock pattern for 5 year-olds?
+#' table( paste( oldstock, newstock)[ indiv$Age == 5])
+#' all( oldstock[ indiv$Age==5] == newstock[ indiv$Age==5])
+#'  note: for 5 year-olds, all records are oldstock == newstock
+#'
+#' ## Scenario 4: movement is both age- and sex-specific
+#' ## Make males sedentary except at age 1, and females randomise
+#' ## location at all ages.
+#' moveMat_M <- array( data = c(1, rep(0,3), 1,rep(0,3), 1, ## age 0
+#'                            rep(c(0.09,0.09,0.12), 2), 0.12, 0.12, 0.16, ## age 1
+#'                            rep(c( 1, rep(0,3), 1,rep(0,3), 1), 4)),  ## age 2 - 5
+#'                    dim = c(3,3,6)) ## 3 'froms', 3 'tos', and 6 ages
+#' moveMat_F <- array( data = rep( c(rep(c(0.09,0.09,0.12), 2), 0.12, 0.12, 0.16), 6), ## all ages
+#'                    dim = c(3,3,6)) ## 3 'froms', 3 'tos', and 6 ages
+#' moveMat_M ## look at male moveMat
+#' moveMat_F ## look at female moveMat
+#' indiv <- makeFounders( minAge = 0, maxAge = 5, survCurv = c(1, 0.6^(1:5)))
+#' indiv2 <- move( indiv, moveMat_M = moveMat_M, moveMat_F = moveMat_F)
+#' oldstock <- indiv$Stock
+#' newstock <- indiv2$Stock
+#' ## now, females of all ages should have moved with probability proportional
+#' ## to the starting size of the stock, and males of all ages other than 1 should
+#' ## have stayed put.
+#' ## Look at males:
+#' table( paste( oldstock, newstock)[ indiv$Age == 0 & indiv$Sex == "M"])
+#' ## zero year-old males all stayed put
+#' table( paste( oldstock, newstock)[ indiv$Age == 1 & indiv$Sex == "M"])
+#' ## one year-old males moved around randomly
+#' table( paste( oldstock, newstock)[ indiv$Age == 2 & indiv$Sex == "M"])
+#' ## two year-old males all stayed put
+#'
+#' ## Look at females:
+#' table( paste( oldstock, newstock)[ indiv$Age == 0 & indiv$Sex == "F"])
+#' ## zero year-old females moved around randomly
+#' table( paste( oldstock, newstock)[ indiv$Age == 1 & indiv$Sex == "F"])
+#' ## one year-old females moved around randomly
+#' table( paste( oldstock, newstock)[ indiv$Age == 2 & indiv$Sex == "F"])
+#' ## one year-old females moved around randomly
+
+move <- function(indiv = makeFounders(), moveMat = NULL, moveMat_M = NULL, moveMat_F = NULL) {
+
+    isSexSpecific <- ( ! is.null(moveMat_M)) | ( ! is.null(moveMat_F))
+    maxMatDim <- max( c( length(dim( moveMat)), length(dim( moveMat_M)), length(dim( moveMat_F))))
+    if( maxMatDim < 2) {
+        stop( "moveMat (or moveMat_M and moveMat_F) needs at least 2 dimensions ('from' and 'to')")
+    }
+    if( maxMatDim > 3) {
+        stop( "moveMat (or moveMat_M and moveMat_F) has more than 3 dimensions. The maximum is 3 (for 'from', 'to', and 'age')")
+    }
+    isAgeSpecific <- ifelse( maxMatDim == 3, TRUE, FALSE)
+
+    ## basicmove <- function(indiv = makeFounders(), moveMat) {
+    ##     if(nrow(moveMat) != ncol(moveMat)) warning("movement matrix is not square")
+    ##     if(nrow(moveMat) > length(unique(indiv[,7]))) warning("One or more stocks start empty")
+
+    ##     oldStock <- indiv[,7]
+    ##     newStock <- matrix(data = NA, nrow = nrow(indiv))
+    ##     for(i in 1:length(newStock)) {
+    ##         newStock[i] <- sample(1:nrow(moveMat), 1, TRUE,
+    ##                               prob = moveMat[indiv[i,7],])
+    ##     }
+    ##     indiv[,7] <- newStock
+    ##     indiv[,7][!is.na(indiv[,6])] <- oldStock[!is.na(indiv[,6])]
+    ##     indiv[,7] <- as.integer(indiv[,7])
+    ##     return(indiv)
+    ## } ## the original 'move' function (now 'oldmove'), superseded by 'fastermove'
+    fastermove <- function(indiv = makeFounders(), moveMat) {
+        if(nrow(moveMat) != ncol(moveMat)) warning("movement matrix is not square")
+        if(nrow(moveMat) > length(unique(indiv[,7]))) warning("One or more stocks start empty")
+
+        oldStock <- indiv[,7]
+        newStock <- matrix(data = NA, nrow = nrow(indiv))
+        for(s in unique(indiv$Stock)) {
+            newStock[ indiv$Stock == s ] <- sample(1:nrow(moveMat), sum(indiv$Stock == s), TRUE,
+                                  prob = moveMat[s,])
+        } ## loops over stocks, rather than individuals. Faster?
+        indiv[,7] <- newStock
+        indiv[,7][!is.na(indiv[,6])] <- oldStock[!is.na(indiv[,6])]
+        indiv[,7] <- as.integer(indiv[,7])
+        return(indiv)
+    }
+
+    ## what are our use-cases?
+    ## neither sex- nor age-specific - refer existing move()
+    if( (! isSexSpecific) & (! isAgeSpecific) ) {
+        indiv <- fastermove(indiv, moveMat = moveMat)
+        return(indiv)
+    }
+
+    ## sex- but not age-specific - refer existing move() separately for each sex
+    if( (isSexSpecific) & (! isAgeSpecific) ) {
+        indiv_M <- indiv[ indiv$Sex == "M",]
+        indiv_F <- indiv[ indiv$Sex == "F",]
+        indiv_M <- fastermove( indiv_M, moveMat = moveMat_M)
+        indiv_F <- fastermove( indiv_F, moveMat = moveMat_F)
+        indiv2 <- rbind( indiv_M, indiv_F)
+        indiv2 <- indiv2[ match(indiv$Me, indiv2$Me),] ## make order match the original
+        return(indiv2)
+    }
+
+    ## define a function to do age-specific movement; can be iterated over for
+    ## the two sexes, as for the sex-specific case
+    ASmove <- function( indiv, moveMat) {
+        ## split the indiv into age-classes
+        IBA <- list( ) ## IBA: indiv by age
+        for( i in 0:max( indiv$AgeLast) ) {
+            IBA[[i+1]] <- indiv[ indiv$AgeLast == i,] ## remember age is 0-indexed,
+        } ## whereas list positions are 1-indexed, so age _a_ is IBA[[a - 1]]
+
+        ## apply existing move() to each age-class separately, each referring to
+        ## a different aisle of moveMat. Remember that moveMat aisles must start at
+        ## age zero in aisle 1, so moveMat[,,1] is the moveMat for age 0
+        mIBA <- list( ) ## mIBA: moved IBA
+        for( i in 0:max( indiv$AgeLast) ) {
+            mIBA[[i+1]] <- fastermove( IBA[[i+1]], moveMat = moveMat[,,i+1])
+        } ## remember age is 0-indexed, whereas list positions are 1-indexed,
+        ## so age _a_ is IBA[[a - 1]]
+
+        ## stick everything back together; return
+        outs <- do.call( "rbind", mIBA)
+        return(outs)
+    }
+
+    ## age- but not sex-specific
+    if( (! isSexSpecific) & (isAgeSpecific) ) {
+        indiv2 <- ASmove( indiv = indiv, moveMat = moveMat)
+        indiv2 <- indiv2[ match(indiv$Me, indiv2$Me),] ## make order match the original
+        return(indiv2)
+    }
+
+    ## age- and sex-specific
+    if( (isSexSpecific) & (isAgeSpecific) ) {
+        indiv_M <- indiv[ indiv$Sex == "M",]
+        indiv_F <- indiv[ indiv$Sex == "F",]
+        indiv_M <- ASmove( indiv_M, moveMat = moveMat_M)
+        indiv_F <- ASmove( indiv_F, moveMat = moveMat_F)
+        indiv2 <- rbind( indiv_M, indiv_F)
+        indiv2 <- indiv2[ match(indiv$Me, indiv2$Me),] ## make order match the original
+        return(indiv2)
+    }
+}
+
 #' Markovian movement between breeding stocks
+#'
+#' Now superseded by new 'move'. New 'move' will accept the same
+#' inputs for backwards-compatability, but is faster and can handle
+#' age- and/or sex-specific movement patterns.
 #'
 #' @return a pop-by-8 character matrix, defined in the [makeFounders]
 #' documentation.
@@ -96,7 +303,7 @@ makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4), 
 #' Cannot be blank.
 #' @export
 
-move <- function(indiv = makeFounders(), moveMat) {
+oldmove <- function(indiv = makeFounders(), moveMat) {
     if(nrow(moveMat) != ncol(moveMat)) warning("movement matrix is not square")
     if(nrow(moveMat) > length(unique(indiv[,7]))) warning("One or more stocks start empty")
 

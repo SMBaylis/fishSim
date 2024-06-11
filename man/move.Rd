@@ -2,21 +2,117 @@
 % Please edit documentation in R/fishSim_dev.R
 \name{move}
 \alias{move}
-\title{Markovian movement between breeding stocks}
+\title{Age- and/or sex-specific Markovian movement between breeding stocks}
 \usage{
-move(indiv = makeFounders(), moveMat)
+move(
+  indiv = makeFounders(),
+  moveMat = NULL,
+  moveMat_M = NULL,
+  moveMat_F = NULL
+)
 }
 \arguments{
-\item{indiv}{Individual matrix, e.g. from \code{makeFounders()}. Can also be a non-founder matrix.}
+\item{indiv}{Individual matrix, e.g. from \code{makeFounders()}. Can
+also be a non-founder matrix.}
 
-\item{moveMat}{An s-by-s matrix describing the probability of moving from
-each stock to each other stock, with 'from' by row and 'to' by column.
-Cannot be blank.}
+\item{moveMat}{A matrix describing the probability of moving from
+each stock to each other stock, with 'from' by row, 'to' by
+column, and optionally, 'age' by aisle}
+
+\item{moveMat_M}{only used if movement is sex-specific. See
+moveMat, but this one specifies movement for males}
+
+\item{moveMat_F}{see moveMat_M, but this one specifies movement for
+females}
 }
 \value{
 a pop-by-8 character matrix, defined in the \link{makeFounders}
 documentation.
 }
 \description{
-Markovian movement between breeding stocks
+Performs movement of animals between stocks by specified
+probabilities of movement to-and-from each stock pair, optionally
+differing across age and sex. Replaces old move() - captures the
+same functionality and adds more, and is (much) quicker.
+}
+\examples{
+## scenario 1: movement is not age- or sex-specific:
+stocks <- c(0.3,0.3,0.4)  ## matches defaults in makeFounders
+admix.m <- matrix(NA, nrow = length(stocks), ncol = length(stocks))
+for (i in 1:nrow(admix.m)) {
+    admix.m[i,] <- stocks*stocks[i]
+}  ## probability of moving into a stock is proportional to the default size of that stock
+   ## from makeFounders.
+indiv <- makeFounders()
+indiv <- move( indiv, moveMat = admix.m)
+
+## Scenario 2: movement is sex-specific but not age-specific.
+## Make 90\% of the males move to stock 3, and 90\% of the females move
+## to stock 1
+moveMat_M <- matrix(c(rep( 0.05, 6), rep( 0.9, 3)), nrow = 3, ncol = 3)
+moveMat_F <- matrix(c(rep( 0.9, 3), rep( 0.05, 6)), nrow = 3, ncol = 3)
+indiv <- makeFounders()
+table(indiv$Stock[ indiv$Sex == "M"]) ## where are the males before moving?
+table(indiv$Stock[ indiv$Sex == "F"]) ## where are the females before moving?
+indiv <- move( indiv, moveMat_M = moveMat_M, moveMat_F = moveMat_F)
+table(indiv$Stock[ indiv$Sex == "M"]) ## where are the males after moving?
+table(indiv$Stock[ indiv$Sex == "F"]) ## where are the females after moving?
+
+## Scenario 3: movement is age-specific but not sex-specific. There are 6 ages (0 -> 5)
+## Make animals more sedentary as they age: age 0 everyone changes stock; age 5 no-one does
+moveMat <- array( data = c(0, rep(0.5,3), 0,rep(0.5,3), 0, ## age 0
+                           0.1, rep(0.45,3), 0.1,rep(0.45,3), 0.1, ## age 1
+                           0.2, rep(0.4,3), 0.2,rep(0.4,3), 0.2,   ## age 2
+                           0.4, rep(0.3,3), 0.4, rep(0.3,3), 0.4,  ## age 3
+                           0.9, rep(0.05, 3), 0.9, rep(0.05, 3), 0.9, ## age 4
+                           1, rep(0,3), 1, rep(0,3), 1), ## age 5
+                   dim = c(3,3,6)) ## 3 'froms', 3 'tos', and 6 ages
+## this array setup is that Toby was gonna show me how to automate with formulas, I think?
+indiv <- makeFounders( minAge = 0, maxAge = 5, survCurv = c(1, 0.6^(1:5)))
+indiv2 <- move( indiv, moveMat = moveMat)
+oldstock <- indiv$Stock
+newstock <- indiv2$Stock
+## what's the oldstock -> newstock pattern for 0 year-olds?
+table( paste( oldstock, newstock)[ indiv$Age == 0])
+any( oldstock[ indiv$Age==0] == newstock[ indiv$Age==0])
+ note: for 0 year-olds, no records where oldstock == newstock
+
+## what's the oldstock -> newstock pattern for 5 year-olds?
+table( paste( oldstock, newstock)[ indiv$Age == 5])
+all( oldstock[ indiv$Age==5] == newstock[ indiv$Age==5])
+ note: for 5 year-olds, all records are oldstock == newstock
+
+## Scenario 4: movement is both age- and sex-specific
+## Make males sedentary except at age 1, and females randomise
+## location at all ages.
+moveMat_M <- array( data = c(1, rep(0,3), 1,rep(0,3), 1, ## age 0
+                           rep(c(0.09,0.09,0.12), 2), 0.12, 0.12, 0.16, ## age 1
+                           rep(c( 1, rep(0,3), 1,rep(0,3), 1), 4)),  ## age 2 - 5
+                   dim = c(3,3,6)) ## 3 'froms', 3 'tos', and 6 ages
+moveMat_F <- array( data = rep( c(rep(c(0.09,0.09,0.12), 2), 0.12, 0.12, 0.16), 6), ## all ages
+                   dim = c(3,3,6)) ## 3 'froms', 3 'tos', and 6 ages
+moveMat_M ## look at male moveMat
+moveMat_F ## look at female moveMat
+indiv <- makeFounders( minAge = 0, maxAge = 5, survCurv = c(1, 0.6^(1:5)))
+indiv2 <- move( indiv, moveMat_M = moveMat_M, moveMat_F = moveMat_F)
+oldstock <- indiv$Stock
+newstock <- indiv2$Stock
+## now, females of all ages should have moved with probability proportional
+## to the starting size of the stock, and males of all ages other than 1 should
+## have stayed put.
+## Look at males:
+table( paste( oldstock, newstock)[ indiv$Age == 0 & indiv$Sex == "M"])
+## zero year-old males all stayed put
+table( paste( oldstock, newstock)[ indiv$Age == 1 & indiv$Sex == "M"])
+## one year-old males moved around randomly
+table( paste( oldstock, newstock)[ indiv$Age == 2 & indiv$Sex == "M"])
+## two year-old males all stayed put
+
+## Look at females:
+table( paste( oldstock, newstock)[ indiv$Age == 0 & indiv$Sex == "F"])
+## zero year-old females moved around randomly
+table( paste( oldstock, newstock)[ indiv$Age == 1 & indiv$Sex == "F"])
+## one year-old females moved around randomly
+table( paste( oldstock, newstock)[ indiv$Age == 2 & indiv$Sex == "F"])
+## one year-old females moved around randomly
 }
