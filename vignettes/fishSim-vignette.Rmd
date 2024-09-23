@@ -568,7 +568,6 @@ for (y in 1:20) {
 
     indiv <- birthdays(indiv)
 }
-
 ```
 
 

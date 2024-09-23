@@ -47,7 +47,7 @@
 #' @export
 
 makeFounders <- function(pop = 1000, osr = c(0.5,0.5), stocks = c(0.3,0.3,0.4), minAge = 1,
-                         maxAge = 20, survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))) {
+                         maxAge = 20, survCurv = 0.7^(minAge:maxAge)/sum(0.7^(minAge:maxAge))) {
 
     if(sum(osr) != 1) warning("osr does not sum to 1")
     if(sum(stocks) != 1) warning("stocks do not sum to 1")
@@ -252,7 +252,7 @@ move <- function(indiv = makeFounders(), moveMat = NULL, moveMat_M = NULL, moveM
     ASmove <- function( indiv, moveMat) {
         ## split the indiv into age-classes
         IBA <- list( ) ## IBA: indiv by age
-        for( i in 0:max( indiv$AgeLast) ) {
+        for( i in min(indiv$AgeLast):max( indiv$AgeLast) ) {
             IBA[[i+1]] <- indiv[ indiv$AgeLast == i,] ## remember age is 0-indexed,
         } ## whereas list positions are 1-indexed, so age _a_ is IBA[[a - 1]]
 
@@ -260,7 +260,7 @@ move <- function(indiv = makeFounders(), moveMat = NULL, moveMat_M = NULL, moveM
         ## a different aisle of moveMat. Remember that moveMat aisles must start at
         ## age zero in aisle 1, so moveMat[,,1] is the moveMat for age 0
         mIBA <- list( ) ## mIBA: moved IBA
-        for( i in 0:max( indiv$AgeLast) ) {
+        for( i in min(indiv$AgeLast):max( indiv$AgeLast) ) {
             mIBA[[i+1]] <- fastermove( IBA[[i+1]], moveMat = moveMat[,,i+1])
         } ## remember age is 0-indexed, whereas list positions are 1-indexed,
         ## so age _a_ is IBA[[a - 1]]
@@ -436,7 +436,7 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
             drawFather <- fathersInStock[sample(nrow(fathersInStock), size = 1, replace = FALSE),]
             if(drawMother[1,8] >= firstBreed & drawFather[1,8] >= firstBreed) {
                 if(type == "flat") {
-                    n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## age-dependent fecundity here?
+                    n.sprogs <- rTruncPoisson(n = 1, T = batchSize) ## original; buggy?
                 } else if (type == "age") {
                     n.sprogs <- rpois(n = 1,
                                            lambda = min(c(fecundityCurve[drawFather[1,8]+1],
