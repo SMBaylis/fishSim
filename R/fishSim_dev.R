@@ -476,13 +476,13 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
             }
         }
         if(exhaustMothers == TRUE & n.sprogs > 0) {
-            mothers <- mothers[mothers[,1] != drawMother[1] , , drop = FALSE]
+            mothers <- mothers[mothers[,1] != drawMother[,1] , , drop = FALSE]
         } ## remove exhausted mother from potential mothers.
         if(exhaustFathers == TRUE & n.sprogs > 0) {
-            fathers <- fathers[fathers[,1] != drawFather[1] , , drop = FALSE]
+            fathers <- fathers[fathers[,1] != drawFather[,1] , , drop = FALSE]
         } ## remove exhausted father from potential fathers.
         ticker <- ticker+n.sprogs
-    }
+    } ## end while
 
     ## if there are more columns in indiv than in sprog.m, add blank
     ## columns with the same names to sprog.m before pasting:
@@ -493,8 +493,6 @@ mate <- function(indiv = makeFounders(), fecundity = 0.2, batchSize = 0.5,
 
     indiv <- rbind(indiv, sprog.m)
     return(indiv)
-
-
 }
 
 

@@ -10,7 +10,7 @@ makeFounders(
   stocks = c(0.3, 0.3, 0.4),
   minAge = 1,
   maxAge = 20,
-  survCurv = 0.7^(1:maxAge)/sum(0.7^(1:maxAge))
+  survCurv = 0.7^(minAge:maxAge)/sum(0.7^(minAge:maxAge))
 )
 }
 \arguments{
