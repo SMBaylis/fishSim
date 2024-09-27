@@ -298,7 +298,7 @@ expect_false( any ( c(0,1) %in% parents$AgeLast))
 indiv <- makeFounders( stocks = c(1), maxAge = 5)
 ## maturityCurve for ages from 0:5
 maturityCurve <- c(0,0,1,1,1,1)
-indiv2 <- altMate( indiv, year = 999, type = "age", firstBreed = 2, maturityCurve = maturityCurve)
+indiv2 <- altMate( indiv, year = 999, type = "age", maturityCurve = maturityCurve)
 ## should have parents of all ages from 2 -> 5
 parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
 expect_true( all ( c(2,3,4,5) %in% parents$AgeLast))
@@ -308,7 +308,7 @@ expect_false( any ( c(0,1) %in% parents$AgeLast))
 indiv <- makeFounders( stocks = c(1), maxAge = 5, minAge = 0)
 ## maturityCurve for ages from 0:5
 maturityCurve <- c(0,0,1,1,1,1)
-indiv2 <- altMate( indiv, year = 999, type = "age", firstBreed = 2, maturityCurve = maturityCurve)
+indiv2 <- altMate( indiv, year = 999, type = "age", maturityCurve = maturityCurve)
 ## should have parents of all ages from 2 -> 5
 parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
 expect_true( all ( c(2,3,4,5) %in% parents$AgeLast))
@@ -523,150 +523,174 @@ expect_true( all( aliveS3$AgeLast %in% c(1, 3, 5)))
 ## 4: birthdays
 
 ### dead animals don't age
+indiv <- makeFounders( maxAge = 6, minAge = 0)
+indiv2 <- mort(indiv, year = 999, type = "flat", mortRate = 0.4)
+indiv3 <- birthdays( indiv2)
+isDead <- ! is.na(indiv2$DeathY)
+
+expect_true( all( indiv3$AgeLast[ isDead] == indiv2$AgeLast[ isDead]))
+
+### all alive animals _do_ age
+expect_true( all( indiv3$AgeLast[ !isDead] == (indiv2$AgeLast[ !isDead] +1) ))
 
 
-## check_growthrates and PoNG
 
-### forcing Y1 to 1 gives a greater estimate than forcing Y1 to 0.5
+## 5: check_growthrates
+
+### forcing Y1 to 1 gives a lesser estimate than forcing Y1 to 0.5
+unforced <- check_growthrate( batchSize = 2, mortRate = 0.5, forceY1 = 0.5)
+forced <- check_growthrate( batchSize = 2, mortRate = 0.5, forceY1 = 1)
+expect_true( forced < unforced)
 
 ### increasing batchSize gives a higher estimate
+smallbatch <- check_growthrate( batchSize = 1, mortRate = 0.5)
+largebatch <- check_growthrate( batchSize = 2, mortRate = 0.5)
+expect_true( largebatch > smallbatch)
 
 ### shifting maturityCurve earlier gives a greater estimate
+bloomLate <- c(0,0,0,0,.5,1,1) ## 50% maturity at age 4; full maturity at 5+
+bloomEarly <- c(0,0,.5,1,1,1,1) ## 50% maturity at age 2; full maturity at 3+
+
+lateMat <- check_growthrate( batchSize = 1, mortRate = 0.2, mateType = "age",
+                            maturityCurve = bloomLate)
+earlyMat <- check_growthrate( batchSize = 1, mortRate = 0.2, mateType = "age",
+                             maturityCurve = bloomEarly)
+expect_true( earlyMat > lateMat)
 
 ### shifting mortRate higher gives a lower estimate
+lomort <- check_growthrate( batchSize = 2, mortRate = 0.1)
+himort <- check_growthrate( batchSize = 2, mortRate = 0.4)
+expect_true( lomort > himort)
 
-### setting mortRate to 1 gives a growth rate of -Inf (or something equally sensible)
+### setting mortRate to 1 gives a growth rate of 0
+allmort <- check_growthrate( batchSize = 2, mortRate = 1)
+expect_true( allmort == 0)
 
-### setting mortRate to 0 gives growthRate == fecundity, or similar
+### setting mortRate to 0 gives growthRate == fecundity
+nomort <- check_growthrate( batchSize = 2, mortRate = 0)
+nomort ## is 1.618 (AKA the bloody Golden Ratio).
+## turns out that my instinct was true for ?continuous-time
+## (i.e., zero year-olds are included in the breeders)
+allBreedNoMort <- check_growthrate( batchSize = 2, mortRate = 0, firstBreed = 0)
+expect_true( round( allBreedNoMort, digits = 2) == 2)
 
 ### setting osr to more-female gives higher growth rates
+manyfem <- check_growthrate( batchSize = 2, mortRate = 0.3, osr = c(0.2, 0.8))
+fewfem <- check_growthrate( batchSize = 2, mortRate = 0.3, osr = c(0.8, 0.2))
+expect_true( manyfem > fewfem)
 
 ### reducing maxClutch reduces growthrate
+smallClutch <- check_growthrate( batchSize = 2, mortRate = 0.3, maxClutch = 3)
+largeClutch <- check_growthrate( batchSize = 2, mortRate = 0.3, maxClutch = 6)
+expect_true( largeClutch > smallClutch)
 
-### check_growthrates is within 15% of real growthrate if:
+## 6: PoNG
 
+### setting y1 survival to the value suggested by PoNG really does
+### result in near-zero population growth
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-check_growthrate(mateType = "flat", mortType = "flat",
-                 batchSize = 0.9, firstBreed = 2, mortRate = 0.2)
-
-## with the current settings, we expect our population to grow by about 1.8% annually.
-
-PoNG(mateType = "flat", mortType = "flat", batchSize = 0.9, firstBreed = 2,
-     mortRate = 0.2)
-
-## this is the 'basic scenario' from the vignette. indiv is experiencing population
-## growth (10x over 60 years), but PoNG suggests it shouldn't.
+### ... with flat breeding and...
+### ... flat mortality
+batchSize = 2
+mortRate = 0.3
+ng <- PoNG( mateType = "flat", mortType = "flat", batchSize = batchSize,
+           mortRate = mortRate)
+## quick loop to test
 indiv <- makeFounders(stocks = c(1))
-ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality is 0.305 for first-years,
-## 0.2 for all older age-classes.
-
-for (y in 1:60) {
-    indiv <- altMate(indiv, firstBreed = 2, batchSize = 0.9, year = y) ## y for year
-    indiv <- mort(indiv, year = y, type = "age", ageMort = ageMort)    ## age-specific mort
+for( y in 1:10) {
+    indiv <- altMate( indiv, batchSize = batchSize, type = "flat")
+    indiv <- mort( indiv, year = y, type = "age", ageMort = c(ng, rep(mortRate, 99)))
     indiv <- birthdays(indiv)
 }
-tail(indiv) ## a population with 60 years of births, deaths, and birthdays
-nrow(indiv[is.na(indiv$DeathY),]) ## the currently-alive population size. Note that population
-## growth only *averages* zero, and variability occurs!
+outsize <- nrow(indiv[ is.na(indiv$DeathY),] )
+outsize
+expect_true( (800 < outsize) & 1200 > outsize)
 
-## first, check whether the loop as-written obeys the rules of check_growthrate and PoNG
-## uses altMate, mort, and birthdays.
-## mateType and mortType are 'flat'
-mtrace(check_growthrate)
-
-
-
-
-
-
-
-
-
-
-
-## this is a script file for exploring the basic properties of Leslie matrices.
-## Because I don't currently know how they work.
-
-## Coding up the American Bison example
-
-mat <- matrix(data = c(0,0,0.42,0.60,0,0,0,0.75,0.8120), nrow = 3, ncol = 3, byrow = TRUE)
-              ## gives near-stable pop size.
-mat <- matrix(data = c(0,0,1.1,0.90,0,0,0,0.90,0.12), nrow = 3, ncol = 3, byrow = TRUE)
-              ## delta-pop is 1.066 per time-step. See eigen(mat)
-pop <- c(5000,0,0)  ## initialise population here
-## ordered: calves, yearlings, adults
-
-output <- matrix(data = NA, nrow = 201, ncol = 3)
-output[1, ] <- pop
-
-for (i in 2:201) {
-    output[i, 1] <- floor(output[(i-1), 3] * mat[1,3])
-    output[i, 2] <- floor(output[(i-1), 1] * mat[2,1])
-    output[i, 3] <- floor((output[(i-1), 2] * mat[3,2]) + (output[(i-1), 3] * mat[3,3]))
+### ... age-specific mortality
+batchSize = 2
+ageMort = c(0.5, rep(0.3, 5), rep(0.4, 5), rep(0.5, 5)) ## senescence and immaturity
+ng <- PoNG( mateType = "flat", mortType = "age", batchSize = batchSize,
+           ageMort = ageMort)
+## quick loop to test
+indiv <- makeFounders(stocks = c(1))
+for( y in 1:10) {
+    indiv <- altMate( indiv, batchSize = batchSize, type = "flat")
+    indiv <- mort( indiv, year = y, type = "age", ageMort = c(ng, ageMort[-1]))
+    indiv <- birthdays(indiv)
 }
+outsize <- nrow(indiv[ is.na(indiv$DeathY),] )
+expect_true( (800 < outsize) & 1200 > outsize)
 
-plot(output[,1], type = "l", col = "blue", ylim = c(min(output), max(output)),
-     ylab = "N individuals", xlab = "Time") ## calves
-lines(output[,2], col = "purple")
-lines(output[,3], col = "red")
-legend(x = 1, y = max(output), legend = c("adults", "yearlings", "calves"),
-       lty = 1, col = c("red", "purple", "blue"))
-
-## ...and, the pigeon example.
-
-mat <- matrix(data = c(0,3.5,1.5,0.5,
-                       0.4,0,0,0,
-                       0,0.5,0,0,
-                       0,0,0.3,0,
-                       0,0,0,0), nrow = 5, ncol = 4, byrow = TRUE)
-pop <- c(2500,1000,300,150)
-
-niter = 30
-output <- matrix(data = NA, nrow = niter+1, ncol = 4)
-output[1,] <- pop
-
-for(i in 2:nrow(output)) {
-    output[i,1] <- floor(output[(i-1), 2]*mat[1,2]) + floor(output[(i-1), 3]*mat[1,3]) +
-                   floor(output[(i-1), 4]*mat[1,4])
-    output[i,2] <- floor(output[(i-1), 1] * mat[2,1])
-    output[i,3] <- floor(output[(i-1), 2] * mat[3,2])
-    output[i,4] <- floor(output[(i-1), 3] * mat[4,3]) ## 100% terminal mortality, so no loop.
+### ... stock-specific mortality
+batchSize = 2
+stockMort = c(0.3, 0.4, 0.2)
+ng <- PoNG( mateType = "flat", mortType = "stock", batchSize = batchSize,
+           stockMort = stockMort)
+ng <- ng ## no $root here, because PoNG only returns the values
+## quick loop to test
+indiv <- makeFounders(stocks = c(1))
+ageStockMort <- matrix(data = c(ng, rep(stockMort,30)), byrow = TRUE, ncol = length(ng))
+for( y in 1:10) {
+    indiv <- altMate( indiv, batchSize = batchSize, type = "flat")
+    indiv <- mort( indiv, year = y, type = "ageStock", ageStockMort = ageStockMort)
+    indiv <- birthdays(indiv)
 }
+outsize <- nrow(indiv[ is.na(indiv$DeathY),] )
+expect_true( (800 < outsize) & 1200 > outsize)
 
-plot(output[,1], type = "l", col = "blue", ylim = c(min(output), max(output)),
-     ylab = "N individuals", xlab = "Time") ## calves
-lines(output[,2], col = "purple")
-lines(output[,3], col = "red")
+### ... age/stock specific mortality
+batchSize = 2
+ageStockMort <- matrix(data = c(0.3,0.4,0.2,0.35,0.4,0.3,0.38,0.4,0.35,0.4,0.4,0.4, rep(0.4,78)),
+                       byrow = TRUE, ncol = 3)
+ng <- PoNG( mateType = "flat", mortType = "ageStock", batchSize = batchSize,
+           ageStockMort = ageStockMort)
+ng <- ng ## no $root here, because PoNG only returns the values
+## quick loop to test
+indiv <- makeFounders(stocks = c(0.3, 0.3, 0.4))
+ageStockMort <- as.matrix(rbind(ng, ageStockMort[-1,]))
+for( y in 1:10) {
+    indiv <- altMate( indiv, batchSize = batchSize, type = "flat")
+    indiv <- mort( indiv, year = y, type = "ageStock", ageStockMort = ageStockMort)
+    indiv <- birthdays(indiv)
+}
+outsize <- nrow(indiv[ is.na(indiv$DeathY),] )
+expect_true( (800 < outsize) & 1200 > outsize)
+
+### ... with age-specific breeding and...
+### ... flat mortality
+batchSize = 2
+mortRate = 0.3
+maturityCurve = c(0,0,0.25,0.75, rep(1, 30))
+
+ng <- PoNG( mateType = "age", mortType = "flat", batchSize = batchSize,
+           mortRate = mortRate, maturityCurve = maturityCurve)
+## quick loop to test
+indiv <- makeFounders(stocks = c(1))
+for( y in 1:10) {
+    indiv <- altMate( indiv, batchSize = batchSize, type = "age",
+                     maturityCurve = c(maturityCurve))
+    indiv <- mort( indiv, year = y, type = "age", ageMort = c(ng, rep(mortRate, 30)))
+    indiv <- birthdays(indiv)
+}
+outsize <- nrow(indiv[ is.na(indiv$DeathY),] )
+expect_true( (800 < outsize) & 1200 > outsize)
+
+### ... with age- and sex-specific breeding and...
+### ... flat mortality
+batchSize = 2
+mortRate = 0.3
+maleCurve = c(0,0,0.25,0.75, rep(1, 30)) ## for males
+femaleCurve = c(0,0,0.5,0.8,rep(1, 30)) ## for females
+
+ng <- PoNG( mateType = "ageSex", mortType = "flat", batchSize = batchSize,
+           mortRate = mortRate, maturityCurve = maturityCurve, femaleCurve = femaleCurve)
+## quick loop to test
+indiv <- makeFounders(stocks = c(1))
+for( y in 1:10) {
+    indiv <- altMate( indiv, batchSize = batchSize, type = "ageSex",
+                     maleCurve = maleCurve, femaleCurve = femaleCurve)
+    indiv <- mort( indiv, year = y, type = "age", ageMort = c(ng, rep(mortRate, 30)))
+    indiv <- birthdays(indiv)
+}
+outsize <- nrow(indiv[ is.na(indiv$DeathY),] )
+expect_true( (800 < outsize) & 1200 > outsize)

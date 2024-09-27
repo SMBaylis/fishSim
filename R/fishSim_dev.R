@@ -1103,7 +1103,7 @@ remove_dead <- function(indiv = mort() ) {
 #' be provided. If `ageStock`, `ageStockMort` must be provided. Defaults to
 #' `flat`.
 #' @param batchSize the value of `batchSize` used in the [altMate()] call. Cannot be blank.
-#' @param firstBreed the value of `firstBreed` used in the [altMate()] call. Defaults to 0.
+#' @param firstBreed the value of `firstBreed` used in the [altMate()] call. Defaults to 1.
 #' @param maxClutch the value of `maxClutch` used in the [altMate()] call. Defaults to Inf. If non-Inf,
 #'                  _effective_ batchSize is estimated as the mean of 1000000 draws from the
 #'                  distribution of batchSize, subsetted to those <= maxAge.
@@ -1140,8 +1140,12 @@ remove_dead <- function(indiv = mort() ) {
 #' @export
 
 check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat", batchSize,
-                             firstBreed = 0, maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve,
+                             firstBreed = 1, maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve,
                              femaleCurve, maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
+
+    ## a Leslie matrix has a first row mat[1,] holding relative fecundities of animals
+    ## aged _j_. Each subsequent row holds the transition probability of an animal
+    ## from age _j-2_ to age _j-1_.
 
     if(!(mateType %in% c("flat", "age", "ageSex"))) {
         stop("'mateType' must be one of 'flat', 'age', or 'ageSex'.")
@@ -1162,7 +1166,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
     if(mateType == "flat") {
         if(mortType == "flat") {
             mat <- matrix(data = 0, nrow = length(0:firstBreed)+1, ncol = length(0:firstBreed)+1)
-            mat[1,((2+firstBreed):ncol(mat))] <- batchSize*osr[2]  ##for all mateType == "flat"
+            mat[1,((firstBreed+1):ncol(mat))] <- batchSize*osr[2]  ##for all mateType == "flat"
             for(i in 1:ncol(mat) ) {
                 if((i+1) <= nrow(mat)) mat[i+1,i] <- 1-mortRate
             }
@@ -1170,7 +1174,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
             ## build a Leslie matrix
         } else if(mortType == "age") {
             mat <- matrix(data = 0, nrow = length(ageMort)+1, ncol = length(ageMort)+1)
-            mat[1,((2+firstBreed):ncol(mat))] <- batchSize*osr[2]  ##for all mateType == "flat"
+            mat[1,((firstBreed+1):ncol(mat))] <- batchSize*osr[2]  ##for all mateType == "flat"
             for(i in 1:ncol(mat) ) {
                 if((i+1) <= nrow(mat)) mat[i+1, i] <- 1-ageMort[i]
             }
@@ -1180,7 +1184,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
             mat <- matrix(data = 0, nrow = length(0:firstBreed)+1, ncol = length(0:firstBreed)+1)
             mat.l <- lapply(seq_len(length(stockMort)), function(X) mat) ## list of empty 'mat'
             for(s in 1:length(stockMort)) {
-                mat.l[[s]][1,((2+firstBreed):ncol(mat.l[[s]]))] <- batchSize*osr[2]
+                mat.l[[s]][1,((1+firstBreed):ncol(mat.l[[s]]))] <- batchSize*osr[2]
                 for( i in 1:ncol(mat.l[[s]]) ) {
                     if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-stockMort[s]
                 }
@@ -1192,7 +1196,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
                           ncol = length(ageStockMort[,1])+1)
             mat.l <- lapply(seq_len(ncol(ageStockMort)), function(X) mat) ## list of empty 'mat'
             for(s in 1:ncol(ageStockMort)) {
-                mat.l[[s]][1,((2+firstBreed):ncol(mat.l[[s]]))] <- batchSize*osr[2]
+                mat.l[[s]][1,((1+firstBreed):ncol(mat.l[[s]]))] <- batchSize*osr[2]
                 for( i in 1:ncol(mat.l[[s]]) ) {
                     if((i+1) <= nrow(mat.l[[s]])) mat.l[[s]][i+1,i] <- 1-ageStockMort[i,s]
                 }
@@ -1201,7 +1205,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
             ## build a list of Leslie matrices
         }
     } else if( mateType == "age") {
-        if(firstBreed > 0) maturityCurve[1:(firstBreed-1)] <- 0 ## truncates maturity by firstBreed
+        if(firstBreed > 0) maturityCurve[1:(firstBreed+1)] <- 0 ## truncates maturity by firstBreed
         if(mortType == "flat") {
             mat <- matrix(data = 0, nrow = length(maturityCurve), ncol = length(maturityCurve))
             mat[1,] <- maturityCurve*batchSize*osr[2]
@@ -1318,7 +1322,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
     }  ## optionally forces year 1 mortality rate to a specific value.
 
     if(mortType %in% c("flat", "age")) {
-        return(eigen(mat)$values[1]) ## this is a numeric growth rate.
+        return( Re( eigen(mat)$values[1])) ## this is a numeric growth rate.
     }
     if(mortType %in% c("stock", "ageStock")) {
         outs <- c(rep(NA, length(mat.l)))
@@ -1360,7 +1364,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 #' @param batchSize the value of `batchSize` used in the [altMate()] call.
 #' Cannot be blank.
 #' @param firstBreed the value of `firstBreed` used in the [altMate()] call.
-#' Defaults to 0.
+#' Defaults to 1.
 #' @param maxClutch the value of `maxClutch` used in the [altMate()] call.
 #' Defaults to `Inf`. If non-`Inf`, _effective_ `batchSize` is estimated as the
 #' mean of 1000000 draws from the distribution of `batchSize`, subsetted to
@@ -1411,7 +1415,7 @@ check_growthrate <- function(forceY1 = NA, mateType = "flat", mortType = "flat",
 #'  ## note that only two of the stocks return a valid PoNG - with 0.5 mortality, stock 3 cannot
 #'  ## reach null growth with any first-year survival rate between 0 and 1.
 
-PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0,
+PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 1,
                  maxClutch = Inf, osr = c(0.5, 0.5), maturityCurve, femaleCurve,
                  maxAge = Inf, mortRate, ageMort, stockMort, ageStockMort) {
 
@@ -1441,7 +1445,7 @@ PoNG <- function(mateType = "flat", mortType = "flat", batchSize, firstBreed = 0
                                             stockMort = stockMort, ageStockMort = ageStockMort))-1},
                            interval = c(0,1), tol = 0.001)
             abline(v = PNG$root, lty = 2)
-            return(PNG) ## Point of No Growth
+            return(PNG$root) ## Point of No Growth
         }
     } else if (mortType %in% c("stock", "ageStock")) {
         if(mortType == "stock") {

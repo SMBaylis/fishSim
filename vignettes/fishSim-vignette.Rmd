@@ -231,7 +231,7 @@ check_growthrate(mateType = "flat", mortType = "flat",
 PoNG(mateType = "flat", mortType = "flat", batchSize = 0.9, firstBreed = 2,
      mortRate = 0.2)
 
-## if first-year mortality was about 0.305, rather than 0.2, our population
+## if first-year mortality was about 0.445, rather than 0.2, our population
 ## would have null growth. You can also read off a range of possible growth rates
 ## from the plot.
 ```
@@ -246,7 +246,7 @@ so that our population is unlikely to explode or become extinct.
 
 ```{r}
 indiv <- makeFounders(stocks = c(1))
-ageMort <- c(0.305, rep(0.2, 100)) ## age-specific mortality is 0.305 for first-years,
+ageMort <- c(0.445, rep(0.2, 100)) ## age-specific mortality is 0.445 for first-years,
 ## 0.2 for all older age-classes.
 
 for (y in 1:60) {

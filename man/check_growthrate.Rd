@@ -9,7 +9,7 @@ check_growthrate(
   mateType = "flat",
   mortType = "flat",
   batchSize,
-  firstBreed = 0,
+  firstBreed = 1,
   maxClutch = Inf,
   osr = c(0.5, 0.5),
   maturityCurve,
@@ -40,7 +40,7 @@ be provided. If \code{ageStock}, \code{ageStockMort} must be provided. Defaults 
 
 \item{batchSize}{the value of \code{batchSize} used in the \code{\link[=altMate]{altMate()}} call. Cannot be blank.}
 
-\item{firstBreed}{the value of \code{firstBreed} used in the \code{\link[=altMate]{altMate()}} call. Defaults to 0.}
+\item{firstBreed}{the value of \code{firstBreed} used in the \code{\link[=altMate]{altMate()}} call. Defaults to 1.}
 
 \item{maxClutch}{the value of \code{maxClutch} used in the \code{\link[=altMate]{altMate()}} call. Defaults to Inf. If non-Inf,
 \emph{effective} batchSize is estimated as the mean of 1000000 draws from the

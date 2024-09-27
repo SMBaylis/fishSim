@@ -8,7 +8,7 @@ PoNG(
   mateType = "flat",
   mortType = "flat",
   batchSize,
-  firstBreed = 0,
+  firstBreed = 1,
   maxClutch = Inf,
   osr = c(0.5, 0.5),
   maturityCurve,
@@ -36,7 +36,7 @@ be provided. If \code{ageStock}, \code{ageStockMort} must be provided. Defaults 
 Cannot be blank.}
 
 \item{firstBreed}{the value of \code{firstBreed} used in the \code{\link[=altMate]{altMate()}} call.
-Defaults to 0.}
+Defaults to 1.}
 
 \item{maxClutch}{the value of \code{maxClutch} used in the \code{\link[=altMate]{altMate()}} call.
 Defaults to \code{Inf}. If non-\code{Inf}, \emph{effective} \code{batchSize} is estimated as the
