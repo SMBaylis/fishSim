@@ -2276,6 +2276,61 @@ namedRelatives <- function(pairs) {
                       HTPs, FTPs, HCPs, FCPs, GHCPs, GFCPs, ORCs))
 }
 
+#' add mtDNA haplotypes to a completed simulation
+#'
+#' Adds a column of mtDNA haplotypes to the 'indiv' data of a
+#' completed simulation, given input mtDNA haplotypes and their
+#' frequencies at the time of the founder population. mtDNA haplotypes
+#' are inherited matrilineally (each animal gets its haplotype from
+#' its mother). Mutation is not handled, so mtDNA diversity will
+#' decrease through time via genetic drift, especially in small
+#' populations.
+#'
+#' @return a pop-by-9 character matrix, defined in the [makeFounders]
+#'     documentation, plus an extra column ('mtHaplo') holding each
+#'     animal's mtDNA haplotype.
+#' @param indiv Individual matrix, as from `makeFounders()`. Every
+#'     animal in indiv must either be a founder (see
+#'     `makeFounders()`), or be descended exclusively from founders.
+#' @param mtDNAfreqs a data.frame of mtDNA haplotypes ('haplos') in
+#'     the first column, and their frequencies ('freqs') in the
+#'     second.
+#' @export
+#' @examples
+#' ## set up a population with some founders and their offspring
+#' batchSize = 2
+#' mortRate = 0.5
+#' indiv <- makeFounders(stocks = c(1))
+#' for( y in 1:10) {
+#'     indiv <- altMate( indiv, batchSize = batchSize, type = "flat")
+#'     indiv <- mort( indiv, year = y, type = "flat", mortRate = mortRate)
+#'     indiv <- birthdays(indiv)
+#' }
+#' ## make haplotype frequencies
+#' haplos <- paste(expand.grid(LETTERS, LETTERS)[,1],expand.grid(LETTERS, LETTERS)[,2], sep = "")
+#' counts <- ceiling(rexp(length(haplos), rate = 0.2))
+#' freqs <- counts / sum(counts)
+#' mtDNAfreqs <- data.frame(haplos = haplos, freqs = freqs)
+#' ## give all animals mtDNA haplotypes consistent with their descent
+#' indiv_haplos <- addmtDNA(indiv, mtDNAfreqs)
+
+addmtDNA <- function(indiv = makeFounders(), mtDNAfreqs) {
+
+    whichfounders <- which( indiv$Dad == "founder")
+    indiv$mtHaplo <- NA
+    indiv$mtHaplo[ whichfounders] <- sample(mtDNAfreqs[,1], length(whichfounders),
+                                            replace = TRUE, prob = mtDNAfreqs[,2])
+    while( any( is.na(indiv$mtHaplo))) {
+        mothers <- indiv[ (!is.na(indiv$mtHaplo)) & (indiv$Sex == "F") ,]
+        whichNewOffspring <- which( (is.na(indiv$mtHaplo)) & (indiv$Mum %in% mothers$Me))
+        for( o in whichNewOffspring) {
+            indiv$mtHaplo[o] <- indiv$mtHaplo[ which(indiv$Me == indiv$Mum[o])]
+        }
+    }
+    return(indiv)
+}
+
+
 #' Quick lookup of CKMR-relevant relationships
 #'
 #' `quickin` performs quick lookup of the kinships directly relevant to
