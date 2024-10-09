@@ -676,7 +676,7 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
                            sep = ""))
             ## sprog.stock <- matrix(data = NA, nrow = 0, ncol = 9)
             sprog.stock <- makeFounders(pop = 0)
-        } else if(nrow(fathersInStock > 0)) {
+        } else if(nrow(fathersInStock) > 0) {
             ## sprog.stock <- matrix(data = NA, nrow = sum(clutchInStock), ncol = 9)
             n.sprogs <- sum(clutchInStock)
             sprog.stock <- data.frame(Me = character(n.sprogs), Sex = character(n.sprogs),
@@ -740,6 +740,254 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
 
     return(indiv)
 }
+
+
+#' mating between bonded pairs
+#'
+#' Returns a matrix with added newborns at age 0. This is the third
+#' mate method, and is similarly-structured to altMate, but with added
+#' features to handle male pair-bonds and divorce. The male pair-bond
+#' and divorce features replace single paternity and male exhaustion
+#' in `altMate`.
+#'
+#' Every female will attempt to breed. If her partner is still alive
+#' and in the same stock, she will remate with that partner unless
+#' they have divorced. If her partner is not alive, has moved to
+#' another stock, or the pair has divorced, she will select a new mate
+#' from the unmated males in her stock (if any).
+#'
+#' @param indiv A matrix of individuals, e.g., generated in
+#'     `makeFounders()` or output from `move()`
+#' @param batchSize Numeric, possibly vector. The mean number of
+#'     offspring produced per mature female if `fecundityDist =
+#'     "poisson"`; the value of T from a zero-truncated Poisson
+#'     distribution, if `fecundityDist = "truncPoisson"` (useful in
+#'     cases where the probability of no offspring is rolled into the
+#'     'maturity' parameter); the probability that a female will have
+#'     a (single) offspring, given that she is mature, if
+#'     `fecundityDist = "binomial"`. If `fecundityDist =
+#'     "multinomial"`, must be a vector of relative probability of
+#'     each number of offspring, from 0 to the maximum possible number
+#'     of offspring. Used for all maturity structures. Note that, if
+#'     run within a loop that goes `[move -> altMate -> mort ->
+#'     birthdays]`, 'produced' is not the same as 'enters age-class
+#'     1', as some individuals will die at age 0.
+#' @param fecundityDist One of "poisson", "truncPoisson", "binomial",
+#'     or "multinomial". Sets the distribution of the number of
+#'     offspring per mature female. Defaults to "poisson".
+#' @param osr Numeric vector with length two, `c(male, female)`,
+#'     giving the sex ratio at birth (recruitment). Used to assign
+#'     sexes to new offspring.
+#' @param year Intended to be used in a simulation loop - this will be
+#'     the iteration number, and holds the `birthyear` value to give
+#'     to new recruits.
+#' @param firstBreed Integer variable. The age at first breeding,
+#'     default 1.  The minimum age at which individuals can
+#'     breed. Applies to potential mothers and potential
+#'     fathers. `firstBreed`, `maturityCurve`, `maleCurve`, and
+#'     `femaleCurve` are all capable of specifying an age at first
+#'     breeding, and `firstBreed` takes precedence.
+#' @param type The type of maturity-age relationship to simulate. Must
+#'     be one of `"flat"`, `"age"`, or `"ageSex"`. If `"flat"`, the
+#'     probability of parenthood is the same for all age:sex
+#'     combinations above firstBreed. If `"age"`, the probability that
+#'     an individual is sexually mature is age-specific, set in
+#'     `maturityCurve`. If `"ageSex"`, the probability that an
+#'     individual is sexually mature is age- and sex-specific, set for
+#'     males in `maleCurve` and for females in `femaleCurve`.
+#' @param maxClutch Numeric value giving the maximum clutch / litter /
+#'     batch / whatever size.  Reduces larger clutches to this size,
+#'     for each breeding female.
+#' @param prDiv numeric between 0 and 1, giving the probability of
+#'     divorce for an established pair. Divorces are assumed to occur
+#'     'before' the mating season, so both members of a divorced pair
+#'     are available for mating again.
+#' @param maturityCurve Numeric vector describing the age-specific
+#'     probability of maturity curve. One value per age, over all ages
+#'     from `0:max(indiv[,8])`.  Used if `type = "age"`. Note that
+#'     `firstBreed` can interfere with `maturityCurve` by setting
+#'     maturities to zero for some age classes.  Recommended usage is
+#'     to set `firstBreed` to zero whenever `maturityCurve` is
+#'     specified.
+#' @param maleCurve Numeric vector describing age-specific probability
+#'     of maturity for males. One value per age, over all ages from
+#'     `0:max(indiv[,8])`. Used if `type = "ageSex"`.  Note that
+#'     `firstBreed` can interfere with `maleCurve` by setting
+#'     maturities to zero for some age classes. Recommended usage is
+#'     to set `firstBreed` to zero whenever `maleCurve` is specified.
+#' @param femaleCurve Numeric vector describing age-specific maturity
+#'     for females. One value per age, over all ages from
+#'     `0:max(indiv[,8])`. Used if `type = "ageSex"`.  Note that
+#'     `firstBreed` can interfere with `femaleCurve` by setting
+#'     maturities to zero for some age classes. Recommended usage is
+#'     to set `firstBreed` to zero whenever `femaleCurve` is
+#'     specified.
+#' @seealso [fishSim::altMate()]
+#' @export
+#' @examples
+#' batchSize = 2
+#' mortRate = 0.5
+#' indiv <- makeFounders(stocks = c(1))
+#' for( y in 1:10) {
+#'     indiv <- bondedMate( indiv, batchSize = batchSize, type = "flat", prDiv = 0.1)
+#'     indiv <- mort( indiv, year = y, type = "flat", mortRate = mortRate)
+#'     indiv <- birthdays(indiv)
+#' }
+
+bondedMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "poisson",
+                       osr = c(0.5,0.5), year = "-1", firstBreed = 1, type = "flat",
+                       maxClutch = Inf, prDiv = 0, maturityCurve,
+                       maleCurve, femaleCurve) {
+
+    if (!(type %in% c("flat", "age", "ageSex"))) {
+        stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
+    }
+    if (!(fecundityDist %in% c("poisson", "truncPoisson", "binomial"))) {
+        stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', or 'binomial'.")
+    }
+
+    mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
+    if(nrow(mothers) == 0) warning("There are no mature females in the population")
+    fathers <- subset(indiv, indiv[,2] == "M" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
+    if(nrow(fathers) == 0) warning("There are no mature males in the population")
+
+    getClutch <- function( fecundityDist, n, batchSize) {
+        if(fecundityDist == "poisson") {clutch <- rpois(n = n, lambda = batchSize)}
+        if(fecundityDist == "truncPoisson") {clutch <- rTruncPoisson(n = n, T=batchSize)}
+        if(fecundityDist == "binomial") {clutch <- rbinom(n, 1, prob = batchSize)}
+        if(fecundityDist == "multinomial") { clutch <- sample( 0:(length(batchSize)-1), size = n,
+                                                              replace = TRUE, prob = batchSize)
+        }
+        return( clutch)
+    }
+
+    if (type == "flat") {
+        clutch <- getClutch(fecundityDist = fecundityDist, n = nrow(mothers), batchSize = batchSize)
+
+        mothers <- subset(mothers, clutch > 0)  ## identify the mothers that truly breed,
+        clutch <- clutch[clutch>0]              ## how many offspring each produces,
+
+    } else if (type == "age") {
+        mothers <- mothers[runif(nrow(mothers)) < maturityCurve[mothers[,8]+1],
+                         , drop = FALSE] ## trims 'mothers' to those that pass a random
+        ## maturity test.
+        fathers <- fathers[runif(nrow(fathers)) < maturityCurve[fathers[,8]+1],
+                         , drop = FALSE] ## trims 'fathers' to those that pass a random
+        ## maturity test.
+
+        clutch <- getClutch(fecundityDist = fecundityDist, n = nrow(mothers), batchSize = batchSize)
+        mothers <- subset(mothers, clutch > 0) ## trims 'mothers' to those that truly breed
+        clutch <- clutch[clutch>0]
+
+    } else if (type == "ageSex") {
+
+        mothers <- mothers[runif(nrow(mothers)) < femaleCurve[mothers[,8]+1] , ,drop = FALSE]
+        ## trims 'mothers' to just those that pass a random maturity test.
+
+        fathers <- fathers[runif(nrow(fathers)) < maleCurve[fathers[,8]+1] , ,drop = FALSE]
+        ## trims 'fathers' to just those that pass a random maturity test.
+        clutch <- getClutch(fecundityDist = fecundityDist, n = nrow(mothers), batchSize = batchSize)
+
+        mothers <- subset(mothers, clutch > 0)
+        clutch <- clutch[clutch>0]
+    }
+
+    clutch[clutch > maxClutch] <- maxClutch ## delimits clutch sizes to not exceed maxClutch
+    sprog.m <- makeFounders(pop = 0) ## left empty if no-one breeds.
+
+    for (s in unique(mothers[,7])) { ## s for 'stock'.
+        mothersInStock <- mothers[mothers[,7] == s , , drop = FALSE]
+        clutchInStock <- clutch[mothers[,7] == s]
+        fathersInStock <- fathers[fathers[,7] == s , , drop = FALSE]
+        if(nrow(fathersInStock) == 0) {
+            warning (paste("There were no mature males in stock ",
+                           s, ", so ", nrow(mothersInStock),
+                           " mature females did not produce offspring",
+                           sep = ""))
+            sprog.stock <- makeFounders(pop = 0)
+        } else if(nrow(fathersInStock) > 0) {
+            ## check for divorces, find mates, etc.
+            ## make sure to update clutchInStock to only include those
+            ## from mothers able to mate this season
+            if( is.null(indiv$Mate)) {
+                indiv$Mate <- NA
+            }
+            ## if divorce rate is applied across both sexes of parent,
+            ## it can generate double-ups where both members of a pair
+            ## 'initiate' a divorce and prDiv becomes inaccurate
+            ## because of double-counting. So make divorces only
+            ## be initiated by females.
+            whichDivorcers <- runif(nrow(mothersInStock)) < prDiv
+            fathersInStock$Mate[ fathersInStock$Me %in% mothersInStock$Mate[whichDivorcers]] <- NA
+            mothersInStock$Mate[ whichDivorcers] <- NA
+
+            ## 'my mate has died or moved to another stock, or I moved to a different stock'
+            ## works b/c fathersInStock only includes living males
+            mothersInStock$Mate[ ! mothersInStock$Mate %in% fathersInStock$Me] <- NA
+
+            ## define unmatedFathersInStock
+            unmatedFathers <- fathersInStock[ !fathersInStock$Me %in% mothersInStock$Mate,]
+            ## randomise order of unmatedFathers so that mates can be just the first n
+            unmatedFathers <- unmatedFathers[ sample( 1:nrow(unmatedFathers), nrow(unmatedFathers)),]
+            ## ditto mothersInStock and the clutches associated with each mother
+            sortMothers <- sample( 1:nrow(mothersInStock), nrow(mothersInStock))
+            mothersInStock <- mothersInStock[ sortMothers,]
+            clutchInStock <- clutchInStock[ sortMothers]
+
+            ## find mates for unmated females
+            if( sum(is.na(mothersInStock$Mate)) <= nrow(unmatedFathers)) {
+                mothersInStock$Mate[ is.na(mothersInStock$Mate)] <- unmatedFathers$Me[ 1:nrow(mothersInStock[ is.na(mothersInStock$Mate),])]
+            } else {
+                mothersInStock$Mate[ is.na(mothersInStock$Mate)][1:nrow(unmatedFathers)] <- unmatedFathers$Me[ 1:nrow(unmatedFathers)]
+            }
+            ## record the mates in indiv
+            motherMatch <- match( mothersInStock$Me, indiv$Me)
+            indiv$Mate[ motherMatch] <- mothersInStock$Mate
+            fatherMatch <- match(mothersInStock$Mate, indiv$Me)
+            indiv$Mate[ fatherMatch] <- mothersInStock$Me
+
+            ## set n sprogs to zero for females that remain unmated
+            clutchInStock[ is.na(mothersInStock$Mate)] <- 0
+
+            ## generate offspring
+            n.sprogs <- sum(clutchInStock)
+            sprog.stock <- data.frame(Me = character(n.sprogs), Sex = character(n.sprogs),
+                                      Dad = character(n.sprogs), Mum = character(n.sprogs),
+                                      BirthY = integer(n.sprogs), DeathY = integer(n.sprogs),
+                                      Stock = integer(n.sprogs), AgeLast = integer(n.sprogs),
+                                      SampY = integer(n.sprogs), Mate = character(n.sprogs))
+
+            sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
+            sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
+            sprog.stock[,3] <- rep(mothersInStock$Mate, times = clutchInStock)
+            sprog.stock[,4] <- rep(mothersInStock$Me, times = clutchInStock)
+            sprog.stock[,5] <- c(rep(year, nrow(sprog.stock)))
+            sprog.stock[,6] <- c(rep(NA, nrow(sprog.stock)))
+            sprog.stock[,7] <- as.integer(rep(s), nrow(sprog.stock))
+            sprog.stock[,8] <- c(rep(0, nrow(sprog.stock)))
+            sprog.stock[,9] <- c(rep(NA, nrow(sprog.stock)))
+
+            sprog.m <- rbind(sprog.m, sprog.stock)
+        }
+    }
+
+    ## if there are more columns in indiv than in sprog.m, add blank
+    ## columns with the same names to sprog.m before pasting:
+    if( ncol(indiv) > ncol(sprog.m)) {
+        sprog.m[ ,10:ncol(indiv)] <- NA
+        colnames(sprog.m)[10:ncol(indiv)] <- colnames(indiv)[10:ncol(indiv)]
+    }
+    names(sprog.m) <- names(indiv)
+    indiv <- rbind(indiv, sprog.m)
+    return(indiv)
+}
+
+
+
+
+
+
+
 
 ###################################################################################################
 
@@ -2321,7 +2569,8 @@ addmtDNA <- function(indiv = makeFounders(), mtDNAfreqs) {
     indiv$mtHaplo[ whichfounders] <- sample(mtDNAfreqs[,1], length(whichfounders),
                                             replace = TRUE, prob = mtDNAfreqs[,2])
     while( any( is.na(indiv$mtHaplo))) {
-        mothers <- indiv[ (!is.na(indiv$mtHaplo)) & (indiv$Sex == "F") ,]
+        mothers <- indiv[ (!is.na(indiv$mtHaplo)) ,] ## present-day males might be mothers
+        ## too, 'cos of sex-switching
         whichNewOffspring <- which( (is.na(indiv$mtHaplo)) & (indiv$Mum %in% mothers$Me))
         for( o in whichNewOffspring) {
             indiv$mtHaplo[o] <- indiv$mtHaplo[ which(indiv$Me == indiv$Mum[o])]
