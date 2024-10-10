@@ -571,7 +571,7 @@ for (y in 1:20) {
 ```
 
 
-## A note on custom functions in fishSim
+## Custom functions in fishSim
 
 The objects used in `fishSim` are deliberately kept simple, to
 encourage hacking wherever hacking is useful. To that end, most
@@ -680,4 +680,4 @@ pairs <- findRelativesPar(indiv = indiv, sampled = TRUE, nCores = 2)
 namedRelatives(pairs)
 ```
 
-
+### Pair-bonded mating

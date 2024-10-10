@@ -319,7 +319,7 @@ indiv <- makeFounders( stocks = c(1), maxAge = 5)
 ## maleCurve and femaleCurve for ages from 0:5
 maleCurve <- c(0,0,1,1,1,1) ## males start breeding age 2
 femaleCurve <- c(0,0,0,1,1,1) ## females start breeding age 3
-indiv2 <- mate( indiv, year = 999, type = "ageSex", maleCurve = maleCurve, femaleCurve = femaleCurve)
+indiv2 <- altMate( indiv, year = 999, type = "ageSex", maleCurve = maleCurve, femaleCurve = femaleCurve)
 ## should have male parents of all ages from 2 -> 5
 dads <- indiv2[ indiv2$Me %in% c(indiv2$Dad),]
 ## should have female parents of all ages from 3 -> 5
@@ -428,7 +428,160 @@ for( r in 1:nrow( couples)) {
 expect_false( all( couples$MumsNMates == 1))
 
 
+## 2b: bondedMate
+### bondedMate is largely copied from altMate, so much of its testing is
+### the same
 
+### only animals above firstBreed breed
+indiv <- makeFounders()
+firstBreed <- 2
+indiv2 <- bondedMate( indiv, year = 1, firstBreed = firstBreed)
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all( parents$AgeLast >= firstBreed))
+
+### dead animals don't breed
+indiv <- makeFounders()
+indiv2 <- mort( indiv, year = 999, mortRate = 0.3, maxAge = 7)
+indiv3 <- bondedMate( indiv2, year = 999)
+parents <- indiv3$Me[ indiv3$Me %in% c(indiv3$Mum, indiv3$Dad)]
+deaders <- indiv3$Me[ !is.na( indiv3$DeathY)]
+
+expect_false( any( deaders %in% parents))
+expect_false( any( parents %in% deaders))
+
+### breeders include all eligible age-classes
+#### type = 'flat'
+indiv <- makeFounders( stocks = c(1), maxAge = 5)
+indiv2 <- bondedMate( indiv, year = 999, type = "flat", firstBreed = 2)
+## should have parents of all ages from 2 -> 5
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all ( c(2,3,4,5) %in% parents$AgeLast))
+expect_false( any ( c(0,1) %in% parents$AgeLast))
+
+## check that again with zero year-olds in indiv, in case of OBOEs
+indiv <- makeFounders( stocks = c(1), maxAge = 5, minAge = 0)
+indiv2 <- bondedMate( indiv, year = 999, type = "flat", firstBreed = 2)
+## should have parents of all ages from 2 -> 5
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all ( c(2,3,4,5) %in% parents$AgeLast))
+expect_false( any ( c(0,1) %in% parents$AgeLast))
+
+#### type = 'age'
+indiv <- makeFounders( stocks = c(1), maxAge = 5)
+## maturityCurve for ages from 0:5
+maturityCurve <- c(0,0,1,1,1,1)
+indiv2 <- bondedMate( indiv, year = 999, type = "age", maturityCurve = maturityCurve)
+## should have parents of all ages from 2 -> 5
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all ( c(2,3,4,5) %in% parents$AgeLast))
+expect_false( any ( c(0,1) %in% parents$AgeLast))
+
+## check that again with zero year-olds in indiv, in case of OBOEs
+indiv <- makeFounders( stocks = c(1), maxAge = 5, minAge = 0)
+## maturityCurve for ages from 0:5
+maturityCurve <- c(0,0,1,1,1,1)
+indiv2 <- bondedMate( indiv, year = 999, type = "age", maturityCurve = maturityCurve)
+## should have parents of all ages from 2 -> 5
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all ( c(2,3,4,5) %in% parents$AgeLast))
+expect_false( any ( c(0,1) %in% parents$AgeLast))
+
+#### type = 'ageSex'
+indiv <- makeFounders( stocks = c(1), maxAge = 5)
+## maleCurve and femaleCurve for ages from 0:5
+maleCurve <- c(0,0,1,1,1,1) ## males start breeding age 2
+femaleCurve <- c(0,0,0,1,1,1) ## females start breeding age 3
+indiv2 <- bondedMate( indiv, year = 999, type = "ageSex", maleCurve = maleCurve, femaleCurve = femaleCurve)
+## should have male parents of all ages from 2 -> 5
+dads <- indiv2[ indiv2$Me %in% c(indiv2$Dad),]
+## should have female parents of all ages from 3 -> 5
+mums <- indiv2[ indiv2$Me %in% c(indiv2$Mum),]
+
+## check ages for dads
+expect_true( all ( c(2,3,4,5) %in% dads$AgeLast))
+expect_false( any ( c(0,1) %in% dads$AgeLast))
+## check ages for mums
+expect_true( all ( c(3,4,5) %in% mums$AgeLast))
+expect_false( any ( c(0,1,2) %in% mums$AgeLast))
+
+### 'firstBreed' takes precedence over fecundityCurve, maleCurve, and femaleCurve
+#### type = 'flat'
+indiv <- makeFounders( stocks = c(1), maxAge = 5)
+indiv2 <- bondedMate( indiv, year = 999, type = "flat", firstBreed = 4)
+## should have parents only from ages 4 -> 5
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all ( c(4,5) %in% parents$AgeLast))
+expect_false( any ( c(0,1,2,3) %in% parents$AgeLast))
+
+#### type = 'age'
+indiv <- makeFounders( stocks = c(1), maxAge = 5)
+## fecundityCurve for ages from 0:5
+maturityCurve <- c(0,0,1,1,1,1)
+indiv2 <- bondedMate( indiv, year = 999, type = "age", firstBreed = 4, maturityCurve = maturityCurve)
+## should have parents only from ages 4 -> 5
+parents <- indiv2[ indiv2$Me %in% c(indiv2$Mum, indiv2$Dad),]
+expect_true( all ( c(4,5) %in% parents$AgeLast))
+expect_false( any ( c(0,1,2,3) %in% parents$AgeLast))
+
+#### type = 'ageSex'
+indiv <- makeFounders( stocks = c(1), maxAge = 5)
+## fecundityCurve for ages from 0:5
+maleCurve <- c(0,0,1,1,1,1) ## males start breeding age 2
+femaleCurve <- c(0,0,0,1,1,1) ## females start breeding age 3
+indiv2 <- bondedMate( indiv, year = 999, type = "ageSex", firstBreed = 4,
+               maleCurve = maleCurve, femaleCurve = femaleCurve)
+## should have dads only from ages 4 -> 5
+dads <- indiv2[ indiv2$Me %in% c(indiv2$Dad),]
+## should have mums only from ages 4 -> 5
+mums <- indiv2[ indiv2$Me %in% c(indiv2$Mum),]
+
+## check ages for dads
+expect_true( all ( c(4,5) %in% dads$AgeLast))
+expect_false( any ( c(0,1,2,3) %in% dads$AgeLast))
+## check ages for mums
+expect_true( all ( c(4,5) %in% mums$AgeLast))
+expect_false( any ( c(0,1,2,3) %in% mums$AgeLast))
+
+### If no mortality and no divorce, and every female breeds, the pairs
+### are the same between repeated breeding rounds
+indiv <- makeFounders()
+
+indiv2 <- bondedMate( indiv, year = 1, firstBreed = 1, fecundityDist = "binomial",
+                     batchSize = 1, prDiv = 0)
+recruits1 <- indiv2[ indiv2$BirthY == 1,]
+parentPairs1 <- unique( paste( recruits1$Dad, recruits1$Mum))
+
+indiv3 <- bondedMate( indiv2, year = 2, firstBreed = 1, fecundityDist = "binomial",
+                     batchSize = 1, prDiv = 0)
+recruits2 <- indiv3[ indiv3$BirthY == 2,]
+parentPairs2 <- unique( paste( recruits2$Dad, recruits2$Mum))
+
+expect_true( all( parentPairs1 %in% parentPairs2))
+expect_true( all( parentPairs2 %in% parentPairs1))
+
+### ppn remating (no mortality) is approximately prDiv
+
+indiv <- makeFounders()
+
+indiv2 <- bondedMate( indiv, year = 1, firstBreed = 1, fecundityDist = "binomial",
+                     batchSize = 1, prDiv = 0)
+recruits1 <- indiv2[ indiv2$BirthY == 1,]
+parentPairs1 <- unique( paste( recruits1$Dad, recruits1$Mum))
+
+indiv3 <- bondedMate( indiv2, year = 2, firstBreed = 1, fecundityDist = "binomial",
+                     batchSize = 1, prDiv = 0.5)
+recruits2 <- indiv3[ indiv3$BirthY == 2,]
+parentPairs2 <- unique( paste( recruits2$Dad, recruits2$Mum))
+
+expect_false( all(parentPairs1 %in% parentPairs2))
+expect_false( all(parentPairs2 %in% parentPairs1))
+## prDiv is 0.5, so we would expect about half of all parents to be remated.
+## Some may have 'collided' with their former partner and so be remated in
+## the same parentPair as before, so the expectation is fractionally more than
+## 0.5
+repeatFraction <- sum( parentPairs2 %in% parentPairs1) / length(parentPairs1)
+expect_true( repeatFraction < 0.6)
+expect_true( repeatFraction > 0.4)
 
 ## 3: mort
 ### if type = 'simple', living pop is brought down to exactly maxPop

@@ -597,8 +597,8 @@ altMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = "po
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    if (!(fecundityDist %in% c("poisson", "truncPoisson", "binomial"))) {
-        stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', or 'binomial'.")
+    if (!(fecundityDist %in% c("poisson", "truncPoisson", "binomial", "multinomial"))) {
+        stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', 'binomial', or 'multinomial'.")
     }
 
     mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
@@ -842,8 +842,8 @@ bondedMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = 
     if (!(type %in% c("flat", "age", "ageSex"))) {
         stop("'type' must be one of 'flat', 'age', or 'ageSex'.")
     }
-    if (!(fecundityDist %in% c("poisson", "truncPoisson", "binomial"))) {
-        stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', or 'binomial'.")
+    if (!(fecundityDist %in% c("poisson", "truncPoisson", "binomial", "multinomial"))) {
+        stop("'fecundityDist' must be one of 'poisson', 'truncPoisson', 'binomial', or 'multinomial'.")
     }
 
     mothers <- subset(indiv, indiv[,2] == "F" & indiv[,8] >= firstBreed & is.na(indiv[,6]))
@@ -935,19 +935,32 @@ bondedMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = 
             clutchInStock <- clutchInStock[ sortMothers]
 
             ## find mates for unmated females
+            ### ...if there are fewer females needing a mate than there are available mates:
             if( sum(is.na(mothersInStock$Mate)) <= nrow(unmatedFathers)) {
+                ### ... then mate the females with the first n_females males in unmatedFathers
                 mothersInStock$Mate[ is.na(mothersInStock$Mate)] <- unmatedFathers$Me[ 1:nrow(mothersInStock[ is.na(mothersInStock$Mate),])]
             } else {
+### otherwise, mate the first n_males males to the first n_males mothers, and
+### leave the rest of the mothers unmated
                 mothersInStock$Mate[ is.na(mothersInStock$Mate)][1:nrow(unmatedFathers)] <- unmatedFathers$Me[ 1:nrow(unmatedFathers)]
             }
+            ## set n sprogs to zero for females that remain unmated,
+            ## and drop them from 'mothers' and clutch
+            clutchInStock[ is.na(mothersInStock$Mate)] <- 0
+#            mothersInStock <- mothersInStock[ clutchInStock > 0,]
+#            clutchInStock <- clutchInStock[ clutchInStock > 0,]
+
             ## record the mates in indiv
             motherMatch <- match( mothersInStock$Me, indiv$Me)
             indiv$Mate[ motherMatch] <- mothersInStock$Mate
             fatherMatch <- match(mothersInStock$Mate, indiv$Me)
-            indiv$Mate[ fatherMatch] <- mothersInStock$Me
+            ## if there are fewer potential fathers than there are females needing
+            ## mates, there will be some NAs in fatherMatch arising from NAs in
+            ## mothersInStock$Mate. Drop them so you're not trying to put things
+            ## into indiv$Mate[NA]
+            fatherMatch <- fatherMatch[ !is.na( fatherMatch)]
+            indiv$Mate[ fatherMatch] <- mothersInStock$Me[1:length( fatherMatch)]
 
-            ## set n sprogs to zero for females that remain unmated
-            clutchInStock[ is.na(mothersInStock$Mate)] <- 0
 
             ## generate offspring
             n.sprogs <- sum(clutchInStock)
@@ -955,7 +968,7 @@ bondedMate <- function(indiv = makeFounders(), batchSize = 0.5, fecundityDist = 
                                       Dad = character(n.sprogs), Mum = character(n.sprogs),
                                       BirthY = integer(n.sprogs), DeathY = integer(n.sprogs),
                                       Stock = integer(n.sprogs), AgeLast = integer(n.sprogs),
-                                      SampY = integer(n.sprogs), Mate = character(n.sprogs))
+                                      SampY = integer(n.sprogs))
 
             sprog.stock[,1] <- uuid(n = nrow(sprog.stock), drop_hyphens = TRUE)
             sprog.stock[,2] <- sample(c("M", "F"), nrow(sprog.stock), TRUE, prob = osr)
