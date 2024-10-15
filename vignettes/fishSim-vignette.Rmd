@@ -103,11 +103,11 @@ implies 70% annual survival, but with a hard age-limit of 20 years.
 ## Mating
 
 Having set up our population, we can now get its members to breed, get
-older, switch sex and die, using the `mate()` (or `altMate()`),
-`birthdays()`, `sexSwitch()`, and `mort()` functions. If we had more
-than one stock, we could also get individuals to move between stocks
-with markovian movement probabilities, using `move()`. Let's look at
-those.
+older, switch sex and die, using `mate()` (or `altMate()` or
+`bondedMate()`), `birthdays()`, `sexSwitch()`, and `mort()`
+functions. If we had more than one stock, we could also get
+individuals to move between stocks with markovian movement
+probabilities, using `move()`. Let's look at those.
 
 ```{r}
 nrow(indiv)
@@ -129,10 +129,17 @@ number of clutch-members, the default mean ('batchSize') of
 male/female pairs until `nrow(indiv) * 0.2` new offspring were
 produced.
 
-Alternatively, we can mate our population using `altMate()`, which
-specifies individual maturities by age, and a probability distribution
-of number of offspring per mature female. Let's generate some new
-founders and try that.
+Alternatively, we can mate our population using `bondedMate()`, which
+stores a mate ID for mature animals and generates offspring within
+each pair unless one member dies or moves to another stock, or the
+pair divorces. Re-mating occurs among surviving animals, but this
+system can give repeated breeding between pair members for many
+breeding seasons.
+
+Finally, we can mate our population using `altMate()`, which specifies
+individual maturities by age, and a probability distribution of number
+of offspring per mature female. Let's generate some new founders and
+try that.
 
 ```{r}
 indiv <- makeFounders(stocks = c(1))
@@ -149,7 +156,7 @@ fecundities, set paternity within-clutch to be single or multiple, to
 exhaust fathers within each breeding season (females, in this system,
 always breed to exhaustion each season), and to set a sex ratio for
 offspring by additional arguments to `altMate()`, and these options
-can also be set in `mate()`.
+can also be set in `mate()` and `bondedMate()`.
 
 ## Mortality
 
@@ -585,22 +592,26 @@ have a species in which each female mates with a handful of males in
 the year preceding each breeding season, and then uses stored sperm
 from these mates to fertilise a clutch of eggs just before giving
 birth. Let's call this the 'sperm storage' scenario. The sperm storage
-scenario can't be coded using the built-in `mate` or `altMate`
-functions - in those functions, each mating event either has single
-paternity (i.e., all offspring produced by each female have the same
-father) or completely random paternity (i.e., the father of each
-offspring is randomly selected from among all mature males in the same
-stock), or, using `mate`, within-clutch single paternity but
+scenario can't be coded using the built-in `mate`, `altMate`, or
+`bondedMate` functions - in those functions, each mating event either
+has single paternity (i.e., all offspring produced by each female have
+the same father) or completely random paternity (i.e., the father of
+each offspring is randomly selected from among all mature males in the
+same stock), or, using `mate`, within-clutch single paternity but
 potentially multiple clutches (each with a different father). In the
 situations handled by `mate` and `altMate`, the expected number of
 offspring for a female is linearly related to her number of mates,
-which doesn't fit with our 'sperm storage' scenario.
+which doesn't fit with our 'sperm storage' scenario. In the situation
+handled by `bondedMate`, one male and one female are socially-bonded
+for at least one breeding season, and a female's whole clutch are
+fathered by her mate.
 
-To get around this problem, we will need to define a custom
-`mate`-like function, that inputs an `indiv`-like
-`data.frame`, generates new offspring the way the scenario demands,
-and outputs an `indiv`-like `data.frame` to be used by the other
-functions in `fishSim`. Such a function could look like this:
+To get around the linear relationship between fecundity and number of
+mates, we will need to define a custom `mate`-like function, that
+inputs an `indiv`-like `data.frame`, generates new offspring the way
+the scenario demands, and outputs an `indiv`-like `data.frame` to be
+used by the other functions in `fishSim`. Such a function could look
+like this:
 
 ```{r}
 # A custom myMate function

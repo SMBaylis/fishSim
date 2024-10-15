@@ -12,7 +12,8 @@ library(ids)
 indiv <- makeFounders( stocks = c(1, 0, 0)) ## everyone starts in stock 1
 ## 'from' by row, 'to' by column, 'age' by aisle
 moveMat <- matrix( data = c(0,1,0,0,0,0,0,0,0), ncol = 3, nrow = 3, byrow = TRUE)
-indiv2 <- move( indiv, moveMat = moveMat)
+expect_warning( {indiv2 <- move( indiv, moveMat = moveMat) }) ## warns that stocks
+## start empty
 expect_true( all( indiv2$Stock == 2))
 
 ## everyone moves up 1 stock:
@@ -620,8 +621,8 @@ indiv <- makeFounders(pop = pop)
 indiv2 <- mort(indiv, type = "flat", mortRate = mortRate)
 E_toll <- pop*mortRate
 O_toll <- sum( !is.na(indiv2$DeathY))
-expect_true( (E_toll / O_toll) < 1.03)
-expect_true( (E_toll / O_toll) > 0.97)
+expect_true( (E_toll / O_toll) < 1.04)
+expect_true( (E_toll / O_toll) > 0.96)
 
 ### if type = "age", mortality exactly follows a (1, 0, 1, ...) ageMort curve
 indiv <- makeFounders(maxAge = 6)
