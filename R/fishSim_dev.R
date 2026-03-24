@@ -215,7 +215,8 @@ move <- function(indiv = makeFounders(), moveMat = NULL, moveMat_M = NULL, moveM
     ## } ## the original 'move' function (now 'oldmove'), superseded by 'fastermove'
     fastermove <- function(indiv = makeFounders(), moveMat) {
         if(nrow(moveMat) != ncol(moveMat)) warning("movement matrix is not square")
-        if(nrow(moveMat) > length(unique(indiv[,7]))) warning("One or more stocks start empty")
+        ## actually, it's OK if one or more stocks start empty - that stock just won't do anything
+        ## if(nrow(moveMat) > length(unique(indiv[,7]))) warning("One or more stocks start empty")
 
         oldStock <- indiv[,7]
         newStock <- matrix(data = NA, nrow = nrow(indiv))
@@ -250,6 +251,11 @@ move <- function(indiv = makeFounders(), moveMat = NULL, moveMat_M = NULL, moveM
     ## define a function to do age-specific movement; can be iterated over for
     ## the two sexes, as for the sex-specific case
     ASmove <- function( indiv, moveMat) {
+        ## an informative warning if moveMat doesn't have enough age-classes for all ages
+        if( dim( moveMat)[3] < length( min(indiv$AgeLast):max(indiv$AgeLast))) {
+            stop( "More ages in indiv than in moveMat. Does moveMat account for age 0 animals and/or animals that have aged past maxAge but haven't yet died?")
+        }
+
         ## split the indiv into age-classes
         IBA <- list( ) ## IBA: indiv by age
         for( i in min(indiv$AgeLast):max( indiv$AgeLast) ) {
@@ -261,6 +267,7 @@ move <- function(indiv = makeFounders(), moveMat = NULL, moveMat_M = NULL, moveM
         ## age zero in aisle 1, so moveMat[,,1] is the moveMat for age 0
         mIBA <- list( ) ## mIBA: moved IBA
         for( i in min(indiv$AgeLast):max( indiv$AgeLast) ) {
+            if( nrow( IBA[[i+1]]) == 0) { next } ## if no animals of this age, break
             mIBA[[i+1]] <- fastermove( IBA[[i+1]], moveMat = moveMat[,,i+1])
         } ## remember age is 0-indexed, whereas list positions are 1-indexed,
         ## so age _a_ is IBA[[a - 1]]
@@ -2759,10 +2766,12 @@ function( anc1s, anc2s, same, weed=NULL) {
 # same=TRUE if anc1s == anc2s ie looking for shared mums
 ## weed: any stronger kin to remove from inbred pairs (eg to exclude known POPs from HTPs)--- result of 'both()'
 
-  if( FALSE && too_smart) {
-    crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
-    ranc1s <- ...
-  }
+    ## this can't do anything (unless MVB was playing with Very Dark Arts), but it causes
+    ## a warning for the '...' used in incorrect context. Commenting out!
+  ## if( FALSE && too_smart) {
+  ##   crosses <- c( outer( 1:ncol( anc1s), 1:ncol( anc2s), sprintf( fmt='_%i_%i_')))
+  ##   ranc1s <- ...
+  ## }
 
   if( isNamespaceLoaded( 'fastmatch')) {
     match <- fastmatch::fmatch
